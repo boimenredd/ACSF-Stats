@@ -424,6 +424,7 @@
         }
 
         function renderTable(league) {
+            function renderTable(league) {
             const head = document.getElementById('tableHead');
             const body = document.getElementById('standingsContent');
             const legend = document.getElementById('tableLegend');
@@ -431,8 +432,9 @@
             document.querySelectorAll('.league-btn').forEach(btn => btn.classList.remove('active-league'));
             document.getElementById(`btn-${league}`).classList.add('active-league');
 
-            head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="pr-4 text-right">PTS</th>`;
-            body.innerHTML = `<tr><td colspan="5" class="py-10 text-center text-zinc-500 font-bold uppercase animate-pulse">Fetching Standings...</td></tr>`;
+            // Added GF, GA, and GD to the header
+            head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="text-center">W-D-L</th><th class="pr-4 text-right">PTS</th>`;
+            body.innerHTML = `<tr><td colspan="8" class="py-10 text-center text-zinc-500 font-bold uppercase animate-pulse">Fetching Standings...</td></tr>`;
 
             Papa.parse(STANDINGS_URLS[league], {
                 download: true, header: true, skipEmptyLines: 'greedy',
@@ -442,6 +444,12 @@
                         const team = r.Team || r.team || '';
                         const mp = r.MP || r.mp || r.GP || 0;
                         const pts = r.Points || r.points || r.Pts || 0;
+                        
+                        // Extracting new stats from CSV
+                        const gf = r.GF || r.gf || r['Goals For'] || 0;
+                        const ga = r.GA || r.ga || r['Goals Against'] || 0;
+                        const gd = r.GD || r.gd || (gf - ga) || 0;
+
                         const wdl = r['W-D-L'] || `${r.W || 0}-${r.D || 0}-${r.L || 0}`;
                         const style = getQualifyStyle(league, pos);
 
@@ -458,6 +466,9 @@
                                 </div>
                             </td>
                             <td class="text-center text-zinc-400 font-mono">${mp}</td>
+                            <td class="text-center text-zinc-400 font-mono">${gf}</td>
+                            <td class="text-center text-zinc-400 font-mono">${ga}</td>
+                            <td class="text-center text-zinc-400 font-mono">${gd > 0 ? '+' + gd : gd}</td>
                             <td class="text-center wdl-column text-[10px]">${wdl}</td>
                             <td class="pr-4 text-right text-[#00ff85] font-black text-sm">${pts}</td>
                         </tr>`;
@@ -465,6 +476,17 @@
                 }
             });
 
+            const rules = league === 'MLS' ? 
+                [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#ef4444', l:'Rel'}] :
+                [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#ef4444', l:'Rel'}];
+            
+            legend.innerHTML = rules.map(rule => `
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full" style="background:${rule.c}"></div>
+                    <span class="text-[9px] font-black text-zinc-500 uppercase">${rule.l}</span>
+                </div>
+            `).join('');
+        }
             const rules = league === 'MLS' ? 
                 [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#ef4444', l:'Rel'}] :
                 [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#ef4444', l:'Rel'}];
