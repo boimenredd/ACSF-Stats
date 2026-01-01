@@ -211,6 +211,9 @@ function parseSheetDate(raw) {
         return 'MATCHDAY_MARKER';
     }
     
+    // Check if "2025" is explicitly in the date string
+    const has2025 = str.includes('2025');
+    
     // Handle formats like "Aug 15" or "August 15"
     let match = str.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\.?\s*(\d+)/i);
     
@@ -230,23 +233,10 @@ function parseSheetDate(raw) {
     
     if (month === -1) return null;
     
-    // Determine year based on current date
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    let year = today.getFullYear();
+    // Determine year based on "2025" indicator
+    let year = has2025 ? 2025 : 2026;
     
-    // Create date with current year
     let d = new Date(year, month, day);
-    
-    // If the date is more than 6 months in the past, it's probably next year
-    if (d < today && (today - d) > (180 * 24 * 60 * 60 * 1000)) {
-        d = new Date(year + 1, month, day);
-    }
-    // If date is more than 6 months in the future, it's probably last year
-    else if (d > today && (d - today) > (180 * 24 * 60 * 60 * 1000)) {
-        d = new Date(year - 1, month, day);
-    }
-    
     d.setHours(0, 0, 0, 0);
     return d;
 }
