@@ -1,1 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Score Hub</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { background: #0b0e11; color: #fff; font-family: 'Inter', sans-serif; }
+        .date-tile { min-width: 60px; height: 70px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; cursor: pointer; border: 1px solid #1f2937; }
+        .date-tile.active { background: #00ff85; color: #000; font-weight: 800; border-color: #00ff85; }
+        .league-pill { padding: 8px 16px; border-radius: 20px; background: #1f2937; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .league-pill.active { background: #fff; color: #000; }
+        .match-card { background: #161b22; border-radius: 12px; padding: 16px; margin-bottom: 8px; border: 1px solid #21262d; }
+        .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; background: #161b22; display: flex; justify-content: space-around; padding: 12px; border-top: 1px solid #30363d; }
+    </style>
+</head>
+<body class="max-w-md mx-auto pb-24">
 
+    <header class="p-4 sticky top-0 bg-[#0b0e11] z-50">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-xl font-extrabold tracking-tighter">SCOREHUB</h1>
+            <button onclick="openCompare()" class="text-[10px] bg-zinc-800 px-3 py-1 rounded-full font-bold text-[#00ff85]">VS COMPARE</button>
+        </div>
+
+        <div class="flex gap-2 overflow-x-auto pb-4 no-scrollbar">
+            <div class="league-pill active" onclick="filterLeague('ALL')">All</div>
+            <div class="league-pill" onclick="filterLeague('PREM')">Premier League</div>
+            <div class="league-pill" onclick="filterLeague('LALIGA')">La Liga</div>
+            <div class="league-pill" onclick="filterLeague('MLS')">MLS</div>
+        </div>
+
+        <div id="dateScroller" class="flex gap-3 overflow-x-auto py-2 no-scrollbar">
+            </div>
+    </header>
+
+    <main id="mainContent" class="px-4">
+        <div id="matchList">
+            <h2 class="text-xs font-bold text-zinc-500 uppercase mb-4">Matches</h2>
+            </div>
+    </main>
+
+    <nav class="nav-bottom">
+        <button onclick="setView('matches')" class="text-xs font-bold">Matches</button>
+        <button onclick="setView('standings')" class="text-xs font-bold text-zinc-500">Standings</button>
+        <button onclick="setView('players')" class="text-xs font-bold text-zinc-500">Stats</button>
+    </nav>
+
+    <script>
+        // Initialization & Date Logic
+        let currentDate = new Date();
+        
+        function initCalendar() {
+            const scroller = document.getElementById('dateScroller');
+            for (let i = -3; i <= 7; i++) {
+                let d = new Date();
+                d.setDate(d.getDate() + i);
+                let tile = document.createElement('div');
+                tile.className = `date-tile ${i === 0 ? 'active' : ''}`;
+                tile.innerHTML = `
+                    <span class="text-[10px] uppercase opacity-60">${d.toLocaleDateString('en-US', {weekday: 'short'})}</span>
+                    <span class="text-lg font-bold">${d.getDate()}</span>
+                `;
+                tile.onclick = () => selectDate(tile, d);
+                scroller.appendChild(tile);
+            }
+        }
+
+        function selectDate(el, date) {
+            document.querySelectorAll('.date-tile').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            // Logic to filter matches by date MM/DD/YYYY
+        }
+
+        initCalendar();
+    </script>
+</body>
+</html>
