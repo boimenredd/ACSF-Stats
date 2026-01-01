@@ -204,7 +204,12 @@ function parseSheetDate(raw) {
     
     let str = raw.trim();
     
-    // Handle formats like "Matchday1Aug 15" or "2Aug 22"
+    // Check if this is a matchday marker (starts with number or "Matchday")
+    if (/^(Matchday)?\d+[A-Z]/i.test(str) || /^(Matchday)?\d+$/.test(str)) {
+        return 'MATCHDAY_MARKER';
+    }
+    
+    // Handle formats like "Aug 15" or "August 15"
     let match = str.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\.?\s*(\d+)/i);
     
     if (!match) return null;
@@ -223,10 +228,23 @@ function parseSheetDate(raw) {
     
     if (month === -1) return null;
     
-    // Determine year: Aug-Dec = 2024/2025, Jan-May = 2025/2026
-    let year = (month >= 7) ? 2024 : 2025;
+    // Determine year based on current date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let year = today.getFullYear();
     
+    // Create date with current year
     let d = new Date(year, month, day);
+    
+    // If the date is more than 6 months in the past, it's probably next year
+    if (d < today && (today - d) > (180 * 24 * 60 * 60 * 1000)) {
+        d = new Date(year + 1, month, day);
+    }
+    // If date is more than 6 months in the future, it's probably last year
+    else if (d > today && (d - today) > (180 * 24 * 60 * 60 * 1000)) {
+        d = new Date(year - 1, month, day);
+    }
+    
     d.setHours(0, 0, 0, 0);
     return d;
 }
@@ -246,10 +264,19 @@ async function init() {
                     results.data.forEach((row, i) => {
                         if (i === 0) return; // Skip header
                         
-                        // Check if this row has a date in column A
-                        const potentialDate = parseSheetDate(row[0]);
-                        if (potentialDate) {
-                            currentDate = potentialDate;
+                        // Check column A for dates or matchday markers
+                        const cellA = row[0];
+                        if (cellA) {
+                            const parsedDate = parseSheetDate(cellA);
+                            
+                            // If it's a matchday marker, reset currentDate
+                            if (parsedDate === 'MATCHDAY_MARKER') {
+                                currentDate = null;
+                            }
+                            // If it's an actual date, use it
+                            else if (parsedDate && parsedDate !== 'MATCHDAY_MARKER') {
+                                currentDate = parsedDate;
+                            }
                         }
                         
                         // If we have a current date and team names, add the match
@@ -292,31 +319,26 @@ async function init() {
 }
 
 function jumpToToday() {
+    // Use actual current date
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const nowTime = now.getTime();
     
-    // Find the closest date to today (could be today, past, or future)
-    let closestIdx = 0;
-    let smallestDiff = Math.abs(uniqueDates[0] - nowTime);
-    
-    for (let i = 1; i < uniqueDates.length; i++) {
-        const diff = Math.abs(uniqueDates[i] - nowTime);
-        if (diff < smallestDiff) {
-            smallestDiff = diff;
-            closestIdx = i;
-        }
-    }
-    
-    // If the closest date is in the past, and there's a future date, prefer today or next game day
+    // Find today or the next upcoming game day
+    let foundIdx = -1;
     for (let i = 0; i < uniqueDates.length; i++) {
         if (uniqueDates[i] >= nowTime) {
-            closestIdx = i;
+            foundIdx = i;
             break;
         }
     }
     
-    dateIdx = closestIdx;
+    // If no future dates, show the most recent date
+    if (foundIdx === -1) {
+        foundIdx = uniqueDates.length - 1;
+    }
+    
+    dateIdx = foundIdx;
     renderMatches();
 }
 
