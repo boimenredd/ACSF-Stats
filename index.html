@@ -30,7 +30,7 @@
         .active-league { background: var(--accent) !important; color: #000 !important; }
 
         .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #111; border-top: 1px solid #222; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
-        .nav-item { color: #555; font-size: 10px; font-weight: 800; text-align: center; cursor: pointer; }
+        .nav-item { color: #555; font-size: 10px; font-weight: 800; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .nav-item.active { color: var(--accent); }
     </style>
 </head>
@@ -38,7 +38,7 @@
 
     <header class="p-4"><h1 class="text-xl font-black italic uppercase">Score<span class="text-[#00ff85]">Hub</span></h1></header>
 
-    <main id="matches-tab">
+    <main id="hub-tab">
         <div class="date-nav">
             <div class="nav-arrow" onclick="changeDate(-1)">‹</div>
             <div class="flex flex-col items-center">
@@ -52,9 +52,9 @@
 
     <div id="standings-tab" class="hidden pt-20">
         <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
-            <button id="btn-PREM" onclick="renderStandings('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">🏴󠁧󠁢󠁥󠁮󠁧󠁿 PREMIER LEAGUE</button>
-            <button id="btn-LALIGA" onclick="renderStandings('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">🇪🇸 LA LIGA</button>
-            <button id="btn-MLS" onclick="renderStandings('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">🇺🇸 MLS</button>
+            <button id="btn-PREM" onclick="renderStandings('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
+            <button id="btn-LALIGA" onclick="renderStandings('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
+            <button id="btn-MLS" onclick="renderStandings('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
         </div>
         <div class="px-2 overflow-x-auto">
             <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 min-w-[600px]">
@@ -68,8 +68,14 @@
     </div>
 
     <nav class="nav-bottom">
-        <div class="nav-item active" onclick="switchTab('matches')">MATCHES</div>
-        <div class="nav-item" onclick="switchTab('standings')">STANDINGS</div>
+        <div class="nav-item active" onclick="switchTab('hub')">
+            <span class="text-lg">⚽</span>
+            <span>MAIN HUB</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('standings')">
+            <span class="text-lg">🏆</span>
+            <span>STANDINGS</span>
+        </div>
     </nav>
 
 <script>
@@ -106,12 +112,25 @@ function getLogo(team) {
 
 function parseSheetDate(raw) {
     if (!raw) return null;
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Oct."];
-    let foundMonth = months.find(m => raw.includes(m));
-    if (!foundMonth) return null;
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     
-    let datePart = raw.substring(raw.indexOf(foundMonth)).replace(/(\d+)(st|nd|rd|th)/, "$1").replace('Oct.', 'Oct');
+    // Find where the actual month starts to skip "MatchdayX"
+    let startIdx = -1;
+    let foundMonth = "";
+    for (let m of months) {
+        let idx = raw.indexOf(m);
+        if (idx !== -1 && (startIdx === -1 || idx < startIdx)) {
+            startIdx = idx;
+            foundMonth = m;
+        }
+    }
+    
+    if (startIdx === -1) return null;
+    
+    // Clean and parse
+    let datePart = raw.substring(startIdx).replace(/(\d+)(st|nd|rd|th)/, "$1").trim();
     let year = (["Jan", "Feb", "Mar", "Apr", "May"].some(m => datePart.includes(m))) ? 2026 : 2025;
+    
     let d = new Date(`${datePart}, ${year}`);
     if (isNaN(d.getTime())) return null;
     d.setHours(0,0,0,0);
@@ -173,7 +192,7 @@ function renderMatches() {
                 ${matches.map(m => {
                     return `
                     <div class="match-row">
-                        <div class="team-box justify-end"><span class="team-name">${m.home}</span><img src="${getLogo(m.home)}" class="team-logo"></div>
+                        <div class="team-box justify-end"><span class="team-name text-right">${m.home}</span><img src="${getLogo(m.home)}" class="team-logo"></div>
                         <div class="match-info">
                             <div class="match-score">${m.score === 'v' ? 'v' : m.score}</div>
                         </div>
@@ -240,9 +259,12 @@ function changeDate(step) {
 }
 
 function switchTab(t) {
-    document.getElementById('matches-tab').classList.toggle('hidden', t !== 'matches');
+    document.getElementById('hub-tab').classList.toggle('hidden', t !== 'hub');
     document.getElementById('standings-tab').classList.toggle('hidden', t !== 'standings');
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.innerText.toLowerCase() === t));
+    document.querySelectorAll('.nav-item').forEach(el => {
+        const isTarget = el.onclick.toString().includes(t);
+        el.classList.toggle('active', isTarget);
+    });
     if (t === 'standings') renderStandings('PREM');
 }
 
