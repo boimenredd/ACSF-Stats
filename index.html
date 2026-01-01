@@ -358,4 +358,83 @@
 
         function renderTable(league) {
             const head = document.getElementById('tableHead');
-            const body
+            const body = document.getElementById('standingsContent');
+            const legend = document.getElementById('tableLegend');
+
+            document.querySelectorAll('.league-btn').forEach(btn => btn.classList.remove('active-league'));
+            document.getElementById(`btn-${league}`).classList.add('active-league');
+
+            head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="pr-4 text-right">PTS</th>`;
+            body.innerHTML = `<tr><td colspan="5" class="py-10 text-center text-zinc-500 font-bold uppercase animate-pulse">Fetching Standings...</td></tr>`;
+
+            Papa.parse(STANDINGS_URLS[league], {
+                download: true, header: true, skipEmptyLines: 'greedy',
+                complete: (res) => {
+                    body.innerHTML = res.data.map(r => {
+                        const pos = r.Position || r.position || r['#'] || '';
+                        const team = r.Team || r.team || '';
+                        const mp = r.MP || r.mp || r.GP || 0;
+                        const pts = r.Points || r.points || r.Pts || 0;
+                        const wdl = r['W-D-L'] || `${r.W || 0}-${r.D || 0}-${r.L || 0}`;
+                        const style = getQualifyStyle(league, pos);
+
+                        return `
+                        <tr class="font-bold border-b border-zinc-800/30">
+                            <td class="pl-4 py-5 flex items-center">
+                                <div class="qualify-indicator" style="background: ${style ? style.color : 'transparent'}"></div>
+                                <span class="text-zinc-500">${pos}</span>
+                            </td>
+                            <td>
+                                <div class="flex items-center gap-4">
+                                    <img src="${getLogo(team)}" class="w-8 h-8 object-contain">
+                                    <span class="text-white truncate max-w-[120px]">${team}</span>
+                                </div>
+                            </td>
+                            <td class="text-center text-zinc-400 font-mono">${mp}</td>
+                            <td class="text-center wdl-column text-[10px]">${wdl}</td>
+                            <td class="pr-4 text-right text-[#00ff85] font-black text-sm">${pts}</td>
+                        </tr>`;
+                    }).join('');
+                }
+            });
+
+            const rules = league === 'MLS' ? 
+                [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#ef4444', l:'Rel'}] :
+                [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#ef4444', l:'Rel'}];
+            
+            legend.innerHTML = rules.map(rule => `
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full" style="background:${rule.c}"></div>
+                    <span class="text-[9px] font-black text-zinc-500 uppercase">${rule.l}</span>
+                </div>
+            `).join('');
+        }
+
+        function getQualifyStyle(league, pos) {
+            pos = parseInt(pos);
+            if (league === 'MLS') {
+                if (pos === 1) return { color: "#fbbf24", label: "Shield" };
+                if (pos >= 2 && pos <= 8) return { color: "#22c55e", label: "Playoffs" };
+                if (pos >= 19) return { color: "#ef4444", label: "Rel" };
+            } else {
+                if (pos === 1) return { color: "#00ff85", label: "Champ" };
+                if (pos >= 2 && pos <= 4) return { color: "#3b82f6", label: "UCL" };
+                if (pos === 5) return { color: "#fbbf24", label: "UEL" };
+                if (pos >= 18) return { color: "#ef4444", label: "Rel" };
+            }
+            return null;
+        }
+
+        function switchTab(tab) {
+            ['matches', 'standings', 'stats'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+                document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
+            });
+            if (tab === 'standings') renderTable('PREM');
+        }
+
+        // Initialize
+        loadAllMatches();
+    </script>
+</body>
+</html>
