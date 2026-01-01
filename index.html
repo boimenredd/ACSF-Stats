@@ -80,27 +80,13 @@
     </nav>
 
     <script>
-        // EMBEDDED SCHEDULE DATA FROM YOUR CSVs
+        // EXPANDED SCHEDULE DATA FROM CSVs
         const HUB_DATA = {
-            "Aug 15": [
-                {league:"PREM", home:"Aston Villa", away:"Newcastle", result:"2-2"},
-                {league:"PREM", home:"Brighton", away:"Leicester", result:"2-2"},
-                {league:"LALIGA", home:"Villarreal", away:"Real Oviedo", result:"3-0"},
-                {league:"LALIGA", home:"Mallorca", away:"Barcelona", result:"1-3"}
-            ],
-            "Aug 22": [
-                {league:"PREM", home:"Man City", away:"Tottenham", result:"1-3"},
-                {league:"LALIGA", home:"Levante", away:"Barcelona", result:"0-7"},
-                {league:"LALIGA", home:"Real Oviedo", away:"Real Madrid", result:"1-6"}
-            ],
-            "February 21st": [
-                {league:"MLS", home:"Miami", away:"LA Galaxy", result:"-"},
-                {league:"MLS", home:"LAFC", away:"Seattle", result:"-"}
-            ],
-            "February 28th": [
-                {league:"MLS", home:"New England", away:"LAFC", result:"-"},
-                {league:"MLS", home:"Columbus", away:"Salt Lake", result:"-"}
-            ]
+            "Aug 15": [{"league": "PREM", "home": "Aston Villa", "away": "Newcastle", "result": "2-2"}, {"league": "PREM", "home": "Brighton", "away": "Leicester", "result": "2-2"}, {"league": "PREM", "home": "Sunderland", "away": "West Ham", "result": "0-2"}, {"league": "PREM", "home": "Tottenham", "away": "Burnley", "result": "3-3"}, {"league": "PREM", "home": "Wolves", "away": "Man City", "result": "0-3"}, {"league": "PREM", "home": "Chelsea", "away": "Crystal Palace", "result": "3-2"}, {"league": "PREM", "home": "Nott'm Forest", "away": "Brentford", "result": "1-2"}, {"league": "PREM", "home": "Man Utd", "away": "Arsenal", "result": "2-2"}, {"league": "PREM", "home": "Leeds", "away": "Southampton", "result": "0-1"}, {"league": "LALIGA", "home": "Villarreal", "away": "Real Oviedo", "result": "3-0"}, {"league": "LALIGA", "home": "Alaves", "away": "Levante", "result": "1-0"}, {"league": "LALIGA", "home": "Mallorca", "away": "Barcelona", "result": "1-3"}, {"league": "LALIGA", "home": "Valencia", "away": "Real Sociedad", "result": "2-3"}, {"league": "LALIGA", "home": "Celta Vigo", "away": "Las Palmas", "result": "2-3"}, {"league": "LALIGA", "home": "Athletic Bilbao", "away": "Sevilla", "result": "1-2"}, {"league": "LALIGA", "home": "Espanyol", "away": "Atletico Madrid", "result": "2-2"}, {"league": "LALIGA", "home": "Elche", "away": "Real Betis", "result": "2-0"}, {"league": "LALIGA", "home": "Real Madrid", "away": "Osasuna", "result": "0-3"}],
+            "Aug 22": [{"league": "PREM", "home": "West Ham", "away": "Chelsea", "result": "2-3"}, {"league": "PREM", "home": "Man City", "away": "Tottenham", "result": "1-3"}, {"league": "PREM", "home": "Bournemouth", "away": "Wolves", "result": "3-2"}, {"league": "PREM", "home": "Brentford", "away": "Aston Villa", "result": "2-0"}, {"league": "PREM", "home": "Burnley", "away": "Sunderland", "result": "1-3"}, {"league": "PREM", "home": "Arsenal", "away": "Leeds", "result": "0-1"}, {"league": "PREM", "home": "Crystal Palace", "away": "Nott'm Forest", "result": "0-1"}, {"league": "PREM", "home": "Southampton", "away": "Brighton", "result": "4-3"}, {"league": "PREM", "home": "Leicester", "away": "Man Utd", "result": "4-2"}, {"league": "PREM", "home": "Newcastle", "away": "Liverpool", "result": "1-3"}, {"league": "LALIGA", "home": "Real Betis", "away": "Alaves", "result": "4-1"}, {"league": "LALIGA", "home": "Mallorca", "away": "Celta Vigo", "result": "1-1"}, {"league": "LALIGA", "home": "Atletico Madrid", "away": "Elche", "result": "4-2"}, {"league": "LALIGA", "home": "Levante", "away": "Barcelona", "result": "0-7"}, {"league": "LALIGA", "home": "Osasuna", "away": "Valencia", "result": "3-1"}, {"league": "LALIGA", "home": "Real Sociedad", "away": "Espanyol", "result": "1-3"}, {"league": "LALIGA", "home": "Villarreal", "away": "Girona", "result": "3-4"}, {"league": "LALIGA", "home": "Real Oviedo", "away": "Real Madrid", "result": "1-6"}, {"league": "LALIGA", "home": "Athletic Bilbao", "away": "Rayo Vallecano", "result": "3-1"}, {"league": "LALIGA", "home": "Sevilla", "away": "Las Palmas", "result": "3-1"}],
+            "Aug 29": [{"league": "PREM", "home": "Aston Villa", "away": "Crystal Palace", "result": "3-3"}, {"league": "PREM", "home": "Chelsea", "away": "Leicester", "result": "2-0"}, {"league": "PREM", "home": "Man Utd", "away": "Burnley", "result": "4-0"}, {"league": "PREM", "home": "Sunderland", "away": "Brentford", "result": "4-4"}, {"league": "PREM", "home": "Tottenham", "away": "Bournemouth", "result": "2-3"}, {"league": "PREM", "home": "Wolves", "away": "Southampton", "result": "2-4"}, {"league": "PREM", "home": "Leeds", "away": "Newcastle", "result": "1-2"}, {"league": "PREM", "home": "Brighton", "away": "Man City", "result": "2-4"}, {"league": "PREM", "home": "Nott'm Forest", "away": "West Ham", "result": "3-4"}, {"league": "PREM", "home": "Liverpool", "away": "Arsenal", "result": "3-1"}, {"league": "LALIGA", "home": "Elche", "away": "Levante", "result": "4-0"}, {"league": "LALIGA", "home": "Valencia", "away": "Las Palmas", "result": "2-3"}, {"league": "LALIGA", "home": "Alaves", "away": "Atletico Madrid", "result": "0-3"}, {"league": "LALIGA", "home": "Real Oviedo", "away": "Real Sociedad", "result": "2-3"}, {"league": "LALIGA", "home": "Girona", "away": "Sevilla", "result": "2-3"}, {"league": "LALIGA", "home": "Real Madrid", "away": "Mallorca", "result": "4-1"}, {"league": "LALIGA", "home": "Celta Vigo", "away": "Villarreal", "result": "2-4"}, {"league": "LALIGA", "home": "Real Betis", "away": "Athletic Bilbao", "result": "1-3"}, {"league": "LALIGA", "home": "Espanyol", "away": "Osasuna", "result": "0-1"}, {"league": "LALIGA", "home": "Rayo Vallecano", "away": "Barcelona", "result": "0-3"}],
+            "February 21st": [{"league": "MLS", "home": "Miami", "away": "LA Galaxy", "result": "-"}, {"league": "MLS", "home": "LAFC", "away": "Seattle", "result": "-"}, {"league": "MLS", "home": "Atlanta", "away": "Columbus", "result": "-"}, {"league": "MLS", "home": "Toronto", "away": "Montreal", "result": "-"}, {"league": "MLS", "home": "San Diego", "away": "San Jose", "result": "-"}, {"league": "MLS", "home": "Orlando", "away": "NY Red Bulls", "result": "-"}, {"league": "MLS", "home": "Houston", "away": "Colorado", "result": "-"}, {"league": "MLS", "home": "Charlotte", "away": "New England", "result": "-"}, {"league": "MLS", "home": "Salt Lake", "away": "Minnesota", "result": "-"}, {"league": "MLS", "home": "Vancouver", "away": "Chicago", "result": "-"}],
+            "February 28th": [{"league": "MLS", "home": "Montreal", "away": "Houston", "result": "-"}, {"league": "MLS", "home": "NY Red Bulls", "away": "San Diego", "result": "-"}, {"league": "MLS", "home": "LA Galaxy", "away": "Orlando", "result": "-"}, {"league": "MLS", "home": "New England", "away": "LAFC", "result": "-"}, {"league": "MLS", "home": "San Jose", "away": "Toronto", "result": "-"}, {"league": "MLS", "home": "Minnesota", "away": "Vancouver", "result": "-"}, {"league": "MLS", "home": "Colorado", "away": "Charlotte", "result": "-"}, {"league": "MLS", "home": "Chicago", "away": "Atlanta", "result": "-"}, {"league": "MLS", "home": "Columbus", "away": "Salt Lake", "result": "-"}, {"league": "MLS", "home": "Seattle", "away": "Miami", "result": "-"}]
         };
 
         const LOGOS = {
@@ -171,8 +157,6 @@
             LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv',
             MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv'
         };
-
-        let tableDataCache = {};
 
         function getLogo(team) {
             if (!team) return "";
