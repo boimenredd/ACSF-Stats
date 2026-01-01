@@ -80,11 +80,11 @@
     </nav>
 
     <script>
-        // CSV Source URLs for Schedule Hub (Using specific GIDs for the league tabs)
+        // UPDATED SCHEDULE GIDs: Ensure these match your specific spreadsheet tabs
         const SCHEDULE_URLS = {
-            PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=0&single=true&output=csv',
-            LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1510525656&single=true&output=csv',
-            MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=0&single=true&output=csv'
+            PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv',
+            LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1516477023&single=true&output=csv',
+            MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAT0GInc6QMrh4OdSjMk63NmcvN_1lyKpDnwYifaQBqtBMu3JAWrJRr0DqzEFt1iPbkV7vZPMOcuis/pub?gid=0&single=true&output=csv'
         };
 
         const LOGOS = {
@@ -129,25 +129,7 @@
             "Rayo Vallecano": "https://ssl.gstatic.com/onebox/media/sports/logos/i5LifmxEVIl0sbvIysiyhw_48x48.png",
             "Alaves": "https://ssl.gstatic.com/onebox/media/sports/logos/RUcTOeFcBc7q7uku1nR_iQ_48x48.png",
             "Miami": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755405/assets/logos/mls-clubs/Club_Logo-Miami_tyqe64.png",
-            "LAFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v174775309/assets/logos/mls-clubs/Club_Logo-LAFC_djrhru.png",
-            "Atlanta": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747499879/assets/logos/mls-clubs/Club_Logo-Atlanta_jtk7ku.png",
-            "Toronto": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265251/assets/logos/mls-clubs/Club_Logo-Toronto_vz6hao.png",
-            "San Diego": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748261519/assets/logos/mls-clubs/Club_Logo-San_Diego_nwpyul.png",
-            "Orlando": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747769281/assets/logos/mls-clubs/Club_Logo-Orlando_ryyn7a.png",
-            "Houston": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500939/assets/logos/mls-clubs/Club_Logo-Houston_oifm77.png",
-            "Charlotte": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500045/assets/logos/mls-clubs/Club_Logo-Charlotte_p7sznf.png",
-            "Salt Lake": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747776403/assets/logos/mls-clubs/Club_Logo-Salt_Lake_City_hpvde5.png",
-            "Vancouver": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265547/assets/logos/mls-clubs/Club_Logo-Vancouver_ao9phl.png",
-            "LA Galaxy": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755165/assets/logos/mls-clubs/Club_Logo-LA_Galaxy_fg0wjp.png",
-            "Seattle": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265125/assets/logos/mls-clubs/Club_Logo-Seattle_e6jk2x.png",
-            "Columbus": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500414/assets/logos/mls-clubs/Club_Logo-Columbus_light_z3eq8l.png",
-            "Montreal": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755806/assets/logos/mls-clubs/Club_Logo-Montreal_beeqnh.png",
-            "San Jose": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748262048/assets/logos/mls-clubs/Club_Logo-San_Jose_opzlmo.png",
-            "NY Red Bulls": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771783/assets/logos/mls-clubs/Club_Logo-RBNY_dwawvt.png",
-            "Colorado": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500322/assets/logos/mls-clubs/Club_Logo-Colorado_n5kpss.png",
-            "New England": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1766020750/assets/NE_Logo_PRI_FC_RGB_480x480_fdx2us.png",
-            "Minnesota": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754826/assets/logos/mls-clubs/Club_Logo-Minnesota_ftweor.png",
-            "Chicago": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500178/assets/logos/mls-clubs/Club_Logo-Chicago_jm2yev.png"
+            "LA Galaxy": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755165/assets/logos/mls-clubs/Club_Logo-LA_Galaxy_fg0wjp.png"
         };
 
         const STANDINGS_URLS = {
@@ -166,37 +148,45 @@
 
         async function fetchSchedules() {
             const list = document.getElementById('unifiedMatchList');
-            list.innerHTML = `<div class="py-20 text-center text-zinc-500 font-bold uppercase animate-pulse">Syncing Hub...</div>`;
+            list.innerHTML = `<div class="py-20 text-center text-zinc-500 font-bold uppercase animate-pulse">Syncing Hub Data...</div>`;
 
             let combinedData = {};
 
-            // Loop through all three leagues (EPL, La Liga, MLS)
-            for (const [key, url] of Object.entries(SCHEDULE_URLS)) {
-                await new Promise(resolve => {
-                    Papa.parse(url, {
-                        download: true,
-                        complete: (results) => {
-                            // Column A (0) = Date, Column B (1) = Home, Column C (2) = Away, Column D (3) = Score
-                            results.data.slice(1).forEach(row => {
-                                const date = row[0];
-                                const home = row[1];
-                                const away = row[2];
-                                const score = row[3] || "-";
+            const leagueKeys = Object.keys(SCHEDULE_URLS);
+            for (const key of leagueKeys) {
+                try {
+                    await new Promise((resolve, reject) => {
+                        Papa.parse(SCHEDULE_URLS[key], {
+                            download: true,
+                            skipEmptyLines: true,
+                            complete: (results) => {
+                                if (results.data && results.data.length > 1) {
+                                    // Start from row 1 to skip header
+                                    results.data.slice(1).forEach(row => {
+                                        const date = row[0] ? row[0].trim() : null;
+                                        const home = row[1] ? row[1].trim() : null;
+                                        const away = row[2] ? row[2].trim() : null;
+                                        const score = row[3] ? row[3].trim() : "-";
 
-                                if (date && home && away) {
-                                    if (!combinedData[date]) combinedData[date] = [];
-                                    combinedData[date].push({
-                                        league: key,
-                                        home: home,
-                                        away: away,
-                                        result: score
+                                        if (date && home && away) {
+                                            if (!combinedData[date]) combinedData[date] = [];
+                                            combinedData[date].push({
+                                                league: key,
+                                                home: home,
+                                                away: away,
+                                                result: score
+                                            });
+                                        }
                                     });
                                 }
-                            });
-                            resolve();
-                        }
+                                resolve();
+                            },
+                            error: (err) => reject(err)
+                        });
                     });
-                });
+                } catch (e) {
+                    console.error("Error fetching " + key, e);
+                }
             }
             renderMainHub(combinedData);
         }
@@ -205,18 +195,18 @@
             const list = document.getElementById('unifiedMatchList');
             list.innerHTML = '';
             
-            if (Object.keys(data).length === 0) {
-                list.innerHTML = '<div class="p-10 text-center text-zinc-500 uppercase">No Matches Scheduled</div>';
+            const dates = Object.keys(data);
+            if (dates.length === 0) {
+                list.innerHTML = '<div class="p-10 text-center text-zinc-500 uppercase">No Matches Found in CSV</div>';
                 return;
             }
 
-            // Sort dates if possible, or just display as they come
-            Object.keys(data).forEach(date => {
+            dates.forEach(date => {
                 const divider = `<div class="date-divider">${date.toUpperCase()}</div>`;
                 list.insertAdjacentHTML('beforeend', divider);
 
                 data[date].forEach(m => {
-                    const score = m.result.includes('-') ? m.result.split('-') : [m.result, ''];
+                    const scoreParts = m.result.includes('-') ? m.result.split('-') : [m.result, ''];
                     list.insertAdjacentHTML('beforeend', `
                         <div class="match-card">
                             <div class="flex flex-col w-3/5">
@@ -233,9 +223,9 @@
                                 </div>
                             </div>
                             <div class="score-box">
-                                <span>${score[0]}</span>
+                                <span>${scoreParts[0] || '-'}</span>
                                 <span class="text-zinc-700">|</span>
-                                <span>${score[1] || score[0]}</span>
+                                <span>${scoreParts[1] || scoreParts[0] || '-'}</span>
                             </div>
                         </div>
                     `);
@@ -249,7 +239,8 @@
             const legend = document.getElementById('tableLegend');
 
             document.querySelectorAll('.league-btn').forEach(btn => btn.classList.remove('active-league'));
-            document.getElementById(`btn-${league}`).classList.add('active-league');
+            const activeBtn = document.getElementById(`btn-${league}`);
+            if(activeBtn) activeBtn.classList.add('active-league');
 
             head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="pr-4 text-right">PTS</th>`;
             body.innerHTML = `<tr><td colspan="5" class="py-10 text-center text-zinc-500 font-bold uppercase animate-pulse">Fetching Standings...</td></tr>`;
@@ -300,14 +291,14 @@
         function getQualifyStyle(league, pos) {
             pos = parseInt(pos);
             if (league === 'MLS') {
-                if (pos === 1) return { color: "#fbbf24", label: "Shield" };
-                if (pos >= 2 && pos <= 8) return { color: "#22c55e", label: "Playoffs" };
-                if (pos >= 19) return { color: "#ef4444", label: "Rel" };
+                if (pos === 1) return { color: "#fbbf24" };
+                if (pos >= 2 && pos <= 8) return { color: "#22c55e" };
+                if (pos >= 19) return { color: "#ef4444" };
             } else {
-                if (pos === 1) return { color: "#00ff85", label: "Champ" };
-                if (pos >= 2 && pos <= 4) return { color: "#3b82f6", label: "UCL" };
-                if (pos === 5) return { color: "#fbbf24", label: "UEL" };
-                if (pos >= 18) return { color: "#ef4444", label: "Rel" };
+                if (pos === 1) return { color: "#00ff85" };
+                if (pos >= 2 && pos <= 4) return { color: "#3b82f6" };
+                if (pos === 5) return { color: "#fbbf24" };
+                if (pos >= 18) return { color: "#ef4444" };
             }
             return null;
         }
@@ -321,7 +312,7 @@
             if (tab === 'matches') fetchSchedules();
         }
 
-        // Initialize
+        // Auto-run on load
         fetchSchedules();
     </script>
 </body>
