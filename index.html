@@ -301,4 +301,87 @@ function renderMatches() {
                 ${matches.map(m => {
                     return `
                     <div class="match-row">
-                        <div class="team-box justify-end"><span class="team-name text-right">${m.home}</span><img src="${
+                        <div class="team-box justify-end"><span class="team-name text-right">${m.home}</span><img src="${getLogo(m.home)}" class="team-logo"></div>
+                        <div class="match-info">
+                            <div class="match-score">${m.score === 'v' ? 'v' : m.score}</div>
+                        </div>
+                        <div class="team-box justify-start"><img src="${getLogo(m.away)}" class="team-logo"><span class="team-name">${m.away}</span></div>
+                    </div>`;
+                }).join('')}
+            </div>`;
+    }).join('');
+}
+
+function renderStandings(lg) {
+    document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active-league'));
+    document.getElementById(`btn-${lg}`).classList.add('active-league');
+    const head = document.getElementById('standingsHead');
+    const body = document.getElementById('standingsBody');
+    const legend = document.getElementById('legend');
+
+    head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="pr-4 text-right">PTS</th>`;
+    
+    Papa.parse(STANDINGS_URLS[lg], {
+        download: true, header: true,
+        complete: (res) => {
+            body.innerHTML = res.data.map(r => {
+                const pos = r.Position || r.position || r['#'] || '';
+                const team = r.Team || r.team || '';
+                const gf = r.GF || 0; const ga = r.GA || 0;
+                const color = getQualifyColor(lg, pos);
+                return `<tr class="border-b border-zinc-800/30">
+                    <td class="pl-4 py-5 flex items-center"><div class="qualify-indicator" style="background:${color}"></div><span class="text-zinc-500">${pos}</span></td>
+                    <td><div class="flex items-center gap-3"><img src="${getLogo(team)}" class="w-6 h-6 object-contain"><span class="font-bold">${team}</span></div></td>
+                    <td class="text-center text-zinc-400 font-mono">${r.MP || r.mp || 0}</td>
+                    <td class="text-center font-mono text-[10px]">${r['W-D-L'] || '0-0-0'}</td>
+                    <td class="text-center text-zinc-400 font-mono">${gf}</td>
+                    <td class="text-center text-zinc-400 font-mono">${ga}</td>
+                    <td class="text-center text-zinc-400 font-mono">${r.GD || (gf - ga)}</td>
+                    <td class="pr-4 text-right text-[#00ff85] font-black">${r.Points || r.Pts || 0}</td>
+                </tr>`;
+            }).join('');
+        }
+    });
+
+    const rules = lg === 'MLS' ? [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#ef4444', l:'Rel'}] : [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#ef4444', l:'Rel'}];
+    legend.innerHTML = rules.map(rule => `<div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${rule.c}"></div><span class="text-[9px] font-black text-zinc-500 uppercase">${rule.l}</span></div>`).join('');
+}
+
+function getQualifyColor(lg, pos) {
+    pos = parseInt(pos);
+    if (lg === 'MLS') {
+        if (pos === 1) return '#fbbf24';
+        if (pos <= 8) return '#22c55e';
+        if (pos >= 25) return '#ef4444';
+    } else {
+        if (pos === 1) return '#00ff85';
+        if (pos <= 4) return '#3b82f6';
+        if (pos === 5) return '#fbbf24';
+        if (pos >= 18) return '#ef4444';
+    }
+    return 'transparent';
+}
+
+function changeDate(step) {
+    dateIdx = Math.max(0, Math.min(uniqueDates.length - 1, dateIdx + step));
+    renderMatches();
+}
+
+function switchTab(t) {
+    document.getElementById('hub-tab').classList.toggle('hidden', t !== 'hub');
+    document.getElementById('standings-tab').classList.toggle('hidden', t !== 'standings');
+    
+    document.querySelectorAll('.nav-item').forEach(el => {
+        const spanText = el.querySelector('span:last-child').textContent;
+        if (t === 'hub' && spanText === 'MAIN HUB') el.classList.add('active');
+        else if (t === 'standings' && spanText === 'STANDINGS') el.classList.add('active');
+        else el.classList.remove('active');
+    });
+    
+    if (t === 'standings') renderStandings('PREM');
+}
+
+init();
+</script>
+</body>
+</html>
