@@ -13,15 +13,26 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
         header { background: rgba(11, 14, 17, 0.95); backdrop-blur: 12px; border-bottom: 1px solid var(--border); position: fixed; top: 0; width: 100%; max-width: 448px; z-index: 100; }
-        .date-divider { position: sticky; top: 72px; background: var(--bg); z-index: 10; padding: 14px 16px; font-size: 11px; font-weight: 900; color: #8b949e; letter-spacing: 0.1em; border-bottom: 1px solid #1f2428; border-top: 1px solid #1f2428; margin-top: 10px; }
         
-        .match-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
-        .league-tag { font-size: 9px; font-weight: 900; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; margin-bottom: 12px; display: inline-block; }
-        .tag-PREM { background: #3d195d; color: white; }
-        .tag-LALIGA { background: #ee252e; color: white; }
-        .tag-MLS { background: #001f52; color: white; }
-
-        .score-box { background: #000; padding: 10px 18px; border-radius: 10px; font-weight: 900; display: flex; gap: 16px; border: 1px solid #21262d; min-width: 85px; justify-content: center; font-size: 18px; font-family: 'Roboto Mono', monospace; }
+        .date-nav { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--card); border-radius: 12px; margin: 16px; }
+        .date-nav button { background: transparent; border: none; color: #8b949e; font-size: 20px; cursor: pointer; padding: 8px; }
+        .date-nav button:hover { color: var(--accent); }
+        .date-display { font-weight: 800; font-size: 15px; cursor: pointer; }
+        
+        .filter-pills { display: flex; gap: 12px; padding: 12px 16px; overflow-x: auto; }
+        .filter-pill { background: var(--card); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+        .filter-pill.active { background: var(--accent); color: #000; border-color: var(--accent); }
+        
+        .league-section { margin: 16px 0; }
+        .league-header { padding: 12px 16px; font-size: 13px; font-weight: 900; color: #8b949e; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .league-flag { width: 20px; height: 20px; border-radius: 4px; }
+        
+        .match-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 0 16px 8px; display: flex; justify-content: space-between; align-items: center; }
+        .team-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+        .team-logo { width: 28px; height: 28px; object-fit: contain; }
+        .team-name { font-size: 14px; font-weight: 700; flex: 1; }
+        .score { font-size: 16px; font-weight: 900; font-family: 'Roboto Mono', monospace; width: 24px; text-align: center; }
+        .match-time { font-size: 13px; font-weight: 700; color: #8b949e; text-align: center; width: 70px; }
         
         .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #161b22; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
         .nav-btn { font-size: 10px; font-weight: 800; color: #8b949e; cursor: pointer; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -30,6 +41,9 @@
         .wdl-column { font-family: 'Roboto Mono', monospace; font-weight: 700; color: #d1d5db; letter-spacing: -0.05em; }
         .qualify-indicator { width: 4px; height: 24px; border-radius: 2px; margin-right: 10px; }
         .active-league { background: var(--accent) !important; color: #000 !important; }
+        .collapsed .matches-container { display: none; }
+        .chevron { transition: transform 0.2s; }
+        .collapsed .chevron { transform: rotate(-90deg); }
     </style>
 </head>
 <body class="max-w-md mx-auto pb-32">
@@ -46,7 +60,20 @@
 
     <main class="mt-20">
         <div id="tab-matches">
-            <div id="unifiedMatchList"></div>
+            <div class="date-nav">
+                <button onclick="changeDate(-1)">‹</button>
+                <div class="date-display" id="currentDate" onclick="resetToToday()">Loading...</div>
+                <button onclick="changeDate(1)">›</button>
+            </div>
+            
+            <div class="filter-pills no-scrollbar">
+                <div class="filter-pill active" onclick="filterLeague('all')">All</div>
+                <div class="filter-pill" onclick="filterLeague('PREM')">Premier League</div>
+                <div class="filter-pill" onclick="filterLeague('LALIGA')">La Liga</div>
+                <div class="filter-pill" onclick="filterLeague('MLS')">MLS</div>
+            </div>
+
+            <div id="matchesList"></div>
         </div>
 
         <div id="tab-standings" class="hidden">
@@ -74,33 +101,22 @@
     </main>
 
     <nav class="nav-bottom">
-        <div onclick="switchTab('matches')" id="nav-matches" class="nav-btn active"><i>⚽</i>Main Hub</div>
+        <div onclick="switchTab('matches')" id="nav-matches" class="nav-btn active"><i>⚽</i>Matches</div>
         <div onclick="switchTab('standings')" id="nav-standings" class="nav-btn"><i>🏆</i>Standings</div>
         <div onclick="switchTab('stats')" id="nav-stats" class="nav-btn"><i>📈</i>Stats</div>
     </nav>
 
     <script>
-        // EMBEDDED SCHEDULE DATA FROM YOUR CSVs
-        const HUB_DATA = {
-            "Aug 15": [
-                {league:"PREM", home:"Aston Villa", away:"Newcastle", result:"2-2"},
-                {league:"PREM", home:"Brighton", away:"Leicester", result:"2-2"},
-                {league:"LALIGA", home:"Villarreal", away:"Real Oviedo", result:"3-0"},
-                {league:"LALIGA", home:"Mallorca", away:"Barcelona", result:"1-3"}
-            ],
-            "Aug 22": [
-                {league:"PREM", home:"Man City", away:"Tottenham", result:"1-3"},
-                {league:"LALIGA", home:"Levante", away:"Barcelona", result:"0-7"},
-                {league:"LALIGA", home:"Real Oviedo", away:"Real Madrid", result:"1-6"}
-            ],
-            "February 21st": [
-                {league:"MLS", home:"Miami", away:"LA Galaxy", result:"-"},
-                {league:"MLS", home:"LAFC", away:"Seattle", result:"-"}
-            ],
-            "February 28th": [
-                {league:"MLS", home:"New England", away:"LAFC", result:"-"},
-                {league:"MLS", home:"Columbus", away:"Salt Lake", result:"-"}
-            ]
+        const SCHEDULE_URLS = {
+            PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=0&single=true&output=csv',
+            LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1737121812&single=true&output=csv',
+            MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=0&single=true&output=csv'
+        };
+
+        const STANDINGS_URLS = {
+            PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=935978435&single=true&output=csv',
+            LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv',
+            MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv'
         };
 
         const LOGOS = {
@@ -144,6 +160,7 @@
             "Celta Vigo": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png",
             "Rayo Vallecano": "https://ssl.gstatic.com/onebox/media/sports/logos/i5LifmxEVIl0sbvIysiyhw_48x48.png",
             "Alaves": "https://ssl.gstatic.com/onebox/media/sports/logos/RUcTOeFcBc7q7uku1nR_iQ_48x48.png",
+            "Getafe": "https://ssl.gstatic.com/onebox/media/sports/logos/jqll6zSd9TZofPk5CR_B1w_48x48.png",
             "Miami": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755405/assets/logos/mls-clubs/Club_Logo-Miami_tyqe64.png",
             "LAFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v174775309/assets/logos/mls-clubs/Club_Logo-LAFC_djrhru.png",
             "Atlanta": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747499879/assets/logos/mls-clubs/Club_Logo-Atlanta_jtk7ku.png",
@@ -166,137 +183,179 @@
             "Chicago": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500178/assets/logos/mls-clubs/Club_Logo-Chicago_jm2yev.png"
         };
 
-        const STANDINGS_URLS = {
-            PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=935978435&single=true&output=csv',
-            LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv',
-            MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv'
+        const LEAGUE_FLAGS = {
+            PREM: '🏴󐁧󐁢󐁥󐁮󐁧󐁿',
+            LALIGA: '🇪🇸',
+            MLS: '🇺🇸'
         };
 
-        let tableDataCache = {};
+        const LEAGUE_NAMES = {
+            PREM: 'England - Premier League',
+            LALIGA: 'Spain - LaLiga',
+            MLS: 'USA - MLS'
+        };
+
+        let currentDate = new Date('2025-12-31'); // Start at current date
+        let allMatches = [];
+        let currentFilter = 'all';
 
         function getLogo(team) {
             if (!team) return "";
             for (let key in LOGOS) {
                 if (team.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(team.toLowerCase())) return LOGOS[key];
             }
-            return "https://via.placeholder.com/40?text=?"; 
+            return "https://via.placeholder.com/28?text=?"; 
         }
 
-        function renderMainHub() {
-            const list = document.getElementById('unifiedMatchList');
-            list.innerHTML = '';
+        function parseDate(dateStr) {
+            const formats = [
+                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // MM/DD/YYYY or M/D/YYYY
+                /^(\d{4})-(\d{2})-(\d{2})$/ // YYYY-MM-DD
+            ];
             
-            Object.keys(HUB_DATA).forEach(date => {
-                const divider = `<div class="date-divider">${date.toUpperCase()}</div>`;
-                list.insertAdjacentHTML('beforeend', divider);
-
-                HUB_DATA[date].forEach(m => {
-                    const score = m.result.includes('-') ? m.result.split('-') : ['-','-'];
-                    list.insertAdjacentHTML('beforeend', `
-                        <div class="match-card">
-                            <div class="flex flex-col w-3/5">
-                                <span class="league-tag tag-${m.league}">${m.league}</span>
-                                <div class="flex flex-col gap-4">
-                                    <div class="flex items-center gap-4">
-                                        <img src="${getLogo(m.home)}" class="w-10 h-10 object-contain">
-                                        <span class="text-sm font-black truncate">${m.home}</span>
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <img src="${getLogo(m.away)}" class="w-10 h-10 object-contain">
-                                        <span class="text-sm font-black truncate">${m.away}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="score-box">
-                                <span>${score[0]}</span>
-                                <span class="text-zinc-700">|</span>
-                                <span>${score[1]}</span>
-                            </div>
-                        </div>
-                    `);
-                });
-            });
-        }
-
-        function renderTable(league) {
-            const head = document.getElementById('tableHead');
-            const body = document.getElementById('standingsContent');
-            const legend = document.getElementById('tableLegend');
-
-            document.querySelectorAll('.league-btn').forEach(btn => btn.classList.remove('active-league'));
-            document.getElementById(`btn-${league}`).classList.add('active-league');
-
-            head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="pr-4 text-right">PTS</th>`;
-            body.innerHTML = `<tr><td colspan="5" class="py-10 text-center text-zinc-500 font-bold uppercase animate-pulse">Fetching Standings...</td></tr>`;
-
-            Papa.parse(STANDINGS_URLS[league], {
-                download: true, header: true, skipEmptyLines: 'greedy',
-                complete: (res) => {
-                    body.innerHTML = res.data.map(r => {
-                        const pos = r.Position || r.position || r['#'] || '';
-                        const team = r.Team || r.team || '';
-                        const mp = r.MP || r.mp || r.GP || 0;
-                        const pts = r.Points || r.points || r.Pts || 0;
-                        const wdl = r['W-D-L'] || `${r.W || 0}-${r.D || 0}-${r.L || 0}`;
-                        const style = getQualifyStyle(league, pos);
-
-                        return `
-                        <tr class="font-bold border-b border-zinc-800/30">
-                            <td class="pl-4 py-5 flex items-center">
-                                <div class="qualify-indicator" style="background: ${style ? style.color : 'transparent'}"></div>
-                                <span class="text-zinc-500">${pos}</span>
-                            </td>
-                            <td>
-                                <div class="flex items-center gap-4">
-                                    <img src="${getLogo(team)}" class="w-8 h-8 object-contain">
-                                    <span class="text-white truncate max-w-[120px]">${team}</span>
-                                </div>
-                            </td>
-                            <td class="text-center text-zinc-400 font-mono">${mp}</td>
-                            <td class="text-center wdl-column text-[10px]">${wdl}</td>
-                            <td class="pr-4 text-right text-[#00ff85] font-black text-sm">${pts}</td>
-                        </tr>`;
-                    }).join('');
+            for (let format of formats) {
+                const match = dateStr.match(format);
+                if (match) {
+                    if (format.source.startsWith('^(\\d{4})')) {
+                        return new Date(match[1], match[2] - 1, match[3]);
+                    } else {
+                        return new Date(match[3], match[1] - 1, match[2]);
+                    }
                 }
-            });
-
-            const rules = league === 'MLS' ? 
-                [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#ef4444', l:'Rel'}] :
-                [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#ef4444', l:'Rel'}];
-            
-            legend.innerHTML = rules.map(rule => `
-                <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full" style="background:${rule.c}"></div>
-                    <span class="text-[9px] font-black text-zinc-500 uppercase">${rule.l}</span>
-                </div>
-            `).join('');
-        }
-
-        function getQualifyStyle(league, pos) {
-            pos = parseInt(pos);
-            if (league === 'MLS') {
-                if (pos === 1) return { color: "#fbbf24", label: "Shield" };
-                if (pos >= 2 && pos <= 8) return { color: "#22c55e", label: "Playoffs" };
-                if (pos >= 19) return { color: "#ef4444", label: "Rel" };
-            } else {
-                if (pos === 1) return { color: "#00ff85", label: "Champ" };
-                if (pos >= 2 && pos <= 4) return { color: "#3b82f6", label: "UCL" };
-                if (pos === 5) return { color: "#fbbf24", label: "UEL" };
-                if (pos >= 18) return { color: "#ef4444", label: "Rel" };
             }
             return null;
         }
 
-        function switchTab(tab) {
-            ['matches', 'standings', 'stats'].forEach(t => {
-                document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
-                document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
-            });
-            if (tab === 'standings') renderTable('PREM');
+        function formatDate(date) {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}`;
         }
 
-        // Initialize
-        renderMainHub();
-    </script>
-</body>
-</html>
+        function isSameDay(d1, d2) {
+            return d1.getFullYear() === d2.getFullYear() &&
+                   d1.getMonth() === d2.getMonth() &&
+                   d1.getDate() === d2.getDate();
+        }
+
+        async function loadAllMatches() {
+            allMatches = [];
+            
+            for (let league of ['PREM', 'LALIGA', 'MLS']) {
+                await new Promise((resolve) => {
+                    Papa.parse(SCHEDULE_URLS[league], {
+                        download: true,
+                        header: true,
+                        skipEmptyLines: 'greedy',
+                        complete: (res) => {
+                            res.data.forEach(row => {
+                                const dateStr = row.Date || row.date || '';
+                                const date = parseDate(dateStr);
+                                if (date) {
+                                    allMatches.push({
+                                        league: league,
+                                        date: date,
+                                        home: row.Home || row.home || '',
+                                        away: row.Away || row.away || '',
+                                        homeScore: row['Home Score'] || row['home score'] || row.HomeScore || '',
+                                        awayScore: row['Away Score'] || row['away score'] || row.AwayScore || '',
+                                        time: row.Time || row.time || ''
+                                    });
+                                }
+                            });
+                            resolve();
+                        }
+                    });
+                });
+            }
+            
+            allMatches.sort((a, b) => a.date - b.date);
+            renderMatches();
+        }
+
+        function renderMatches() {
+            const list = document.getElementById('matchesList');
+            document.getElementById('currentDate').textContent = formatDate(currentDate);
+            
+            const dayMatches = allMatches.filter(m => isSameDay(m.date, currentDate));
+            
+            if (dayMatches.length === 0) {
+                list.innerHTML = '<div class="p-10 text-center text-zinc-500 font-bold uppercase text-xs">No matches scheduled for this date</div>';
+                return;
+            }
+            
+            const filteredMatches = currentFilter === 'all' ? dayMatches : dayMatches.filter(m => m.league === currentFilter);
+            
+            if (filteredMatches.length === 0) {
+                list.innerHTML = '<div class="p-10 text-center text-zinc-500 font-bold uppercase text-xs">No matches for this league on this date</div>';
+                return;
+            }
+            
+            const byLeague = {};
+            filteredMatches.forEach(m => {
+                if (!byLeague[m.league]) byLeague[m.league] = [];
+                byLeague[m.league].push(m);
+            });
+            
+            list.innerHTML = Object.keys(byLeague).map(league => `
+                <div class="league-section">
+                    <div class="league-header" onclick="toggleLeague('${league}')">
+                        <span class="league-flag">${LEAGUE_FLAGS[league]}</span>
+                        <span>${LEAGUE_NAMES[league]}</span>
+                        <span class="chevron ml-auto">▼</span>
+                    </div>
+                    <div class="matches-container" id="league-${league}">
+                        ${byLeague[league].map(m => {
+                            const hasScore = m.homeScore !== '' && m.awayScore !== '';
+                            const displayTime = hasScore ? '' : (m.time || 'TBD');
+                            
+                            return `
+                                <div class="match-card">
+                                    <div class="flex-1">
+                                        <div class="team-row">
+                                            <img src="${getLogo(m.home)}" class="team-logo">
+                                            <span class="team-name">${m.home}</span>
+                                            ${hasScore ? `<span class="score">${m.homeScore}</span>` : ''}
+                                        </div>
+                                        <div class="team-row">
+                                            <img src="${getLogo(m.away)}" class="team-logo">
+                                            <span class="team-name">${m.away}</span>
+                                            ${hasScore ? `<span class="score">${m.awayScore}</span>` : ''}
+                                        </div>
+                                    </div>
+                                    ${!hasScore ? `<div class="match-time">${displayTime}</div>` : ''}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleLeague(league) {
+            const section = document.querySelector(`#league-${league}`).parentElement;
+            section.classList.toggle('collapsed');
+        }
+
+        function changeDate(days) {
+            currentDate.setDate(currentDate.getDate() + days);
+            renderMatches();
+        }
+
+        function resetToToday() {
+            currentDate = new Date('2025-12-31');
+            renderMatches();
+        }
+
+        function filterLeague(league) {
+            currentFilter = league;
+            document.querySelectorAll('.filter-pill').forEach(pill => {
+                pill.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            renderMatches();
+        }
+
+        function renderTable(league) {
+            const head = document.getElementById('tableHead');
+            const body
