@@ -85,7 +85,7 @@
                 <button id="btn-MLS" onclick="renderTable('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap transition-all">MLS</button>
             </div>
             <div class="px-2 overflow-x-auto">
-                <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 min-w-[460px]">
+                <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 min-w-[580px]">
                     <table class="w-full text-left text-[11px]">
                         <thead>
                             <tr id="tableHead" class="uppercase bg-zinc-800/50"></tr>
@@ -112,7 +112,7 @@
         const SCHEDULE_URLS = {
             PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=0&single=true&output=csv',
             LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1737121812&single=true&output=csv',
-            MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=0&single=true&output=csv'
+            MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1689966801&single=true&output=csv'
         };
 
         const STANDINGS_URLS = {
@@ -164,14 +164,11 @@
             "Valencia": "https://ssl.gstatic.com/onebox/media/sports/logos/QPbjvDwI_0Wuu4tCS2O6uw_48x48.png",
             "Real Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png",
             "Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png",
-            "Real Oviedo": "https://ssl.gstatic.com/onebox/media/sports/logos/2hbZVQulcYqiPFXkWDkB_g_48x48.png",
+            "Oviedo": "https://ssl.gstatic.com/onebox/media/sports/logos/2hbZVQulcYqiPFXkWDkB_g_48x48.png",
             "Celta Vigo": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png",
             "Celta": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png",
             "Rayo Vallecano": "https://ssl.gstatic.com/onebox/media/sports/logos/i5LifmxEVIl0sbvIysiyhw_48x48.png",
             "Alaves": "https://ssl.gstatic.com/onebox/media/sports/logos/RUcTOeFcBc7q7uku1nR_iQ_48x48.png",
-            "Getafe": "https://ssl.gstatic.com/onebox/media/sports/logos/jqll6zSd9TZofPk5CR_B1w_48x48.png",
-            "Leganes": "https://ssl.gstatic.com/onebox/media/sports/logos/c0FJxye3t46n10AUIEK0cA_48x48.png",
-            "Valladolid": "https://ssl.gstatic.com/onebox/media/sports/logos/SN1BSVY-lrUj6Y_ZJsOa5Q_48x48.png",
             "Miami": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755405/assets/logos/mls-clubs/Club_Logo-Miami_tyqe64.png",
             "LAFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v174775309/assets/logos/mls-clubs/Club_Logo-LAFC_djrhru.png",
             "Atlanta": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747499879/assets/logos/mls-clubs/Club_Logo-Atlanta_jtk7ku.png",
@@ -217,7 +214,7 @@
             MLS: 'USA - MLS'
         };
 
-        let currentDate = new Date('2025-08-15'); // Start with a date that has matches
+        let currentDate = new Date('2025-08-15');
         let allMatches = [];
         let currentFilter = 'all';
         let allDates = [];
@@ -236,26 +233,12 @@
         function parseDate(dateStr) {
             if (!dateStr) return null;
             dateStr = dateStr.trim();
-            
-            // Try MM/DD/YYYY or M/D/YYYY
             let match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-            if (match) {
-                return new Date(match[3], match[1] - 1, match[2]);
-            }
-            
-            // Try YYYY-MM-DD
+            if (match) return new Date(match[3], match[1] - 1, match[2]);
             match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-            if (match) {
-                return new Date(match[1], match[2] - 1, match[3]);
-            }
-            
-            // Try other common formats
+            if (match) return new Date(match[1], match[2] - 1, match[3]);
             const parsed = new Date(dateStr);
-            if (!isNaN(parsed.getTime())) {
-                return parsed;
-            }
-            
-            return null;
+            return !isNaN(parsed.getTime()) ? parsed : null;
         }
 
         function formatDate(date) {
@@ -272,96 +255,52 @@
 
         async function loadAllMatches() {
             allMatches = [];
-            let loadedCount = 0;
-            
             for (let league of ['PREM', 'LALIGA', 'MLS']) {
                 await new Promise((resolve) => {
                     Papa.parse(SCHEDULE_URLS[league], {
-                        download: true,
-                        header: true,
-                        skipEmptyLines: 'greedy',
+                        download: true, header: true, skipEmptyLines: 'greedy',
                         complete: (res) => {
-                            console.log(`${league} loaded:`, res.data.length, 'rows');
-                            
                             res.data.forEach(row => {
-                                // Check all possible column names
                                 const dateStr = row.Date || row.date || row.DATE || row['Match Date'] || '';
                                 const home = (row.Home || row.home || row.HOME || row['Home Team'] || '').trim();
                                 const away = (row.Away || row.away || row.AWAY || row['Away Team'] || '').trim();
                                 const homeScore = row['Home Score'] || row['home score'] || row.HomeScore || row['Home Goals'] || '';
                                 const awayScore = row['Away Score'] || row['away score'] || row.AwayScore || row['Away Goals'] || '';
                                 const time = row.Time || row.time || row.TIME || '';
-                                
                                 const date = parseDate(dateStr);
-                                
                                 if (date && home && away) {
-                                    allMatches.push({
-                                        league: league,
-                                        date: date,
-                                        home: home,
-                                        away: away,
-                                        homeScore: homeScore,
-                                        awayScore: awayScore,
-                                        time: time
-                                    });
-                                    loadedCount++;
+                                    allMatches.push({ league, date, home, away, homeScore, awayScore, time });
                                 }
                             });
-                            
                             resolve();
                         },
-                        error: (err) => {
-                            console.error(`Error loading ${league}:`, err);
-                            resolve();
-                        }
+                        error: () => resolve()
                     });
                 });
             }
-            
-            console.log('Total matches loaded:', loadedCount);
-            
             allMatches.sort((a, b) => a.date - b.date);
-            
-            // Get all unique dates
-            const dateSet = new Set();
-            allMatches.forEach(m => {
-                const dateKey = `${m.date.getFullYear()}-${m.date.getMonth()}-${m.date.getDate()}`;
-                dateSet.add(dateKey);
-            });
-            allDates = Array.from(dateSet).sort();
-            
-            // Set current date to first date with matches
-            if (allMatches.length > 0) {
-                currentDate = new Date(allMatches[0].date);
-            }
-            
+            if (allMatches.length > 0) currentDate = new Date(allMatches[0].date);
             renderMatches();
         }
 
         function renderMatches() {
             const list = document.getElementById('matchesList');
             document.getElementById('currentDate').textContent = formatDate(currentDate);
-            
             const dayMatches = allMatches.filter(m => isSameDay(m.date, currentDate));
-            
             if (dayMatches.length === 0) {
                 list.innerHTML = '<div class="p-10 text-center text-zinc-500 font-bold uppercase text-xs">No matches scheduled for this date</div>';
                 return;
             }
-            
             const filteredMatches = currentFilter === 'all' ? dayMatches : dayMatches.filter(m => m.league === currentFilter);
-            
             if (filteredMatches.length === 0) {
                 list.innerHTML = '<div class="p-10 text-center text-zinc-500 font-bold uppercase text-xs">No matches for this league on this date</div>';
                 return;
             }
-            
             const byLeague = {};
             filteredMatches.forEach(m => {
                 if (!byLeague[m.league]) byLeague[m.league] = [];
                 byLeague[m.league].push(m);
             });
-            
             list.innerHTML = Object.keys(byLeague).map(league => `
                 <div class="league-section">
                     <div class="league-header" onclick="toggleLeague('${league}')">
@@ -372,8 +311,6 @@
                     <div class="matches-container" id="league-${league}">
                         ${byLeague[league].map(m => {
                             const hasScore = m.homeScore !== '' && m.awayScore !== '';
-                            const displayTime = hasScore ? '' : (m.time || 'TBD');
-                            
                             return `
                                 <div class="match-card">
                                     <div class="flex-1">
@@ -388,18 +325,15 @@
                                             ${hasScore ? `<span class="score">${m.awayScore}</span>` : ''}
                                         </div>
                                     </div>
-                                    ${!hasScore ? `<div class="match-time">${displayTime}</div>` : ''}
-                                </div>
-                            `;
+                                    ${!hasScore ? `<div class="match-time">${m.time || 'TBD'}</div>` : ''}
+                                </div>`;
                         }).join('')}
                     </div>
-                </div>
-            `).join('');
+                </div>`).join('');
         }
 
         function toggleLeague(league) {
-            const section = document.querySelector(`#league-${league}`).parentElement;
-            section.classList.toggle('collapsed');
+            document.querySelector(`#league-${league}`).parentElement.classList.toggle('collapsed');
         }
 
         function changeDate(days) {
@@ -416,15 +350,11 @@
 
         function filterLeague(league) {
             currentFilter = league;
-            document.querySelectorAll('.filter-pill').forEach(pill => {
-                pill.classList.remove('active');
-            });
-            event.target.classList.add('active');
+            document.querySelectorAll('.filter-pill').forEach(pill => pill.classList.toggle('active', pill.innerText.toLowerCase().includes(league.toLowerCase()) || (league === 'all' && pill.innerText === 'All')));
             renderMatches();
         }
 
         function renderTable(league) {
-            function renderTable(league) {
             const head = document.getElementById('tableHead');
             const body = document.getElementById('standingsContent');
             const legend = document.getElementById('tableLegend');
@@ -432,7 +362,6 @@
             document.querySelectorAll('.league-btn').forEach(btn => btn.classList.remove('active-league'));
             document.getElementById(`btn-${league}`).classList.add('active-league');
 
-            // Added GF, GA, and GD to the header
             head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="text-center">W-D-L</th><th class="pr-4 text-right">PTS</th>`;
             body.innerHTML = `<tr><td colspan="8" class="py-10 text-center text-zinc-500 font-bold uppercase animate-pulse">Fetching Standings...</td></tr>`;
 
@@ -444,12 +373,9 @@
                         const team = r.Team || r.team || '';
                         const mp = r.MP || r.mp || r.GP || 0;
                         const pts = r.Points || r.points || r.Pts || 0;
-                        
-                        // Extracting new stats from CSV
                         const gf = r.GF || r.gf || r['Goals For'] || 0;
                         const ga = r.GA || r.ga || r['Goals Against'] || 0;
                         const gd = r.GD || r.gd || (gf - ga) || 0;
-
                         const wdl = r['W-D-L'] || `${r.W || 0}-${r.D || 0}-${r.L || 0}`;
                         const style = getQualifyStyle(league, pos);
 
@@ -484,19 +410,7 @@
                 <div class="flex items-center gap-2">
                     <div class="w-2 h-2 rounded-full" style="background:${rule.c}"></div>
                     <span class="text-[9px] font-black text-zinc-500 uppercase">${rule.l}</span>
-                </div>
-            `).join('');
-        }
-            const rules = league === 'MLS' ? 
-                [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#ef4444', l:'Rel'}] :
-                [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#ef4444', l:'Rel'}];
-            
-            legend.innerHTML = rules.map(rule => `
-                <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full" style="background:${rule.c}"></div>
-                    <span class="text-[9px] font-black text-zinc-500 uppercase">${rule.l}</span>
-                </div>
-            `).join('');
+                </div>`).join('');
         }
 
         function getQualifyStyle(league, pos) {
@@ -522,7 +436,6 @@
             if (tab === 'standings') renderTable('PREM');
         }
 
-        // Initialize
         loadAllMatches();
     </script>
 </body>
