@@ -10,34 +10,36 @@
     <style>
         :root { --accent: #00ff85; --bg: #0b0e11; --card: #1c1c1c; --border: #30363d; --header-bg: #121212; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* Main Hub Styles (Matching Image) */
+        /* Layout Styles */
         .league-container { background: var(--card); border-radius: 20px; margin: 12px 16px; overflow: hidden; border: 1px solid #2a2a2a; }
         .league-header { background: var(--header-bg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a2a; }
-        .match-row { padding: 20px 16px; display: flex; align-items: center; justify-content: center; position: relative; }
-        .team-side { display: flex; align-items: center; gap: 8px; width: 40%; }
+        .match-row { padding: 18px 16px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #ffffff0a; }
+        .match-row:last-child { border-bottom: none; }
+        .team-side { display: flex; align-items: center; gap: 10px; width: 42%; }
         .team-home { justify-content: flex-end; text-align: right; }
         .team-away { justify-content: flex-start; text-align: left; }
-        .time-box { width: 20%; text-align: center; font-family: 'Roboto Mono', monospace; line-height: 1.2; }
+        .time-box { width: 16%; text-align: center; font-family: 'Roboto Mono', monospace; }
         
-        .date-divider { position: sticky; top: 72px; background: var(--bg); z-index: 10; padding: 14px 16px; font-size: 11px; font-weight: 900; color: #8b949e; letter-spacing: 0.1em; text-transform: uppercase; }
+        .date-divider { position: sticky; top: 72px; background: var(--bg); z-index: 10; padding: 14px 20px; font-size: 11px; font-weight: 900; color: #8b949e; letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px solid #1f2428; }
 
-        /* Standings Table Styles */
-        .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #161b22; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
-        .nav-btn { font-size: 10px; font-weight: 800; color: #8b949e; cursor: pointer; text-transform: uppercase; text-align: center; }
+        /* Standing Indicators */
+        .qualify-bar { width: 4px; height: 24px; border-radius: 2px; margin-right: 12px; }
+        
+        /* Navigation */
+        .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #161b22; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 14px 0; z-index: 100; }
+        .nav-btn { font-size: 10px; font-weight: 800; color: #8b949e; cursor: pointer; text-transform: uppercase; }
         .nav-btn.active { color: var(--accent); }
         .active-league { background: var(--accent) !important; color: #000 !important; }
     </style>
 </head>
 <body class="max-w-md mx-auto pb-32">
 
-    <header class="fixed top-0 w-full max-w-md bg-[#0b0e11]/95 backdrop-blur-md z-[100] border-bottom border-[#1f2428]">
+    <header class="fixed top-0 w-full max-w-md bg-[#0b0e11]/95 backdrop-blur-md z-[100] border-b border-[#1f2428]">
         <div class="p-4 flex justify-between items-center">
             <h1 class="text-xl font-black italic uppercase">Score<span class="text-[#00ff85]">Hub</span></h1>
-            <div class="flex items-center gap-2">
-                <span class="text-[9px] font-bold text-zinc-500 uppercase">Live Update</span>
-                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-            </div>
+            <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
         </div>
     </header>
 
@@ -70,11 +72,32 @@
                 </table>
             </div>
         </div>
+
+        <div id="tab-stats" class="hidden p-8">
+            <h2 class="text-zinc-500 font-black uppercase text-center text-sm tracking-widest">Statistical Leaders</h2>
+            <div class="mt-6 space-y-4">
+                <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex justify-between items-center">
+                    <div>
+                        <p class="text-[9px] text-zinc-500 font-bold uppercase">Golden Boot</p>
+                        <p class="text-white font-black">Erling Haaland</p>
+                    </div>
+                    <span class="text-[#00ff85] font-mono font-black text-xl">22</span>
+                </div>
+                <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex justify-between items-center">
+                    <div>
+                        <p class="text-[9px] text-zinc-500 font-bold uppercase">Playmaker</p>
+                        <p class="text-white font-black">Kevin De Bruyne</p>
+                    </div>
+                    <span class="text-[#00ff85] font-mono font-black text-xl">14</span>
+                </div>
+            </div>
+        </div>
     </main>
 
     <nav class="nav-bottom">
         <div onclick="switchTab('matches')" id="nav-matches" class="nav-btn active">HUB</div>
         <div onclick="switchTab('standings')" id="nav-standings" class="nav-btn">TABLE</div>
+        <div onclick="switchTab('stats')" id="nav-stats" class="nav-btn">STATS</div>
     </nav>
 
     <script>
@@ -133,7 +156,7 @@
             "Valencia": "https://ssl.gstatic.com/onebox/media/sports/logos/QPbjvDwI_0Wuu4tCS2O6uw_48x48.png",
             "Real Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png",
             "Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png",
-            "Real Oviedo": "https://ssl.gstatic.com/onebox/media/sports/logos/2hbZVQulcYqiPFXkWDkB_g_48x48.png",
+            "Oviedo": "https://ssl.gstatic.com/onebox/media/sports/logos/2hbZVQulcYqiPFXkWDkB_g_48x48.png",
             "Celta Vigo": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png",
             "Celta": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png",
             "Rayo Vallecano": "https://ssl.gstatic.com/onebox/media/sports/logos/i5LifmxEVIl0sbvIysiyhw_48x48.png",
@@ -174,129 +197,107 @@
             "Cincinnati": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500252/assets/logos/mls-clubs/Club_Logo-Cincinatti_ohmgcp.png"
         };
 
-        function getLogo(team) {
-            if (!team) return "";
-            for (let key in LOGOS) {
-                if (team.toLowerCase().includes(key.toLowerCase())) return LOGOS[key];
-            }
-            return "https://via.placeholder.com/30?text=?"; 
+        function getLogo(name) {
+            for(let key in LOGOS) if(name.toLowerCase().includes(key.toLowerCase())) return LOGOS[key];
+            return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=222&color=fff&bold=true`;
         }
 
         async function fetchSchedules() {
             const list = document.getElementById('unifiedMatchList');
-            list.innerHTML = `<div class="p-20 text-center animate-pulse text-zinc-500 font-bold uppercase">Syncing Live Hub...</div>`;
+            list.innerHTML = `<div class="p-20 text-center animate-pulse text-zinc-500 font-bold uppercase">Syncing Live Schedule...</div>`;
+            let masterMap = {};
 
-            let combinedData = {};
-
-            for (const [leagueName, url] of Object.entries(SCHEDULE_URLS)) {
+            for (const [league, url] of Object.entries(SCHEDULE_URLS)) {
                 await new Promise(resolve => {
-                    Papa.parse(url, {
-                        download: true,
-                        complete: (results) => {
-                            results.data.slice(1).forEach(row => {
-                                const date = row[0]; // Column A
-                                const home = row[1]; // Column B
-                                const away = row[2]; // Column C
-                                const score = row[3] || "3:00 PM"; // Column D (Treat as time if score empty)
-
-                                if (date && home && away) {
-                                    if (!combinedData[date]) combinedData[date] = {};
-                                    if (!combinedData[date][leagueName]) combinedData[date][leagueName] = [];
-                                    combinedData[date][leagueName].push({ home, away, score });
-                                }
-                            });
-                            resolve();
-                        }
-                    });
+                    Papa.parse(url, { download: true, complete: (res) => {
+                        let currentHeader = "";
+                        res.data.slice(1).forEach(row => {
+                            if (row[0] && row[0].trim() !== "") currentHeader = row[0].trim();
+                            const home = row[1] ? row[1].trim() : "";
+                            const away = row[2] ? row[2].trim() : "";
+                            const score = row[3] || "TBD";
+                            if (home && away && currentHeader) {
+                                if (!masterMap[currentHeader]) masterMap[currentHeader] = {};
+                                if (!masterMap[currentHeader][league]) masterMap[currentHeader][league] = [];
+                                masterMap[currentHeader][league].push({ home, away, score });
+                            }
+                        });
+                        resolve();
+                    }});
                 });
             }
-            renderMainHub(combinedData);
+            renderHub(masterMap);
         }
 
-        function renderMainHub(data) {
+        function renderHub(data) {
             const list = document.getElementById('unifiedMatchList');
             list.innerHTML = '';
-            
-            // Sort Dates
-            const sortedDates = Object.keys(data).sort((a,b) => new Date(a) - new Date(b));
-
-            sortedDates.forEach(date => {
+            Object.keys(data).forEach(date => {
                 list.insertAdjacentHTML('beforeend', `<div class="date-divider">${date}</div>`);
-
                 for (const league in data[date]) {
-                    let leagueHtml = `
-                        <div class="league-container">
-                            <div class="league-header">
-                                <span class="text-[11px] font-black uppercase flex items-center gap-2">
-                                    <span class="w-1 h-3 bg-[#00ff85] rounded-full"></span> ${league}
-                                </span>
-                                <span class="text-[10px] text-zinc-600">▼</span>
-                            </div>`;
-                    
+                    let html = `<div class="league-container">
+                        <div class="league-header"><span class="text-[11px] font-black uppercase flex items-center gap-2"><span class="w-1 h-3 bg-[#00ff85] rounded-full"></span> ${league}</span></div>`;
                     data[date][league].forEach(m => {
-                        leagueHtml += `
-                            <div class="match-row">
-                                <div class="team-side team-home">
-                                    <span class="text-xs font-bold truncate">${m.home}</span>
-                                    <img src="${getLogo(m.home)}" class="w-6 h-6 object-contain">
-                                </div>
-                                <div class="time-box">
-                                    <span class="text-[11px] font-black text-[#00ff85]">${m.score}</span>
-                                </div>
-                                <div class="team-side team-away">
-                                    <img src="${getLogo(m.away)}" class="w-6 h-6 object-contain">
-                                    <span class="text-xs font-bold truncate">${m.away}</span>
-                                </div>
-                            </div>`;
+                        html += `<div class="match-row">
+                            <div class="team-side team-home">
+                                <span class="text-[11px] font-bold truncate">${m.home}</span>
+                                <img src="${getLogo(m.home)}" class="w-6 h-6 object-contain">
+                            </div>
+                            <div class="time-box"><span class="text-[10px] font-black text-[#00ff85]">${m.score}</span></div>
+                            <div class="team-side team-away">
+                                <img src="${getLogo(m.away)}" class="w-6 h-6 object-contain">
+                                <span class="text-[11px] font-bold truncate">${m.away}</span>
+                            </div>
+                        </div>`;
                     });
-
-                    leagueHtml += `</div>`;
-                    list.insertAdjacentHTML('beforeend', leagueHtml);
+                    list.insertAdjacentHTML('beforeend', html + `</div>`);
                 }
             });
+        }
+
+        function getStyle(league, pos) {
+            pos = parseInt(pos);
+            if (league === 'MLS') {
+                if (pos === 1) return "#fbbf24";
+                if (pos <= 9) return "#22c55e";
+            } else {
+                if (pos === 1) return "#00ff85";
+                if (pos <= 4) return "#3b82f6";
+                if (pos <= 6) return "#fbbf24";
+                if (pos >= 18) return "#ef4444";
+            }
+            return "transparent";
         }
 
         function renderTable(league) {
             const body = document.getElementById('standingsContent');
-            document.querySelectorAll('.league-btn').forEach(btn => btn.classList.remove('active-league'));
+            document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active-league'));
             document.getElementById(`btn-${league}`).classList.add('active-league');
-
-            Papa.parse(STANDINGS_URLS[league], {
-                download: true, header: true,
-                complete: (res) => {
-                    body.innerHTML = res.data.map(r => {
-                        const pos = r.Position || r['#'] || '';
-                        const team = r.Team || '';
-                        const mp = r.MP || 0;
-                        const wdl = r['W-D-L'] || `${r.W}-${r.D}-${r.L}`;
-                        const gf = r.GF || 0;
-                        const ga = r.GA || 0;
-                        const gd = r.GD || 0;
-                        const pts = r.Points || r.Pts || 0;
-
-                        return `
-                        <tr class="border-b border-zinc-800/50 hover:bg-zinc-800/20">
-                            <td class="pl-4 py-4 text-zinc-500 font-bold">${pos}</td>
-                            <td>
-                                <div class="flex items-center gap-3">
-                                    <img src="${getLogo(team)}" class="w-6 h-6 object-contain">
-                                    <span class="font-bold truncate max-w-[100px]">${team}</span>
-                                </div>
-                            </td>
-                            <td class="text-center font-mono">${mp}</td>
-                            <td class="text-center font-mono text-[10px] text-zinc-400">${wdl}</td>
-                            <td class="text-center font-mono text-zinc-400">${gf}</td>
-                            <td class="text-center font-mono text-zinc-400">${ga}</td>
-                            <td class="text-center font-mono text-zinc-400">${gd}</td>
-                            <td class="pr-4 text-right text-[#00ff85] font-black">${pts}</td>
-                        </tr>`;
-                    }).join('');
-                }
-            });
+            Papa.parse(STANDINGS_URLS[league], { download: true, header: true, complete: (res) => {
+                body.innerHTML = res.data.map(r => {
+                    const pos = r.Position || r['#'] || '';
+                    return `<tr class="border-b border-zinc-800/50">
+                        <td class="pl-4 py-4 flex items-center">
+                            <div class="qualify-bar" style="background:${getStyle(league, pos)}"></div>
+                            <span class="text-zinc-500 font-bold">${pos}</span>
+                        </td>
+                        <td class="font-bold text-zinc-100 flex items-center gap-2 py-4">
+                            <img src="${getLogo(r.Team || '')}" class="w-5 h-5 object-contain">
+                            ${r.Team || ''}
+                        </td>
+                        <td class="text-center font-mono">${r.MP || 0}</td>
+                        <td class="text-center font-mono text-[10px] text-zinc-400">${r['W-D-L'] || '0-0-0'}</td>
+                        <td class="text-center font-mono text-zinc-400">${r.GF || 0}</td>
+                        <td class="text-center font-mono text-zinc-400">${r.GA || 0}</td>
+                        <td class="text-center font-mono text-zinc-400">${r.GD || 0}</td>
+                        <td class="pr-4 text-right text-[#00ff85] font-black">${r.Points || r.Pts || 0}</td>
+                    </tr>`;
+                }).join('');
+            }});
         }
 
         function switchTab(tab) {
-            ['matches', 'standings'].forEach(t => {
+            ['matches', 'standings', 'stats'].forEach(t => {
                 document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
                 document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
             });
