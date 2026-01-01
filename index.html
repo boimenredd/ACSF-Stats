@@ -13,26 +13,22 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
         header { background: rgba(11, 14, 17, 0.95); backdrop-blur: 12px; border-bottom: 1px solid var(--border); position: fixed; top: 0; width: 100%; max-width: 448px; z-index: 100; }
-        .date-divider { position: sticky; top: 72px; background: var(--bg); z-index: 10; padding: 12px 16px; font-size: 11px; font-weight: 900; color: #8b949e; letter-spacing: 0.1em; border-bottom: 1px solid #1f2428; }
+        .date-divider { position: sticky; top: 72px; background: var(--bg); z-index: 10; padding: 14px 16px; font-size: 11px; font-weight: 900; color: #8b949e; letter-spacing: 0.1em; border-bottom: 1px solid #1f2428; border-top: 1px solid #1f2428; margin-top: 10px; }
         
-        /* Match Card Enhancements */
-        .match-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
-        .league-tag { font-size: 8px; font-weight: 900; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-bottom: 8px; display: inline-block; }
+        .match-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
+        .league-tag { font-size: 9px; font-weight: 900; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; margin-bottom: 12px; display: inline-block; }
         .tag-PREM { background: #3d195d; color: white; }
         .tag-LALIGA { background: #ee252e; color: white; }
         .tag-MLS { background: #001f52; color: white; }
 
-        .score-box { background: #000; padding: 8px 14px; border-radius: 8px; font-weight: 900; display: flex; gap: 12px; border: 1px solid #21262d; min-width: 70px; justify-content: center; font-size: 14px; }
+        .score-box { background: #000; padding: 10px 18px; border-radius: 10px; font-weight: 900; display: flex; gap: 16px; border: 1px solid #21262d; min-width: 85px; justify-content: center; font-size: 18px; font-family: 'Roboto Mono', monospace; }
         
-        /* Navigation */
         .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #161b22; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
         .nav-btn { font-size: 10px; font-weight: 800; color: #8b949e; cursor: pointer; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-btn.active { color: var(--accent); }
-        .nav-btn i { font-size: 16px; font-style: normal; }
-
-        /* Standings Tab Specifics */
+        
         .wdl-column { font-family: 'Roboto Mono', monospace; font-weight: 700; color: #d1d5db; letter-spacing: -0.05em; }
-        .qualify-indicator { width: 4px; height: 20px; border-radius: 2px; margin-right: 10px; }
+        .qualify-indicator { width: 4px; height: 24px; border-radius: 2px; margin-right: 10px; }
         .active-league { background: var(--accent) !important; color: #000 !important; }
     </style>
 </head>
@@ -43,7 +39,7 @@
             <h1 class="text-xl font-black italic tracking-tighter uppercase">Score<span class="text-[#00ff85]">Hub</span></h1>
             <div id="sync-status" class="flex items-center gap-2">
                 <span id="sync-label" class="text-[9px] font-bold text-zinc-500 uppercase">Live Hub</span>
-                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
             </div>
         </div>
     </header>
@@ -55,12 +51,12 @@
 
         <div id="tab-standings" class="hidden">
             <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
-                <button id="btn-PREM" onclick="renderTable('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap transition-colors">PREMIER LEAGUE</button>
-                <button id="btn-LALIGA" onclick="renderTable('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap transition-colors">LA LIGA</button>
-                <button id="btn-MLS" onclick="renderTable('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap transition-colors">MLS</button>
+                <button id="btn-PREM" onclick="renderTable('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap transition-all">PREMIER LEAGUE</button>
+                <button id="btn-LALIGA" onclick="renderTable('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap transition-all">LA LIGA</button>
+                <button id="btn-MLS" onclick="renderTable('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap transition-all">MLS</button>
             </div>
             <div class="px-2 overflow-x-auto">
-                <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 min-w-[420px]">
+                <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 min-w-[460px]">
                     <table class="w-full text-left text-[11px]">
                         <thead>
                             <tr id="tableHead" class="uppercase bg-zinc-800/50"></tr>
@@ -125,32 +121,38 @@
             "Celta Vigo": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png",
             "Rayo Vallecano": "https://ssl.gstatic.com/onebox/media/sports/logos/i5LifmxEVIl0sbvIysiyhw_48x48.png",
             "Alaves": "https://ssl.gstatic.com/onebox/media/sports/logos/RUcTOeFcBc7q7uku1nR_iQ_48x48.png",
-            "Inter Miami": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755405/assets/logos/mls-clubs/Club_Logo-Miami_tyqe64.png",
+            "Miami": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755405/assets/logos/mls-clubs/Club_Logo-Miami_tyqe64.png",
             "LAFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755309/assets/logos/mls-clubs/Club_Logo-LAFC_djrhru.png",
-            "Atlanta Utd": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747499879/assets/logos/mls-clubs/Club_Logo-Atlanta_jtk7ku.png",
-            "Toronto FC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265251/assets/logos/mls-clubs/Club_Logo-Toronto_vz6hao.png",
+            "Atlanta": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747499879/assets/logos/mls-clubs/Club_Logo-Atlanta_jtk7ku.png",
+            "Toronto": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265251/assets/logos/mls-clubs/Club_Logo-Toronto_vz6hao.png",
             "San Diego": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748261519/assets/logos/mls-clubs/Club_Logo-San_Diego_nwpyul.png",
-            "Orlando City": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747769281/assets/logos/mls-clubs/Club_Logo-Orlando_ryyn7a.png",
-            "Houston Dynamo": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500939/assets/logos/mls-clubs/Club_Logo-Houston_oifm77.png",
-            "Charlotte FC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500045/assets/logos/mls-clubs/Club_Logo-Charlotte_p7sznf.png",
-            "Real Salt Lake": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747776403/assets/logos/mls-clubs/Club_Logo-Salt_Lake_City_hpvde5.png",
-            "Vancouver Whitecaps": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265547/assets/logos/mls-clubs/Club_Logo-Vancouver_ao9phl.png",
+            "Orlando": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747769281/assets/logos/mls-clubs/Club_Logo-Orlando_ryyn7a.png",
+            "Houston": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500939/assets/logos/mls-clubs/Club_Logo-Houston_oifm77.png",
+            "Charlotte": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500045/assets/logos/mls-clubs/Club_Logo-Charlotte_p7sznf.png",
+            "Salt Lake": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747776403/assets/logos/mls-clubs/Club_Logo-Salt_Lake_City_hpvde5.png",
+            "Vancouver": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265547/assets/logos/mls-clubs/Club_Logo-Vancouver_ao9phl.png",
             "LA Galaxy": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755165/assets/logos/mls-clubs/Club_Logo-LA_Galaxy_fg0wjp.png",
-            "Seattle Sounders": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265125/assets/logos/mls-clubs/Club_Logo-Seattle_e6jk2x.png",
-            "Columbus Crew": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500414/assets/logos/mls-clubs/Club_Logo-Columbus_light_z3eq8l.png",
-            "CF Montreal": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755806/assets/logos/mls-clubs/Club_Logo-Montreal_beeqnh.png",
-            "San Jose Earthquakes": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748262048/assets/logos/mls-clubs/Club_Logo-San_Jose_opzlmo.png",
+            "Seattle": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265125/assets/logos/mls-clubs/Club_Logo-Seattle_e6jk2x.png",
+            "Columbus": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500414/assets/logos/mls-clubs/Club_Logo-Columbus_light_z3eq8l.png",
+            "Montreal": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755806/assets/logos/mls-clubs/Club_Logo-Montreal_beeqnh.png",
+            "San Jose": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748262048/assets/logos/mls-clubs/Club_Logo-San_Jose_opzlmo.png",
             "NY Red Bulls": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771783/assets/logos/mls-clubs/Club_Logo-RBNY_dwawvt.png",
-            "Colorado Rapids": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500322/assets/logos/mls-clubs/Club_Logo-Colorado_n5kpss.png",
+            "Colorado": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500322/assets/logos/mls-clubs/Club_Logo-Colorado_n5kpss.png",
             "New England": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1766020750/assets/NE_Logo_PRI_FC_RGB_480x480_fdx2us.png",
-            "Minnesota Utd": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754826/assets/logos/mls-clubs/Club_Logo-Minnesota_ftweor.png",
-            "Chicago Fire": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500178/assets/logos/mls-clubs/Club_Logo-Chicago_jm2yev.png"
+            "Minnesota": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754826/assets/logos/mls-clubs/Club_Logo-Minnesota_ftweor.png",
+            "Chicago": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500178/assets/logos/mls-clubs/Club_Logo-Chicago_jm2yev.png"
         };
 
-        const SHEETS = {
-            PREM: { sch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv', tbl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=935978435&single=true&output=csv' },
-            LALIGA: { sch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1516477023&single=true&output=csv', tbl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv' },
-            MLS: { sch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAT0GInc6QMrh4OdSjMk63NmcvN_1lyKpDnwYifaQBqtBMu3JAWrJRr0DqzEFt1iPbkV7vZPMOcuis/pub?gid=0&single=true&output=csv', tbl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv' }
+        const STANDINGS_URLS = {
+            PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=935978435&single=true&output=csv',
+            LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv',
+            MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv'
+        };
+
+        const SCHEDULE_FILES = {
+            PREM: 'ACSF Matchlist - EPL Matches (1).csv',
+            LALIGA: 'ACSF Matchlist - La Liga Matches (1).csv',
+            MLS: '2026 MLS Schedule - Schedule.csv'
         };
 
         let allMatches = [];
@@ -159,32 +161,34 @@
         function getLogo(team) {
             if (!team) return "";
             for (let key in LOGOS) {
-                if (team.includes(key) || key.includes(team)) return LOGOS[key];
+                if (team.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(team.toLowerCase())) return LOGOS[key];
             }
-            return "";
-        }
-
-        function normalizeRow(row) {
-            const normalized = {};
-            for (let key in row) normalized[key.toLowerCase().trim()] = row[key];
-            return normalized;
+            return "https://via.placeholder.com/40?text=?"; 
         }
 
         async function initHub() {
-            document.getElementById('sync-label').innerText = "Syncing...";
-            const loaders = Object.keys(SHEETS).map(league => {
+            document.getElementById('sync-label').innerText = "Syncing Hub...";
+            
+            // For the Hub, we will parse the local files provided by the user
+            const loaders = Object.keys(SCHEDULE_FILES).map(league => {
                 return new Promise(resolve => {
-                    Papa.parse(SHEETS[league].sch, {
+                    Papa.parse(SCHEDULE_FILES[league], {
                         download: true, header: true, skipEmptyLines: 'greedy',
                         complete: (res) => {
-                            let lastDate = null;
-                            resolve(res.data.map(row => {
-                                const m = normalizeRow(row);
-                                let d = m.matchday;
-                                if (d && /[a-zA-Z]/.test(d)) lastDate = d;
-                                return (m.home && m.away) ? {...m, league: league, assignedDate: lastDate} : null;
-                            }).filter(x => x));
-                        }
+                            let lastDate = "TBA";
+                            const leagueMatches = res.data.map(row => {
+                                const md = row.Matchday || row.matchday;
+                                const home = row.Home || row.home;
+                                const away = row.Away || row.away;
+                                const result = row.Result || row.result || "-";
+                                
+                                if (md && /[a-zA-Z]/.test(md)) lastDate = md;
+                                if (home && away) return { league, home, away, result, date: lastDate };
+                                return null;
+                            }).filter(x => x);
+                            resolve(leagueMatches);
+                        },
+                        error: () => resolve([]) // Handle missing files gracefully
                     });
                 });
             });
@@ -192,10 +196,11 @@
             allMatches = (await Promise.all(loaders)).flat();
             renderUnifiedMatches();
             
-            Object.keys(SHEETS).forEach(l => {
-                Papa.parse(SHEETS[l].tbl, { 
+            // Pre-load standings data from URLs
+            Object.keys(STANDINGS_URLS).forEach(l => {
+                Papa.parse(STANDINGS_URLS[l], { 
                     download: true, header: true, skipEmptyLines: 'greedy', 
-                    complete: (res) => { tableData[l] = res.data.map(r => normalizeRow(r)); }
+                    complete: (res) => { tableData[l] = res.data; }
                 });
             });
             document.getElementById('sync-label').innerText = "Live Hub";
@@ -205,11 +210,10 @@
             const list = document.getElementById('unifiedMatchList');
             list.innerHTML = '';
             const groups = {};
+            
             allMatches.forEach(m => {
-                if (m.assignedDate) {
-                    if (!groups[m.assignedDate]) groups[m.assignedDate] = [];
-                    groups[m.assignedDate].push(m);
-                }
+                if (!groups[m.date]) groups[m.date] = [];
+                groups[m.date].push(m);
             });
 
             Object.keys(groups).forEach(dateKey => {
@@ -221,16 +225,23 @@
                 groups[dateKey].forEach(m => {
                     list.insertAdjacentHTML('beforeend', `
                         <div class="match-card">
-                            <div class="flex flex-col w-1/2">
+                            <div class="flex flex-col w-3/5">
                                 <span class="league-tag tag-${m.league}">${m.league}</span>
-                                <div class="flex flex-col gap-3">
-                                    <div class="flex items-center gap-3"><img src="${getLogo(m.home)}" class="w-7 h-7 object-contain"><span class="text-xs font-black truncate">${m.home}</span></div>
-                                    <div class="flex items-center gap-3"><img src="${getLogo(m.away)}" class="w-7 h-7 object-contain"><span class="text-xs font-black truncate">${m.away}</span></div>
+                                <div class="flex flex-col gap-4">
+                                    <div class="flex items-center gap-4">
+                                        <img src="${getLogo(m.home)}" class="w-10 h-10 object-contain">
+                                        <span class="text-sm font-black truncate">${m.home}</span>
+                                    </div>
+                                    <div class="flex items-center gap-4">
+                                        <img src="${getLogo(m.away)}" class="w-10 h-10 object-contain">
+                                        <span class="text-sm font-black truncate">${m.away}</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="score-box">
-                                <span>${m.result?.split('-')[0] || '-'}</span>
-                                <span>${m.result?.split('-')[1] || '-'}</span>
+                                <span>${m.result.includes('-') ? m.result.split('-')[0] : '-'}</span>
+                                <span class="text-zinc-700">|</span>
+                                <span>${m.result.includes('-') ? m.result.split('-')[1] : '-'}</span>
                             </div>
                         </div>
                     `);
@@ -241,56 +252,59 @@
         function getQualifyStyle(league, pos) {
             pos = parseInt(pos);
             if (league === 'MLS') {
-                if (pos === 1) return { color: "#fbbf24", label: "Shield Champ" };
+                if (pos === 1) return { color: "#fbbf24", label: "Shield" };
                 if (pos >= 2 && pos <= 8) return { color: "#22c55e", label: "Playoffs" };
-                if (pos === 18) return { color: "#eab308", label: "Rel. Playoff" };
-                if (pos >= 19) return { color: "#ef4444", label: "Relegation" };
+                if (pos >= 19) return { color: "#ef4444", label: "Rel" };
             } else {
-                if (pos === 1) return { color: "#00ff85", label: "League Champ" };
-                if (pos >= 2 && pos <= 4) return { color: "#3b82f6", label: "Champions League" };
-                if (pos === 5) return { color: "#fbbf24", label: "Europa League" };
-                if (pos === 6) return { color: "#15803d", label: "Conference League" };
-                if (pos >= 18) return { color: "#ef4444", label: "Relegation" };
+                if (pos === 1) return { color: "#00ff85", label: "Champ" };
+                if (pos >= 2 && pos <= 4) return { color: "#3b82f6", label: "UCL" };
+                if (pos === 5) return { color: "#fbbf24", label: "UEL" };
+                if (pos >= 18) return { color: "#ef4444", label: "Rel" };
             }
             return null;
         }
 
         function renderTable(league) {
             const data = tableData[league] || [];
-            const isMls = league === 'MLS';
             const head = document.getElementById('tableHead');
             const body = document.getElementById('standingsContent');
             const legend = document.getElementById('tableLegend');
 
-            // Handle button highlighting
             document.querySelectorAll('.league-btn').forEach(btn => btn.classList.remove('active-league'));
-            document.getElementById(`btn-${league}`).classList.add('active-league');
+            const activeBtn = document.getElementById(`btn-${league}`);
+            if(activeBtn) activeBtn.classList.add('active-league');
 
-            head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">${isMls ? 'GP' : 'MP'}</th><th class="text-center">W-D-L</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="pr-4 text-right">PTS</th>`;
+            head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="pr-4 text-right">PTS</th>`;
 
             body.innerHTML = data.map(r => {
-                const pos = r.position || r['#'] || '';
+                const pos = r.Position || r.position || r['#'] || '';
+                const team = r.Team || r.team || '';
                 const style = getQualifyStyle(league, pos);
-                const wdl = r['w-d-l'] || `${r.w || 0}-${r.d || 0}-${r.l || 0}`;
+                const mp = r.MP || r.mp || r.GP || 0;
+                const pts = r.Points || r.points || r.Pts || 0;
+                const wdl = r['W-D-L'] || `${r.W || 0}-${r.D || 0}-${r.L || 0}`;
+
                 return `
                 <tr class="font-bold border-b border-zinc-800/30">
-                    <td class="pl-4 py-4 flex items-center">
+                    <td class="pl-4 py-5 flex items-center">
                         <div class="qualify-indicator" style="background: ${style ? style.color : 'transparent'}"></div>
                         <span class="text-zinc-500">${pos}</span>
                     </td>
-                    <td><div class="flex items-center gap-3"><img src="${getLogo(r.team)}" class="w-6 h-6 object-contain"><span class="text-white truncate max-w-[95px]">${r.team || ''}</span></div></td>
-                    <td class="text-center text-zinc-400 font-mono">${r.mp || r.gp || 0}</td>
+                    <td>
+                        <div class="flex items-center gap-4">
+                            <img src="${getLogo(team)}" class="w-8 h-8 object-contain">
+                            <span class="text-white truncate max-w-[120px]">${team}</span>
+                        </div>
+                    </td>
+                    <td class="text-center text-zinc-400 font-mono">${mp}</td>
                     <td class="text-center wdl-column text-[10px]">${wdl}</td>
-                    <td class="text-center text-zinc-500">${r.gf || 0}</td>
-                    <td class="text-center text-zinc-500">${r.ga || 0}</td>
-                    <td class="text-center">${r.gd || 0}</td>
-                    <td class="pr-4 text-right text-[#00ff85] font-black">${r.points || r.pts || 0}</td>
+                    <td class="pr-4 text-right text-[#00ff85] font-black text-sm">${pts}</td>
                 </tr>`;
             }).join('');
 
             const rules = league === 'MLS' ? 
-                [{c:'#fbbf24', l:'Shield Champ'}, {c:'#22c55e', l:'Playoffs'}, {c:'#eab308', l:'Rel. Playoff'}, {c:'#ef4444', l:'Relegation'}] :
-                [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#15803d', l:'UECL'}, {c:'#ef4444', l:'Rel'}];
+                [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#ef4444', l:'Rel'}] :
+                [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#ef4444', l:'Rel'}];
             
             legend.innerHTML = rules.map(rule => `
                 <div class="flex items-center gap-2">
@@ -305,12 +319,10 @@
                 document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
                 document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
             });
-            // Defaults to PREM automatically when the tab is clicked
             if (tab === 'standings') renderTable('PREM');
         }
 
         initHub();
-        setInterval(initHub, 60000); 
     </script>
 </body>
 </html>
