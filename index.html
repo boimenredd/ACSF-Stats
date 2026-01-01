@@ -33,6 +33,8 @@
         .team-name { font-size: 14px; font-weight: 700; flex: 1; }
         .score { font-size: 16px; font-weight: 900; font-family: 'Roboto Mono', monospace; width: 24px; text-align: center; }
         .match-time { font-size: 13px; font-weight: 700; color: #8b949e; text-align: center; width: 70px; }
+        .match-time.live { color: #22c55e; font-weight: 900; }
+        .match-time.ft { color: #ef4444; font-weight: 900; }
         
         .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #161b22; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
         .nav-btn { font-size: 10px; font-weight: 800; color: #8b949e; cursor: pointer; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 4px; }
@@ -205,19 +207,10 @@
             "Cincinnati": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500252/assets/logos/mls-clubs/Club_Logo-Cincinatti_ohmgcp.png"
         };
 
-        const LEAGUE_FLAGS = {
-            PREM: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-            LALIGA: '🇪🇸',
-            MLS: '🇺🇸'
-        };
+        const LEAGUE_FLAGS = { PREM: '🏴', LALIGA: '🇪🇸', MLS: '🇺🇸' };
+        const LEAGUE_NAMES = { PREM: 'England - Premier League', LALIGA: 'Spain - LaLiga', MLS: 'USA - MLS' };
 
-        const LEAGUE_NAMES = {
-            PREM: 'England - Premier League',
-            LALIGA: 'Spain - LaLiga',
-            MLS: 'USA - MLS'
-        };
-
-        let currentDate = new Date('2025-08-15'); // Start with a date that has matches
+        let currentDate = new Date('2025-08-15');
         let allMatches = [];
         let currentFilter = 'all';
         let allDates = [];
@@ -236,25 +229,12 @@
         function parseDate(dateStr) {
             if (!dateStr) return null;
             dateStr = dateStr.trim();
-            
-            // Try MM/DD/YYYY or M/D/YYYY
             let match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-            if (match) {
-                return new Date(match[3], match[1] - 1, match[2]);
-            }
-            
-            // Try YYYY-MM-DD
+            if (match) return new Date(match[3], match[1] - 1, match[2]);
             match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-            if (match) {
-                return new Date(match[1], match[2] - 1, match[3]);
-            }
-            
-            // Try other common formats
+            if (match) return new Date(match[1], match[2] - 1, match[3]);
             const parsed = new Date(dateStr);
-            if (!isNaN(parsed.getTime())) {
-                return parsed;
-            }
-            
+            if (!isNaN(parsed.getTime())) return parsed;
             return null;
         }
 
@@ -273,235 +253,119 @@
         async function loadAllMatches() {
             allMatches = [];
             let loadedCount = 0;
-            
-            for (let league of ['PREM', 'LALIGA', 'MLS']) {
-                await new Promise((resolve) => {
+
+            for (let league of ['PREM','LALIGA','MLS']) {
+                await new Promise(resolve => {
                     Papa.parse(SCHEDULE_URLS[league], {
                         download: true,
                         header: true,
                         skipEmptyLines: 'greedy',
-                        complete: (res) => {
-                            console.log(`${league} loaded:`, res.data.length, 'rows');
-                            
+                        complete: res => {
                             res.data.forEach(row => {
-                                // Check all possible column names
                                 const dateStr = row.Date || row.date || row.DATE || row['Match Date'] || '';
                                 const home = (row.Home || row.home || row.HOME || row['Home Team'] || '').trim();
                                 const away = (row.Away || row.away || row.AWAY || row['Away Team'] || '').trim();
                                 const homeScore = row['Home Score'] || row['home score'] || row.HomeScore || row['Home Goals'] || '';
                                 const awayScore = row['Away Score'] || row['away score'] || row.AwayScore || row['Away Goals'] || '';
                                 const time = row.Time || row.time || row.TIME || '';
-                                
+                                const status = (row.Status || 'SCHEDULED').toUpperCase();
+                                const minute = row.Minute || '';
+
                                 const date = parseDate(dateStr);
-                                
+
                                 if (date && home && away) {
-                                    allMatches.push({
-                                        league: league,
-                                        date: date,
-                                        home: home,
-                                        away: away,
-                                        homeScore: homeScore,
-                                        awayScore: awayScore,
-                                        time: time
-                                    });
+                                    allMatches.push({league,date,home,away,homeScore,awayScore,time,status,minute});
                                     loadedCount++;
                                 }
                             });
-                            
                             resolve();
                         },
-                        error: (err) => {
-                            console.error(`Error loading ${league}:`, err);
-                            resolve();
-                        }
+                        error: err => { console.error(err); resolve(); }
                     });
                 });
             }
-            
-            console.log('Total matches loaded:', loadedCount);
-            
-            allMatches.sort((a, b) => a.date - b.date);
-            
-            // Get all unique dates
+
+            allMatches.sort((a,b) => a.date-b.date);
             const dateSet = new Set();
-            allMatches.forEach(m => {
-                const dateKey = `${m.date.getFullYear()}-${m.date.getMonth()}-${m.date.getDate()}`;
-                dateSet.add(dateKey);
-            });
+            allMatches.forEach(m=>dateSet.add(`${m.date.getFullYear()}-${m.date.getMonth()}-${m.date.getDate()}`));
             allDates = Array.from(dateSet).sort();
-            
-            // Set current date to first date with matches
-            if (allMatches.length > 0) {
-                currentDate = new Date(allMatches[0].date);
-            }
-            
+            if(allMatches.length>0) currentDate=new Date(allMatches[0].date);
             renderMatches();
         }
 
         function renderMatches() {
             const list = document.getElementById('matchesList');
             document.getElementById('currentDate').textContent = formatDate(currentDate);
-            
-            const dayMatches = allMatches.filter(m => isSameDay(m.date, currentDate));
-            
-            if (dayMatches.length === 0) {
-                list.innerHTML = '<div class="p-10 text-center text-zinc-500 font-bold uppercase text-xs">No matches scheduled for this date</div>';
-                return;
-            }
-            
-            const filteredMatches = currentFilter === 'all' ? dayMatches : dayMatches.filter(m => m.league === currentFilter);
-            
-            if (filteredMatches.length === 0) {
-                list.innerHTML = '<div class="p-10 text-center text-zinc-500 font-bold uppercase text-xs">No matches for this league on this date</div>';
-                return;
-            }
-            
-            const byLeague = {};
-            filteredMatches.forEach(m => {
-                if (!byLeague[m.league]) byLeague[m.league] = [];
-                byLeague[m.league].push(m);
-            });
-            
-            list.innerHTML = Object.keys(byLeague).map(league => `
-                <div class="league-section">
-                    <div class="league-header" onclick="toggleLeague('${league}')">
-                        <span class="league-flag">${LEAGUE_FLAGS[league]}</span>
-                        <span>${LEAGUE_NAMES[league]}</span>
-                        <span class="chevron ml-auto">▼</span>
+            const dayMatches = allMatches.filter(m=>isSameDay(m.date,currentDate) && (currentFilter==='all'||m.league===currentFilter));
+
+            if(dayMatches.length===0) { list.innerHTML='<div class="loading-msg">No matches found.</div>'; return; }
+
+            const leagues = {};
+            dayMatches.forEach(m=> { if(!leagues[m.league]) leagues[m.league]=[]; leagues[m.league].push(m); });
+
+            let html='';
+            for(let league of Object.keys(leagues)){
+                html+=`<div class="league-section collapsed">
+                    <div class="league-header" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <span class="chevron">▶</span> ${LEAGUE_FLAGS[league]} ${LEAGUE_NAMES[league]}
                     </div>
-                    <div class="matches-container" id="league-${league}">
-                        ${byLeague[league].map(m => {
-                            const hasScore = m.homeScore !== '' && m.awayScore !== '';
-                            const displayTime = hasScore ? '' : (m.time || 'TBD');
-                            
-                            return `
-                                <div class="match-card">
-                                    <div class="flex-1">
-                                        <div class="team-row">
-                                            <img src="${getLogo(m.home)}" class="team-logo" onerror="this.src='https://via.placeholder.com/28?text=?'">
-                                            <span class="team-name">${m.home}</span>
-                                            ${hasScore ? `<span class="score">${m.homeScore}</span>` : ''}
-                                        </div>
-                                        <div class="team-row">
-                                            <img src="${getLogo(m.away)}" class="team-logo" onerror="this.src='https://via.placeholder.com/28?text=?'">
-                                            <span class="team-name">${m.away}</span>
-                                            ${hasScore ? `<span class="score">${m.awayScore}</span>` : ''}
-                                        </div>
-                                    </div>
-                                    ${!hasScore ? `<div class="match-time">${displayTime}</div>` : ''}
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `).join('');
+                    <div class="matches-container">`;
+
+                leagues[league].forEach(m=>{
+                    const displayTime = m.time;
+                    let timeHtml='';
+                    if(m.status==='LIVE') timeHtml=`<div class="match-time live">${m.minute}'</div>`;
+                    else if(m.status==='HT') timeHtml=`<div class="match-time live">HT</div>`;
+                    else if(m.status==='FT') timeHtml=`<div class="match-time ft">FT</div>`;
+                    else timeHtml=`<div class="match-time">${displayTime}</div>`;
+
+                    html+=`<div class="match-card">
+                        <div class="team-row">
+                            <img class="team-logo" src="${getLogo(m.home)}">
+                            <div class="team-name">${m.home}</div>
+                            <div class="score">${m.homeScore||'-'}</div>
+                        </div>
+                        ${timeHtml}
+                        <div class="team-row">
+                            <img class="team-logo" src="${getLogo(m.away)}">
+                            <div class="team-name">${m.away}</div>
+                            <div class="score">${m.awayScore||'-'}</div>
+                        </div>
+                    </div>`;
+                });
+
+                html+='</div></div>';
+            }
+
+            list.innerHTML = html;
         }
 
-        function toggleLeague(league) {
-            const section = document.querySelector(`#league-${league}`).parentElement;
-            section.classList.toggle('collapsed');
-        }
-
-        function changeDate(days) {
-            currentDate.setDate(currentDate.getDate() + days);
+        function changeDate(offset) {
+            currentDate.setDate(currentDate.getDate()+offset);
             renderMatches();
         }
 
-        function resetToToday() {
-            if (allMatches.length > 0) {
-                currentDate = new Date(allMatches[0].date);
-                renderMatches();
-            }
-        }
-
-        function filterLeague(league) {
-            currentFilter = league;
-            document.querySelectorAll('.filter-pill').forEach(pill => {
-                pill.classList.remove('active');
-            });
-            event.target.classList.add('active');
+        function resetToToday() { 
+            currentDate = new Date();
             renderMatches();
         }
 
-        function renderTable(league) {
-            const head = document.getElementById('tableHead');
-            const body = document.getElementById('standingsContent');
-            const legend = document.getElementById('tableLegend');
-
-            document.querySelectorAll('.league-btn').forEach(btn => btn.classList.remove('active-league'));
-            document.getElementById(`btn-${league}`).classList.add('active-league');
-
-            head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="pr-4 text-right">PTS</th>`;
-            body.innerHTML = `<tr><td colspan="5" class="py-10 text-center text-zinc-500 font-bold uppercase animate-pulse">Fetching Standings...</td></tr>`;
-
-            Papa.parse(STANDINGS_URLS[league], {
-                download: true, header: true, skipEmptyLines: 'greedy',
-                complete: (res) => {
-                    body.innerHTML = res.data.map(r => {
-                        const pos = r.Position || r.position || r['#'] || '';
-                        const team = r.Team || r.team || '';
-                        const mp = r.MP || r.mp || r.GP || 0;
-                        const pts = r.Points || r.points || r.Pts || 0;
-                        const wdl = r['W-D-L'] || `${r.W || 0}-${r.D || 0}-${r.L || 0}`;
-                        const style = getQualifyStyle(league, pos);
-
-                        return `
-                        <tr class="font-bold border-b border-zinc-800/30">
-                            <td class="pl-4 py-5 flex items-center">
-                                <div class="qualify-indicator" style="background: ${style ? style.color : 'transparent'}"></div>
-                                <span class="text-zinc-500">${pos}</span>
-                            </td>
-                            <td>
-                                <div class="flex items-center gap-4">
-                                    <img src="${getLogo(team)}" class="w-8 h-8 object-contain" onerror="this.src='https://via.placeholder.com/32?text=?'">
-                                    <span class="text-white truncate max-w-[120px]">${team}</span>
-                                </div>
-                            </td>
-                            <td class="text-center text-zinc-400 font-mono">${mp}</td>
-                            <td class="text-center wdl-column text-[10px]">${wdl}</td>
-                            <td class="pr-4 text-right text-[#00ff85] font-black text-sm">${pts}</td>
-                        </tr>`;
-                    }).join('');
-                }
-            });
-
-            const rules = league === 'MLS' ? 
-                [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#ef4444', l:'Rel'}] :
-                [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#ef4444', l:'Rel'}];
-            
-            legend.innerHTML = rules.map(rule => `
-                <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full" style="background:${rule.c}"></div>
-                    <span class="text-[9px] font-black text-zinc-500 uppercase">${rule.l}</span>
-                </div>
-            `).join('');
+        function filterLeague(league){
+            currentFilter=league;
+            document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));
+            document.querySelectorAll('.filter-pill').forEach(p=>{if(p.textContent.replace(/\s/g,'').toLowerCase().includes(league.toLowerCase())) p.classList.add('active');});
+            renderMatches();
         }
 
-        function getQualifyStyle(league, pos) {
-            pos = parseInt(pos);
-            if (league === 'MLS') {
-                if (pos === 1) return { color: "#fbbf24", label: "Shield" };
-                if (pos >= 2 && pos <= 8) return { color: "#22c55e", label: "Playoffs" };
-                if (pos >= 19) return { color: "#ef4444", label: "Rel" };
-            } else {
-                if (pos === 1) return { color: "#00ff85", label: "Champ" };
-                if (pos >= 2 && pos <= 4) return { color: "#3b82f6", label: "UCL" };
-                if (pos === 5) return { color: "#fbbf24", label: "UEL" };
-                if (pos >= 18) return { color: "#ef4444", label: "Rel" };
-            }
-            return null;
+        function switchTab(tab){
+            document.querySelectorAll('main > div').forEach(d=>d.classList.add('hidden'));
+            document.getElementById('tab-'+tab).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+            document.getElementById('nav-'+tab).classList.add('active');
         }
 
-        function switchTab(tab) {
-            ['matches', 'standings', 'stats'].forEach(t => {
-                document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
-                document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
-            });
-            if (tab === 'standings') renderTable('PREM');
-        }
-
-        // Initialize
         loadAllMatches();
+        setInterval(loadAllMatches,30000); // auto-refresh every 30s
     </script>
 </body>
 </html>
