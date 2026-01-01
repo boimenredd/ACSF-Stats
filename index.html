@@ -80,27 +80,11 @@
     </nav>
 
     <script>
-        // EMBEDDED SCHEDULE DATA FROM YOUR CSVs
-        const HUB_DATA = {
-            "Aug 15": [
-                {league:"PREM", home:"Aston Villa", away:"Newcastle", result:"2-2"},
-                {league:"PREM", home:"Brighton", away:"Leicester", result:"2-2"},
-                {league:"LALIGA", home:"Villarreal", away:"Real Oviedo", result:"3-0"},
-                {league:"LALIGA", home:"Mallorca", away:"Barcelona", result:"1-3"}
-            ],
-            "Aug 22": [
-                {league:"PREM", home:"Man City", away:"Tottenham", result:"1-3"},
-                {league:"LALIGA", home:"Levante", away:"Barcelona", result:"0-7"},
-                {league:"LALIGA", home:"Real Oviedo", away:"Real Madrid", result:"1-6"}
-            ],
-            "February 21st": [
-                {league:"MLS", home:"Miami", away:"LA Galaxy", result:"-"},
-                {league:"MLS", home:"LAFC", away:"Seattle", result:"-"}
-            ],
-            "February 28th": [
-                {league:"MLS", home:"New England", away:"LAFC", result:"-"},
-                {league:"MLS", home:"Columbus", away:"Salt Lake", result:"-"}
-            ]
+        // CSV Source URLs for Schedule Hub (Using specific GIDs for the league tabs)
+        const SCHEDULE_URLS = {
+            PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=0&single=true&output=csv',
+            LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1510525656&single=true&output=csv',
+            MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=0&single=true&output=csv'
         };
 
         const LOGOS = {
@@ -172,8 +156,6 @@
             MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv'
         };
 
-        let tableDataCache = {};
-
         function getLogo(team) {
             if (!team) return "";
             for (let key in LOGOS) {
@@ -182,16 +164,59 @@
             return "https://via.placeholder.com/40?text=?"; 
         }
 
-        function renderMainHub() {
+        async function fetchSchedules() {
+            const list = document.getElementById('unifiedMatchList');
+            list.innerHTML = `<div class="py-20 text-center text-zinc-500 font-bold uppercase animate-pulse">Syncing Hub...</div>`;
+
+            let combinedData = {};
+
+            // Loop through all three leagues (EPL, La Liga, MLS)
+            for (const [key, url] of Object.entries(SCHEDULE_URLS)) {
+                await new Promise(resolve => {
+                    Papa.parse(url, {
+                        download: true,
+                        complete: (results) => {
+                            // Column A (0) = Date, Column B (1) = Home, Column C (2) = Away, Column D (3) = Score
+                            results.data.slice(1).forEach(row => {
+                                const date = row[0];
+                                const home = row[1];
+                                const away = row[2];
+                                const score = row[3] || "-";
+
+                                if (date && home && away) {
+                                    if (!combinedData[date]) combinedData[date] = [];
+                                    combinedData[date].push({
+                                        league: key,
+                                        home: home,
+                                        away: away,
+                                        result: score
+                                    });
+                                }
+                            });
+                            resolve();
+                        }
+                    });
+                });
+            }
+            renderMainHub(combinedData);
+        }
+
+        function renderMainHub(data) {
             const list = document.getElementById('unifiedMatchList');
             list.innerHTML = '';
             
-            Object.keys(HUB_DATA).forEach(date => {
+            if (Object.keys(data).length === 0) {
+                list.innerHTML = '<div class="p-10 text-center text-zinc-500 uppercase">No Matches Scheduled</div>';
+                return;
+            }
+
+            // Sort dates if possible, or just display as they come
+            Object.keys(data).forEach(date => {
                 const divider = `<div class="date-divider">${date.toUpperCase()}</div>`;
                 list.insertAdjacentHTML('beforeend', divider);
 
-                HUB_DATA[date].forEach(m => {
-                    const score = m.result.includes('-') ? m.result.split('-') : ['-','-'];
+                data[date].forEach(m => {
+                    const score = m.result.includes('-') ? m.result.split('-') : [m.result, ''];
                     list.insertAdjacentHTML('beforeend', `
                         <div class="match-card">
                             <div class="flex flex-col w-3/5">
@@ -210,7 +235,7 @@
                             <div class="score-box">
                                 <span>${score[0]}</span>
                                 <span class="text-zinc-700">|</span>
-                                <span>${score[1]}</span>
+                                <span>${score[1] || score[0]}</span>
                             </div>
                         </div>
                     `);
@@ -293,10 +318,11 @@
                 document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
             });
             if (tab === 'standings') renderTable('PREM');
+            if (tab === 'matches') fetchSchedules();
         }
 
         // Initialize
-        renderMainHub();
+        fetchSchedules();
     </script>
 </body>
 </html>
