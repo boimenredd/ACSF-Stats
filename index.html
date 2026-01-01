@@ -1,119 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScoreHub Pro</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
-    <style>
-        :root { --accent: #00ff85; --bg: #0b0e11; --card: #1c1c1c; --border: #30363d; --header-bg: #121212; }
-        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        /* Layout Styles */
-        .league-container { background: var(--card); border-radius: 20px; margin: 12px 16px; overflow: hidden; border: 1px solid #2a2a2a; }
-        .league-header { background: var(--header-bg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a2a; }
-        .match-row { padding: 18px 16px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #ffffff0a; }
-        .match-row:last-child { border-bottom: none; }
-        .team-side { display: flex; align-items: center; gap: 10px; width: 42%; }
-        .team-home { justify-content: flex-end; text-align: right; }
-        .team-away { justify-content: flex-start; text-align: left; }
-        .time-box { width: 16%; text-align: center; font-family: 'Roboto Mono', monospace; }
-        
-        .date-divider { position: sticky; top: 72px; background: var(--bg); z-index: 10; padding: 14px 20px; font-size: 11px; font-weight: 900; color: #8b949e; letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px solid #1f2428; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScoreHub Pro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+:root { --accent: #00ff85; --bg: #0b0e11; --card: #1c1c1c; --border: #30363d; --header-bg: #121212; }
+body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
 
-        /* Standing Indicators */
-        .qualify-bar { width: 4px; height: 24px; border-radius: 2px; margin-right: 12px; }
-        
-        /* Navigation */
-        .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #161b22; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 14px 0; z-index: 100; }
-        .nav-btn { font-size: 10px; font-weight: 800; color: #8b949e; cursor: pointer; text-transform: uppercase; }
-        .nav-btn.active { color: var(--accent); }
-        .active-league { background: var(--accent) !important; color: #000 !important; }
-    </style>
+/* Layout Styles */
+.league-container { background: var(--card); border-radius: 20px; margin: 12px 16px; overflow: hidden; border: 1px solid #2a2a2a; }
+.league-header { background: var(--header-bg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a2a; }
+.match-row { padding: 18px 16px; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #ffffff0a; }
+.match-row:last-child { border-bottom: none; }
+.team-side { display: flex; align-items: center; gap: 10px; width: 42%; }
+.team-home { justify-content: flex-end; text-align: right; }
+.team-away { justify-content: flex-start; text-align: left; }
+.time-box { width: 16%; text-align: center; font-family: 'Roboto Mono', monospace; }
+
+.date-selector { display:flex; justify-content:center; gap:20px; align-items:center; margin:16px 0; font-family:'Roboto Mono', monospace; }
+.date-btn { cursor:pointer; font-size:14px; font-weight:bold; color:#8b949e; transition:color .2s; }
+.date-btn:hover { color:var(--accent); }
+.date-display { color:var(--accent); font-weight:bold; }
+
+.date-divider { font-size: 12px; font-weight: 900; color: #8b949e; text-transform: uppercase; letter-spacing:0.1em; margin:10px 0; }
+
+/* Standing Indicators */
+.qualify-bar { width: 4px; height: 24px; border-radius: 2px; margin-right: 12px; }
+
+/* Navigation */
+.nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #161b22; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 14px 0; z-index: 100; }
+.nav-btn { font-size: 10px; font-weight: 800; color: #8b949e; cursor: pointer; text-transform: uppercase; }
+.nav-btn.active { color: var(--accent); }
+.active-league { background: var(--accent) !important; color: #000 !important; }
+</style>
 </head>
 <body class="max-w-md mx-auto pb-32">
 
-    <header class="fixed top-0 w-full max-w-md bg-[#0b0e11]/95 backdrop-blur-md z-[100] border-b border-[#1f2428]">
-        <div class="p-4 flex justify-between items-center">
-            <h1 class="text-xl font-black italic uppercase">Score<span class="text-[#00ff85]">Hub</span></h1>
-            <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+<header class="fixed top-0 w-full max-w-md bg-[#0b0e11]/95 backdrop-blur-md z-[100] border-b border-[#1f2428]">
+    <div class="p-4 flex justify-between items-center">
+        <h1 class="text-xl font-black italic uppercase">Score<span class="text-[#00ff85]">Hub</span></h1>
+        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+    </div>
+</header>
+
+<main class="mt-20">
+    <div id="tab-matches">
+        <div class="date-selector">
+            <span class="date-btn" id="prevDate">&#8592;</span>
+            <span class="date-display" id="currentDate">Loading...</span>
+            <span class="date-btn" id="nextDate">&#8594;</span>
         </div>
-    </header>
+        <div id="unifiedMatchList"></div>
+    </div>
 
-    <main class="mt-20">
-        <div id="tab-matches">
-            <div id="unifiedMatchList"></div>
+    <div id="tab-standings" class="hidden">
+        <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
+            <button id="btn-PREM" onclick="renderTable('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">PREMIER LEAGUE</button>
+            <button id="btn-LALIGA" onclick="renderTable('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
+            <button id="btn-MLS" onclick="renderTable('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
         </div>
-
-        <div id="tab-standings" class="hidden">
-            <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
-                <button id="btn-PREM" onclick="renderTable('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">PREMIER LEAGUE</button>
-                <button id="btn-LALIGA" onclick="renderTable('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
-                <button id="btn-MLS" onclick="renderTable('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
-            </div>
-            <div class="px-2 overflow-x-auto">
-                <table class="w-full text-left text-[11px] min-w-[500px]">
-                    <thead class="bg-zinc-800/50 uppercase">
-                        <tr>
-                            <th class="pl-4 py-3">#</th>
-                            <th>Team</th>
-                            <th class="text-center">MP</th>
-                            <th class="text-center">W-D-L</th>
-                            <th class="text-center">GF</th>
-                            <th class="text-center">GA</th>
-                            <th class="text-center">GD</th>
-                            <th class="pr-4 text-right">PTS</th>
-                        </tr>
-                    </thead>
-                    <tbody id="standingsContent"></tbody>
-                </table>
-            </div>
+        <div class="px-2 overflow-x-auto">
+            <table class="w-full text-left text-[11px] min-w-[500px]">
+                <thead class="bg-zinc-800/50 uppercase">
+                    <tr>
+                        <th class="pl-4 py-3">#</th>
+                        <th>Team</th>
+                        <th class="text-center">MP</th>
+                        <th class="text-center">W-D-L</th>
+                        <th class="text-center">GF</th>
+                        <th class="text-center">GA</th>
+                        <th class="text-center">GD</th>
+                        <th class="pr-4 text-right">PTS</th>
+                    </tr>
+                </thead>
+                <tbody id="standingsContent"></tbody>
+            </table>
         </div>
+    </div>
 
-        <div id="tab-stats" class="hidden p-8">
-            <h2 class="text-zinc-500 font-black uppercase text-center text-sm tracking-widest">Statistical Leaders</h2>
-            <div class="mt-6 space-y-4">
-                <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex justify-between items-center">
-                    <div>
-                        <p class="text-[9px] text-zinc-500 font-bold uppercase">Golden Boot</p>
-                        <p class="text-white font-black">Erling Haaland</p>
-                    </div>
-                    <span class="text-[#00ff85] font-mono font-black text-xl">22</span>
-                </div>
-                <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 flex justify-between items-center">
-                    <div>
-                        <p class="text-[9px] text-zinc-500 font-bold uppercase">Playmaker</p>
-                        <p class="text-white font-black">Kevin De Bruyne</p>
-                    </div>
-                    <span class="text-[#00ff85] font-mono font-black text-xl">14</span>
-                </div>
-            </div>
-        </div>
-    </main>
+    <div id="tab-stats" class="hidden p-8">
+        <h2 class="text-zinc-500 font-black uppercase text-center text-sm tracking-widest">Statistical Leaders</h2>
+        <div class="mt-6 text-center text-zinc-400 font-bold">Coming soon</div>
+    </div>
+</main>
 
-    <nav class="nav-bottom">
-        <div onclick="switchTab('matches')" id="nav-matches" class="nav-btn active">HUB</div>
-        <div onclick="switchTab('standings')" id="nav-standings" class="nav-btn">TABLE</div>
-        <div onclick="switchTab('stats')" id="nav-stats" class="nav-btn">STATS</div>
-    </nav>
+<nav class="nav-bottom">
+    <div onclick="switchTab('matches')" id="nav-matches" class="nav-btn active">HUB</div>
+    <div onclick="switchTab('standings')" id="nav-standings" class="nav-btn">TABLE</div>
+    <div onclick="switchTab('stats')" id="nav-stats" class="nav-btn">STATS</div>
+</nav>
 
-    <script>
-        const SCHEDULE_URLS = {
-            PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv',
-            LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1516477023&single=true&output=csv',
-            MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAT0GInc6QMrh4OdSjMk63NmcvN_1lyKpDnwYifaQBqtBMu3JAWrJRr0DqzEFt1iPbkV7vZPMOcuis/pub?gid=0&single=true&output=csv'
-        };
+<script>
+const SCHEDULE_URLS = {
+    PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv',
+    LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1516477023&single=true&output=csv',
+    MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAT0GInc6QMrh4OdSjMk63NmcvN_1lyKpDnwYifaQBqtBMu3JAWrJRr0DqzEFt1iPbkV7vZPMOcuis/pub?gid=0&single=true&output=csv'
+};
 
-        const STANDINGS_URLS = {
-            PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=935978435&single=true&output=csv',
-            LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv',
-            MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv'
-        };
+const STANDINGS_URLS = {
+    PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=935978435&single=true&output=csv',
+    LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv',
+    MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv'
+};
 
-        const LOGOS = {
+const LOGOS = { 
             "Liverpool": "https://resources.premierleague.com/premierleague25/badges-alt/14.svg",
             "Newcastle": "https://resources.premierleague.com/premierleague25/badges-alt/4.svg",
             "Chelsea": "https://resources.premierleague.com/premierleague25/badges-alt/8.svg",
@@ -156,7 +151,7 @@
             "Valencia": "https://ssl.gstatic.com/onebox/media/sports/logos/QPbjvDwI_0Wuu4tCS2O6uw_48x48.png",
             "Real Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png",
             "Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png",
-            "Oviedo": "https://ssl.gstatic.com/onebox/media/sports/logos/2hbZVQulcYqiPFXkWDkB_g_48x48.png",
+            "Real Oviedo": "https://ssl.gstatic.com/onebox/media/sports/logos/2hbZVQulcYqiPFXkWDkB_g_48x48.png",
             "Celta Vigo": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png",
             "Celta": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png",
             "Rayo Vallecano": "https://ssl.gstatic.com/onebox/media/sports/logos/i5LifmxEVIl0sbvIysiyhw_48x48.png",
@@ -195,117 +190,125 @@
             "Sporting KC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265350/assets/logos/mls-clubs/Club_Logo-Sporting_Kansas_City_rrkzdb.png",
             "DC United": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500514/assets/logos/mls-clubs/Club_Logo-DC_United_igj4qy.png",
             "Cincinnati": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500252/assets/logos/mls-clubs/Club_Logo-Cincinatti_ohmgcp.png"
+
         };
 
-        function getLogo(name) {
-            for(let key in LOGOS) if(name.toLowerCase().includes(key.toLowerCase())) return LOGOS[key];
-            return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=222&color=fff&bold=true`;
-        }
+function getLogo(name) {
+    for(let key in LOGOS) if(name.toLowerCase().includes(key.toLowerCase())) return LOGOS[key];
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=222&color=fff&bold=true`;
+}
 
-        async function fetchSchedules() {
-            const list = document.getElementById('unifiedMatchList');
-            list.innerHTML = `<div class="p-20 text-center animate-pulse text-zinc-500 font-bold uppercase">Syncing Live Schedule...</div>`;
-            let masterMap = {};
+let allData = {};
+let dates = [];
+let currentDateIndex = 0;
 
-            for (const [league, url] of Object.entries(SCHEDULE_URLS)) {
-                await new Promise(resolve => {
-                    Papa.parse(url, { download: true, complete: (res) => {
-                        let currentHeader = "";
-                        res.data.slice(1).forEach(row => {
-                            if (row[0] && row[0].trim() !== "") currentHeader = row[0].trim();
-                            const home = row[1] ? row[1].trim() : "";
-                            const away = row[2] ? row[2].trim() : "";
-                            const score = row[3] || "TBD";
-                            if (home && away && currentHeader) {
-                                if (!masterMap[currentHeader]) masterMap[currentHeader] = {};
-                                if (!masterMap[currentHeader][league]) masterMap[currentHeader][league] = [];
-                                masterMap[currentHeader][league].push({ home, away, score });
-                            }
-                        });
-                        resolve();
-                    }});
+async function fetchSchedules() {
+    const list = document.getElementById('unifiedMatchList');
+    list.innerHTML = `<div class="p-20 text-center animate-pulse text-zinc-500 font-bold uppercase">Syncing Live Schedule...</div>`;
+    let masterMap = {};
+
+    for (const [league, url] of Object.entries(SCHEDULE_URLS)) {
+        await new Promise(resolve => {
+            Papa.parse(url, { download: true, complete: (res) => {
+                let currentHeader = "";
+                res.data.slice(1).forEach(row => {
+                    if (row[0] && row[0].trim() !== "") currentHeader = row[0].trim();
+                    const home = row[1] ? row[1].trim() : "";
+                    const away = row[2] ? row[2].trim() : "";
+                    const score = row[3] || "TBD";
+                    if (home && away && currentHeader) {
+                        if (!masterMap[currentHeader]) masterMap[currentHeader] = {};
+                        if (!masterMap[currentHeader][league]) masterMap[currentHeader][league] = [];
+                        masterMap[currentHeader][league].push({ home, away, score });
+                    }
                 });
-            }
-            renderHub(masterMap);
-        }
-
-        function renderHub(data) {
-            const list = document.getElementById('unifiedMatchList');
-            list.innerHTML = '';
-            Object.keys(data).forEach(date => {
-                list.insertAdjacentHTML('beforeend', `<div class="date-divider">${date}</div>`);
-                for (const league in data[date]) {
-                    let html = `<div class="league-container">
-                        <div class="league-header"><span class="text-[11px] font-black uppercase flex items-center gap-2"><span class="w-1 h-3 bg-[#00ff85] rounded-full"></span> ${league}</span></div>`;
-                    data[date][league].forEach(m => {
-                        html += `<div class="match-row">
-                            <div class="team-side team-home">
-                                <span class="text-[11px] font-bold truncate">${m.home}</span>
-                                <img src="${getLogo(m.home)}" class="w-6 h-6 object-contain">
-                            </div>
-                            <div class="time-box"><span class="text-[10px] font-black text-[#00ff85]">${m.score}</span></div>
-                            <div class="team-side team-away">
-                                <img src="${getLogo(m.away)}" class="w-6 h-6 object-contain">
-                                <span class="text-[11px] font-bold truncate">${m.away}</span>
-                            </div>
-                        </div>`;
-                    });
-                    list.insertAdjacentHTML('beforeend', html + `</div>`);
-                }
-            });
-        }
-
-        function getStyle(league, pos) {
-            pos = parseInt(pos);
-            if (league === 'MLS') {
-                if (pos === 1) return "#fbbf24";
-                if (pos <= 9) return "#22c55e";
-            } else {
-                if (pos === 1) return "#00ff85";
-                if (pos <= 4) return "#3b82f6";
-                if (pos <= 6) return "#fbbf24";
-                if (pos >= 18) return "#ef4444";
-            }
-            return "transparent";
-        }
-
-        function renderTable(league) {
-            const body = document.getElementById('standingsContent');
-            document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active-league'));
-            document.getElementById(`btn-${league}`).classList.add('active-league');
-            Papa.parse(STANDINGS_URLS[league], { download: true, header: true, complete: (res) => {
-                body.innerHTML = res.data.map(r => {
-                    const pos = r.Position || r['#'] || '';
-                    return `<tr class="border-b border-zinc-800/50">
-                        <td class="pl-4 py-4 flex items-center">
-                            <div class="qualify-bar" style="background:${getStyle(league, pos)}"></div>
-                            <span class="text-zinc-500 font-bold">${pos}</span>
-                        </td>
-                        <td class="font-bold text-zinc-100 flex items-center gap-2 py-4">
-                            <img src="${getLogo(r.Team || '')}" class="w-5 h-5 object-contain">
-                            ${r.Team || ''}
-                        </td>
-                        <td class="text-center font-mono">${r.MP || 0}</td>
-                        <td class="text-center font-mono text-[10px] text-zinc-400">${r['W-D-L'] || '0-0-0'}</td>
-                        <td class="text-center font-mono text-zinc-400">${r.GF || 0}</td>
-                        <td class="text-center font-mono text-zinc-400">${r.GA || 0}</td>
-                        <td class="text-center font-mono text-zinc-400">${r.GD || 0}</td>
-                        <td class="pr-4 text-right text-[#00ff85] font-black">${r.Points || r.Pts || 0}</td>
-                    </tr>`;
-                }).join('');
+                resolve();
             }});
-        }
+        });
+    }
+    allData = masterMap;
+    dates = Object.keys(allData).sort();
+    currentDateIndex = 0;
+    renderDate();
+}
 
-        function switchTab(tab) {
-            ['matches', 'standings', 'stats'].forEach(t => {
-                document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
-                document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
-            });
-            if (tab === 'standings') renderTable('PREM');
-            if (tab === 'matches') fetchSchedules();
-        }
+function renderDate() {
+    const list = document.getElementById('unifiedMatchList');
+    list.innerHTML = '';
+    if(dates.length === 0) return;
+    const date = dates[currentDateIndex];
+    document.getElementById('currentDate').textContent = date;
 
-        fetchSchedules();
-    </script>
+    for (const league in allData[date]) {
+        let html = `<div class="league-container">
+            <div class="league-header"><span class="text-[11px] font-black uppercase flex items-center gap-2"><span class="w-1 h-3 bg-[#00ff85] rounded-full"></span> ${league}</span></div>`;
+        allData[date][league].forEach(m => {
+            html += `<div class="match-row">
+                <div class="team-side team-home">
+                    <span class="text-[11px] font-bold truncate">${m.home}</span>
+                    <img src="${getLogo(m.home)}" class="w-6 h-6 object-contain">
+                </div>
+                <div class="time-box"><span class="text-[10px] font-black text-[#00ff85]">${m.score}</span></div>
+                <div class="team-side team-away">
+                    <img src="${getLogo(m.away)}" class="w-6 h-6 object-contain">
+                    <span class="text-[11px] font-bold truncate">${m.away}</span>
+                </div>
+            </div>`;
+        });
+        list.insertAdjacentHTML('beforeend', html + `</div>`);
+    }
+}
+
+document.getElementById('prevDate').addEventListener('click', ()=>{
+    if(currentDateIndex > 0) { currentDateIndex--; renderDate(); }
+});
+document.getElementById('nextDate').addEventListener('click', ()=>{
+    if(currentDateIndex < dates.length-1) { currentDateIndex++; renderDate(); }
+});
+
+function getStyle(league, pos) {
+    pos = parseInt(pos);
+    if (league === 'MLS') {
+        if (pos === 1) return "#fbbf24";
+        if (pos <= 9) return "#22c55e";
+    } else {
+        if (pos === 1) return "#00ff85";
+        if (pos <= 4) return "#3b82f6";
+        if (pos <= 6) return "#fbbf24";
+        if (pos >= 18) return "#ef4444";
+    }
+    return "transparent";
+}
+
+function renderTable(league) {
+    const body = document.getElementById('standingsContent');
+    document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active-league'));
+    document.getElementById(`btn-${league}`).classList.add('active-league');
+    Papa.parse(STANDINGS_URLS[league], { download: true, header: true, complete: (res) => {
+        body.innerHTML = res.data.map(r => {
+            const pos = r.Position || r['#'] || '';
+            return `<tr class="border-b border-zinc-800/50">
+                <td class="pl-4 py-4 flex flex-col items-center">
+                    <div class="qualify-bar" style="background:${getStyle(league, pos)}"></div>
+                    <span class="text-zinc-500 font-bold">${pos}</span>
+                    <span class="text-white font-bold text-[10px] mt-1">${r.Team || ''}</span>
+                </td>
+                <td colspan="7" class="text-center text-zinc-500 py-4">Coming soon</td>
+            </tr>`;
+        }).join('');
+    }});
+}
+
+function switchTab(tab) {
+    ['matches','standings','stats'].forEach(t=>{
+        document.getElementById(`tab-${t}`).classList.toggle('hidden', t!==tab);
+        document.getElementById(`nav-${t}`).classList.toggle('active', t===tab);
+    });
+    if(tab==='standings') renderTable('PREM');
+    if(tab==='matches') fetchSchedules();
+}
+
+fetchSchedules();
+</script>
 </body>
 </html>
