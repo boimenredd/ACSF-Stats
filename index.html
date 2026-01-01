@@ -233,25 +233,35 @@ function parseSheetDate(raw) {
 
 async function init() {
     const keys = ['PREM', 'LALIGA', 'MLS'];
+    allMatches = [];
     const dateMap = {};
+    
     for (let k of keys) {
         await new Promise(res => {
             Papa.parse(SCHEDULE_URLS[k], {
                 download: true,
                 complete: (results) => {
+                    let currentDate = null;
+                    
                     results.data.forEach((row, i) => {
-                        if (i === 0 || !row[0] || !row[1] || !row[2]) return;
+                        if (i === 0) return; // Skip header
                         
-                        const d = parseSheetDate(row[0]);
-                        if (d) {
+                        // Check if this row has a date in column A
+                        const potentialDate = parseSheetDate(row[0]);
+                        if (potentialDate) {
+                            currentDate = potentialDate;
+                        }
+                        
+                        // If we have a current date and team names, add the match
+                        if (currentDate && row[1] && row[2]) {
                             allMatches.push({ 
                                 league: k, 
-                                date: d, 
+                                date: currentDate, 
                                 home: (row[1] || '').trim(), 
                                 away: (row[2] || '').trim(), 
                                 score: (row[3] || 'v').trim() 
                             });
-                            dateMap[d.getTime()] = true;
+                            dateMap[currentDate.getTime()] = true;
                         }
                     });
                     res();
@@ -259,6 +269,7 @@ async function init() {
             });
         });
     }
+    
     uniqueDates = Object.keys(dateMap).map(Number).sort((a,b) => a - b);
     
     if (uniqueDates.length > 0) {
@@ -269,18 +280,43 @@ async function init() {
     
     setInterval(() => {
         const currentDateIdx = dateIdx;
+        const tempMatches = allMatches;
         allMatches = [];
         init().then(() => {
             dateIdx = currentDateIdx;
             renderMatches();
+        }).catch(() => {
+            allMatches = tempMatches;
         });
     }, 60000);
 }
 
 function jumpToToday() {
-    const now = new Date().setHours(0,0,0,0);
-    dateIdx = uniqueDates.findIndex(d => d >= now);
-    if (dateIdx === -1) dateIdx = 0;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const nowTime = now.getTime();
+    
+    // Find the closest date to today (could be today, past, or future)
+    let closestIdx = 0;
+    let smallestDiff = Math.abs(uniqueDates[0] - nowTime);
+    
+    for (let i = 1; i < uniqueDates.length; i++) {
+        const diff = Math.abs(uniqueDates[i] - nowTime);
+        if (diff < smallestDiff) {
+            smallestDiff = diff;
+            closestIdx = i;
+        }
+    }
+    
+    // If the closest date is in the past, and there's a future date, prefer today or next game day
+    for (let i = 0; i < uniqueDates.length; i++) {
+        if (uniqueDates[i] >= nowTime) {
+            closestIdx = i;
+            break;
+        }
+    }
+    
+    dateIdx = closestIdx;
     renderMatches();
 }
 
