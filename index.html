@@ -14,21 +14,26 @@
         
         header { background: rgba(11, 14, 17, 0.95); backdrop-blur: 12px; border-bottom: 1px solid var(--border); position: fixed; top: 0; width: 100%; max-width: 448px; z-index: 100; }
         .date-divider { position: sticky; top: 72px; background: var(--bg); z-index: 10; padding: 12px 16px; font-size: 11px; font-weight: 900; color: #8b949e; letter-spacing: 0.1em; border-bottom: 1px solid #1f2428; }
-        .match-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
         
-        .league-tag { font-size: 8px; font-weight: 900; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-bottom: 6px; display: inline-block; }
+        /* Match Card Enhancements */
+        .match-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
+        .league-tag { font-size: 8px; font-weight: 900; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-bottom: 8px; display: inline-block; }
         .tag-PREM { background: #3d195d; color: white; }
         .tag-LALIGA { background: #ee252e; color: white; }
         .tag-MLS { background: #001f52; color: white; }
 
-        .score-box { background: #000; padding: 6px 12px; border-radius: 6px; font-weight: 900; display: flex; gap: 10px; border: 1px solid #21262d; min-width: 60px; justify-content: center; }
+        .score-box { background: #000; padding: 8px 14px; border-radius: 8px; font-weight: 900; display: flex; gap: 12px; border: 1px solid #21262d; min-width: 70px; justify-content: center; font-size: 14px; }
+        
+        /* Navigation */
         .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #161b22; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
         .nav-btn { font-size: 10px; font-weight: 800; color: #8b949e; cursor: pointer; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-btn.active { color: var(--accent); }
         .nav-btn i { font-size: 16px; font-style: normal; }
 
+        /* Standings Tab Specifics */
         .wdl-column { font-family: 'Roboto Mono', monospace; font-weight: 700; color: #d1d5db; letter-spacing: -0.05em; }
-        .qualify-indicator { width: 3px; height: 18px; border-radius: 2px; margin-right: 8px; }
+        .qualify-indicator { width: 4px; height: 20px; border-radius: 2px; margin-right: 10px; }
+        .active-league { background: var(--accent) !important; color: #000 !important; }
     </style>
 </head>
 <body class="max-w-md mx-auto pb-32">
@@ -50,12 +55,12 @@
 
         <div id="tab-standings" class="hidden">
             <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
-                <button onclick="renderTable('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap">PREMIER LEAGUE</button>
-                <button onclick="renderTable('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap">LA LIGA</button>
-                <button onclick="renderTable('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap">MLS</button>
+                <button id="btn-PREM" onclick="renderTable('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap transition-colors">PREMIER LEAGUE</button>
+                <button id="btn-LALIGA" onclick="renderTable('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap transition-colors">LA LIGA</button>
+                <button id="btn-MLS" onclick="renderTable('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap transition-colors">MLS</button>
             </div>
             <div class="px-2 overflow-x-auto">
-                <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 min-w-[380px]">
+                <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 min-w-[420px]">
                     <table class="w-full text-left text-[11px]">
                         <thead>
                             <tr id="tableHead" class="uppercase bg-zinc-800/50"></tr>
@@ -85,7 +90,7 @@
             "Chelsea": "https://resources.premierleague.com/premierleague25/badges-alt/8.svg",
             "Aston Villa": "https://resources.premierleague.com/premierleague25/badges-alt/7.svg",
             "Man City": "https://resources.premierleague.com/premierleague25/badges-alt/43.svg",
-            "Man United": "https://resources.premierleague.com/premierleague25/badges-alt/1.svg",
+            "Man Utd": "https://resources.premierleague.com/premierleague25/badges-alt/1.svg",
             "Arsenal": "https://resources.premierleague.com/premierleague25/badges-alt/3.svg",
             "Southampton": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c9/FC_Southampton.svg/1051px-FC_Southampton.svg.png",
             "Bournemouth": "https://resources.premierleague.com/premierleague25/badges-alt/91.svg",
@@ -135,7 +140,7 @@
             "Columbus Crew": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500414/assets/logos/mls-clubs/Club_Logo-Columbus_light_z3eq8l.png",
             "CF Montreal": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755806/assets/logos/mls-clubs/Club_Logo-Montreal_beeqnh.png",
             "San Jose Earthquakes": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748262048/assets/logos/mls-clubs/Club_Logo-San_Jose_opzlmo.png",
-            "NY Red Bulls": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771783/assets/logos/mls-clubs/Club_Logo-RBNY_dwawvt.png",
+            "New York RB": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771783/assets/logos/mls-clubs/Club_Logo-RBNY_dwawvt.png",
             "Colorado Rapids": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500322/assets/logos/mls-clubs/Club_Logo-Colorado_n5kpss.png",
             "New England": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1766020750/assets/NE_Logo_PRI_FC_RGB_480x480_fdx2us.png",
             "Minnesota Utd": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754826/assets/logos/mls-clubs/Club_Logo-Minnesota_ftweor.png",
@@ -218,9 +223,9 @@
                         <div class="match-card">
                             <div class="flex flex-col w-1/2">
                                 <span class="league-tag tag-${m.league}">${m.league}</span>
-                                <div class="flex flex-col gap-2">
-                                    <div class="flex items-center gap-2"><img src="${getLogo(m.home)}" class="w-4 h-4 object-contain"><span class="text-xs font-bold truncate">${m.home}</span></div>
-                                    <div class="flex items-center gap-2"><img src="${getLogo(m.away)}" class="w-4 h-4 object-contain"><span class="text-xs font-bold truncate">${m.away}</span></div>
+                                <div class="flex flex-col gap-3">
+                                    <div class="flex items-center gap-3"><img src="${getLogo(m.home)}" class="w-7 h-7 object-contain"><span class="text-xs font-black truncate">${m.home}</span></div>
+                                    <div class="flex items-center gap-3"><img src="${getLogo(m.away)}" class="w-7 h-7 object-contain"><span class="text-xs font-black truncate">${m.away}</span></div>
                                 </div>
                             </div>
                             <div class="score-box">
@@ -236,12 +241,12 @@
         function getQualifyStyle(league, pos) {
             pos = parseInt(pos);
             if (league === 'MLS') {
-                if (pos === 1) return { color: "#fbbf24", label: "Supporter Shield Champion" };
-                if (pos >= 2 && pos <= 8) return { color: "#22c55e", label: "Playoff Qualification" };
-                if (pos === 18) return { color: "#eab308", label: "Relegation Playoff" };
+                if (pos === 1) return { color: "#fbbf24", label: "Shield Champ" };
+                if (pos >= 2 && pos <= 8) return { color: "#22c55e", label: "Playoffs" };
+                if (pos === 18) return { color: "#eab308", label: "Rel. Playoff" };
                 if (pos >= 19) return { color: "#ef4444", label: "Relegation" };
             } else {
-                if (pos === 1) return { color: "#00ff85", label: "League Champion" };
+                if (pos === 1) return { color: "#00ff85", label: "League Champ" };
                 if (pos >= 2 && pos <= 4) return { color: "#3b82f6", label: "Champions League" };
                 if (pos === 5) return { color: "#fbbf24", label: "Europa League" };
                 if (pos === 6) return { color: "#15803d", label: "Conference League" };
@@ -257,6 +262,10 @@
             const body = document.getElementById('standingsContent');
             const legend = document.getElementById('tableLegend');
 
+            // Handle button highlighting
+            document.querySelectorAll('.league-btn').forEach(btn => btn.classList.remove('active-league'));
+            document.getElementById(`btn-${league}`).classList.add('active-league');
+
             head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">${isMls ? 'GP' : 'MP'}</th><th class="text-center">W-D-L</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="pr-4 text-right">PTS</th>`;
 
             body.innerHTML = data.map(r => {
@@ -269,7 +278,7 @@
                         <div class="qualify-indicator" style="background: ${style ? style.color : 'transparent'}"></div>
                         <span class="text-zinc-500">${pos}</span>
                     </td>
-                    <td><div class="flex items-center gap-2"><img src="${getLogo(r.team)}" class="w-4 h-4 object-contain"><span class="text-white truncate max-w-[85px]">${r.team || ''}</span></div></td>
+                    <td><div class="flex items-center gap-3"><img src="${getLogo(r.team)}" class="w-6 h-6 object-contain"><span class="text-white truncate max-w-[95px]">${r.team || ''}</span></div></td>
                     <td class="text-center text-zinc-400 font-mono">${r.mp || r.gp || 0}</td>
                     <td class="text-center wdl-column text-[10px]">${wdl}</td>
                     <td class="text-center text-zinc-500">${r.gf || 0}</td>
@@ -279,7 +288,6 @@
                 </tr>`;
             }).join('');
 
-            // Dynamic Legend
             const rules = league === 'MLS' ? 
                 [{c:'#fbbf24', l:'Shield Champ'}, {c:'#22c55e', l:'Playoffs'}, {c:'#eab308', l:'Rel. Playoff'}, {c:'#ef4444', l:'Relegation'}] :
                 [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#15803d', l:'UECL'}, {c:'#ef4444', l:'Rel'}];
@@ -297,6 +305,7 @@
                 document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
                 document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
             });
+            // Defaults to PREM automatically when the tab is clicked
             if (tab === 'standings') renderTable('PREM');
         }
 
