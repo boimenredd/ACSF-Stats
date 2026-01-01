@@ -112,26 +112,35 @@ function getLogo(team) {
 
 function parseSheetDate(raw) {
     if (!raw) return null;
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Oct."];
     
-    // Find where the actual month starts to skip "MatchdayX"
-    let startIdx = -1;
-    let foundMonth = "";
-    for (let m of months) {
-        let idx = raw.indexOf(m);
-        if (idx !== -1 && (startIdx === -1 || idx < startIdx)) {
-            startIdx = idx;
-            foundMonth = m;
+    // Improved Month finding logic to skip "MatchdayX"
+    let cleanRaw = raw.trim();
+    let monthMatch = null;
+    let earliestPos = Infinity;
+
+    months.forEach(m => {
+        let pos = cleanRaw.indexOf(m);
+        if (pos !== -1 && pos < earliestPos) {
+            earliestPos = pos;
+            monthMatch = m;
         }
+    });
+
+    if (!monthMatch) return null;
+
+    // Isolate the date part starting from the month
+    let dateStr = cleanRaw.substring(earliestPos)
+        .replace(/(\d+)(st|nd|rd|th)/, "$1") // Remove ordinals
+        .replace("Oct.", "Oct");             // Standardize Oct.
+
+    // Handle Year (Season-based logic)
+    let year = 2025;
+    if (["Jan", "Feb", "Mar", "Apr", "May"].some(m => dateStr.includes(m))) {
+        year = 2026;
     }
-    
-    if (startIdx === -1) return null;
-    
-    // Clean and parse
-    let datePart = raw.substring(startIdx).replace(/(\d+)(st|nd|rd|th)/, "$1").trim();
-    let year = (["Jan", "Feb", "Mar", "Apr", "May"].some(m => datePart.includes(m))) ? 2026 : 2025;
-    
-    let d = new Date(`${datePart}, ${year}`);
+
+    let d = new Date(`${dateStr}, ${year}`);
     if (isNaN(d.getTime())) return null;
     d.setHours(0,0,0,0);
     return d;
@@ -159,13 +168,20 @@ async function init() {
         });
     }
     uniqueDates = Object.keys(dateMap).map(Number).sort((a,b) => a - b);
-    jumpToToday();
+    
+    // Ensure we jump to a date with data
+    if (uniqueDates.length > 0) {
+        jumpToToday();
+    } else {
+        document.getElementById('dateText').textContent = "NO DATA FOUND";
+    }
 }
 
 function jumpToToday() {
     const now = new Date().setHours(0,0,0,0);
+    // Find today or the next available date
     dateIdx = uniqueDates.findIndex(d => d >= now);
-    if (dateIdx === -1) dateIdx = uniqueDates.length - 1;
+    if (dateIdx === -1) dateIdx = 0; // Fallback to first available date
     renderMatches();
 }
 
@@ -261,10 +277,15 @@ function changeDate(step) {
 function switchTab(t) {
     document.getElementById('hub-tab').classList.toggle('hidden', t !== 'hub');
     document.getElementById('standings-tab').classList.toggle('hidden', t !== 'standings');
+    
+    // Correctly update active state for nav items
     document.querySelectorAll('.nav-item').forEach(el => {
-        const isTarget = el.onclick.toString().includes(t);
-        el.classList.toggle('active', isTarget);
+        const spanText = el.querySelector('span:last-child').textContent;
+        if (t === 'hub' && spanText === 'MAIN HUB') el.classList.add('active');
+        else if (t === 'standings' && spanText === 'STANDINGS') el.classList.add('active');
+        else el.classList.remove('active');
     });
+    
     if (t === 'standings') renderStandings('PREM');
 }
 
