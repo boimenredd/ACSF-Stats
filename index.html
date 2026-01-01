@@ -33,7 +33,7 @@
         <div class="p-4 flex justify-between items-center">
             <h1 class="text-xl font-black italic tracking-tighter uppercase">Score<span class="text-[#00ff85]">Hub</span></h1>
             <div id="sync-status" class="flex items-center gap-2">
-                <span class="text-[9px] font-bold text-zinc-500 uppercase">Live Hub</span>
+                <span id="sync-label" class="text-[9px] font-bold text-zinc-500 uppercase">Live Hub</span>
                 <div class="w-2 h-2 rounded-full bg-green-500"></div>
             </div>
         </div>
@@ -78,6 +78,13 @@
         let allMatches = [];
         let tableData = {};
 
+        // Normalizes object keys to lowercase to avoid "Date" vs "date" errors
+        function normalizeRow(row) {
+            const normalized = {};
+            for (let key in row) normalized[key.toLowerCase().trim()] = row[key];
+            return normalized;
+        }
+
         function parseFlexibleDate(dateStr) {
             if (!dateStr) return null;
             let clean = dateStr.replace(/(\d+)(st|nd|rd|th)/i, "$1").trim();
@@ -87,22 +94,27 @@
         }
 
         async function initHub() {
+            document.getElementById('sync-label').innerText = "Syncing...";
             const loaders = Object.keys(SHEETS).map(league => {
                 return new Promise(resolve => {
                     Papa.parse(SHEETS[league].sch, {
                         download: true, header: true, skipEmptyLines: true,
-                        complete: (res) => resolve(res.data.map(m => ({ ...m, League: league })))
+                        complete: (res) => resolve(res.data.map(m => ({ ...normalizeRow(m), league: league })))
                     });
                 });
             });
 
             const results = await Promise.all(loaders);
-            allMatches = results.flat().filter(m => m.Home_Team || m.Away_Team);
+            allMatches = results.flat().filter(m => m.home_team || m.away_team);
             renderUnifiedMatches();
             
             Object.keys(SHEETS).forEach(l => {
-                Papa.parse(SHEETS[l].tbl, { download: true, header: true, skipEmptyLines: true, complete: (res) => { tableData[l] = res.data; }});
+                Papa.parse(SHEETS[l].tbl, { 
+                    download: true, header: true, skipEmptyLines: true, 
+                    complete: (res) => { tableData[l] = res.data.map(r => normalizeRow(r)); }
+                });
             });
+            document.getElementById('sync-label').innerText = "Live Hub";
         }
 
         function renderUnifiedMatches() {
@@ -110,13 +122,12 @@
             list.innerHTML = '';
             const groups = {};
             
-            allMatches.forEach(match => {
-                const dateRaw = match.Date || match.date; 
-                const d = parseFlexibleDate(dateRaw);
+            allMatches.forEach(m => {
+                const d = parseFlexibleDate(m.date);
                 if (d) {
                     const key = d.toDateString();
                     if (!groups[key]) groups[key] = [];
-                    groups[key].push(match);
+                    groups[key].push(m);
                 }
             });
 
@@ -125,26 +136,25 @@
 
             sortedDates.forEach(dateKey => {
                 const isToday = dateKey === todayKey;
-                const dateObj = new Date(dateKey);
                 const header = document.createElement('div');
                 header.className = 'date-divider';
                 if (isToday) header.id = 'scroll-target';
-                header.innerText = isToday ? "TODAY" : dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+                header.innerText = isToday ? "TODAY" : new Date(dateKey).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
                 list.appendChild(header);
 
                 groups[dateKey].forEach(m => {
                     list.insertAdjacentHTML('beforeend', `
                         <div class="match-card">
                             <div class="flex flex-col w-1/2">
-                                <span class="league-tag tag-${m.League}">${m.League}</span>
+                                <span class="league-tag tag-${m.league}">${m.league}</span>
                                 <div class="flex flex-col gap-2">
-                                    <div class="flex items-center gap-2"><div class="w-3 h-3 bg-zinc-800 rounded-full"></div><span class="text-xs font-bold truncate">${m.Home_Team || m.home_team || 'TBD'}</span></div>
-                                    <div class="flex items-center gap-2"><div class="w-3 h-3 bg-zinc-800 rounded-full"></div><span class="text-xs font-bold truncate">${m.Away_Team || m.away_team || 'TBD'}</span></div>
+                                    <div class="flex items-center gap-2"><div class="w-3 h-3 bg-zinc-800 rounded-full"></div><span class="text-xs font-bold truncate">${m.home_team || 'TBD'}</span></div>
+                                    <div class="flex items-center gap-2"><div class="w-3 h-3 bg-zinc-800 rounded-full"></div><span class="text-xs font-bold truncate">${m.away_team || 'TBD'}</span></div>
                                 </div>
                             </div>
                             <div class="score-box">
-                                <span>${m.Home_Score || m.home_score || '-'}</span>
-                                <span>${m.Away_Score || m.away_score || '-'}</span>
+                                <span>${m.home_score || '-'}</span>
+                                <span>${m.away_score || '-'}</span>
                             </div>
                         </div>
                     `);
@@ -161,26 +171,30 @@
             const head = document.getElementById('tableHead');
             const body = document.getElementById('standingsContent');
             
-            // Dynamic Headers based on League
+            // Reusable row template for W-D-L
+            const getWDL = (r) => `${r.w || 0}-${r.d || 0}-${r.l || 0}`;
+
             if (league === 'MLS') {
-                head.innerHTML = '<th class="p-3">#</th><th class="p-3">Team</th><th class="p-2">GP</th><th class="p-2">W</th><th class="p-2">D</th><th class="p-2">L</th><th class="p-2">GF</th><th class="p-2">GA</th><th class="p-2">GD</th><th class="p-3 text-right">PTS</th>';
+                head.innerHTML = '<th class="p-3">#</th><th class="p-3">Team</th><th class="p-2">GP</th><th class="p-2 text-center">W-D-L</th><th class="p-2">GD</th><th class="p-3 text-right">PTS</th>';
                 body.innerHTML = data.map(r => `
                     <tr class="border-b border-zinc-800/40 font-bold">
                         <td class="p-3 text-zinc-500">${r['#'] || ''}</td>
-                        <td class="p-3 text-white truncate max-w-[80px]">${r.Team || ''}</td>
-                        <td class="p-2 text-zinc-400">${r.GP || 0}</td><td class="p-2">${r.W || 0}</td><td class="p-2">${r.D || 0}</td><td class="p-2">${r.L || 0}</td>
-                        <td class="p-2 text-zinc-500">${r.GF || 0}</td><td class="p-2 text-zinc-500">${r.GA || 0}</td><td class="p-2">${r.GD || 0}</td>
-                        <td class="p-3 text-right text-[#00ff85] font-black">${r.PTS || 0}</td>
+                        <td class="p-3 text-white truncate max-w-[100px]">${r.team || ''}</td>
+                        <td class="p-2 text-zinc-400">${r.gp || 0}</td>
+                        <td class="p-2 text-center text-[10px] font-mono">${getWDL(r)}</td>
+                        <td class="p-2">${r.gd || 0}</td>
+                        <td class="p-3 text-right text-[#00ff85] font-black">${r.pts || 0}</td>
                     </tr>`).join('');
             } else {
-                head.innerHTML = '<th class="p-3">POS</th><th class="p-3">Team</th><th class="p-2">MP</th><th class="p-2">W</th><th class="p-2">D</th><th class="p-2">L</th><th class="p-2">GF</th><th class="p-2">GA</th><th class="p-2">GD</th><th class="p-3 text-right">PTS</th>';
+                head.innerHTML = '<th class="p-3">POS</th><th class="p-3">Team</th><th class="p-2">MP</th><th class="p-2 text-center">W-D-L</th><th class="p-2">GD</th><th class="p-3 text-right">PTS</th>';
                 body.innerHTML = data.map(r => `
                     <tr class="border-b border-zinc-800/40 font-bold">
-                        <td class="p-3 text-zinc-500">${r.Position || ''}</td>
-                        <td class="p-3 text-white truncate max-w-[80px]">${r.Team || ''}</td>
-                        <td class="p-2 text-zinc-400">${r.MP || 0}</td><td class="p-2">${r.W || 0}</td><td class="p-2">${r.D || 0}</td><td class="p-2">${r.L || 0}</td>
-                        <td class="p-2 text-zinc-500">${r.GF || 0}</td><td class="p-2 text-zinc-500">${r.GA || 0}</td><td class="p-2">${r.GD || 0}</td>
-                        <td class="p-3 text-right text-[#00ff85] font-black">${r.Points || 0}</td>
+                        <td class="p-3 text-zinc-500">${r.position || ''}</td>
+                        <td class="p-3 text-white truncate max-w-[100px]">${r.team || ''}</td>
+                        <td class="p-2 text-zinc-400">${r.mp || 0}</td>
+                        <td class="p-2 text-center text-[10px] font-mono">${getWDL(r)}</td>
+                        <td class="p-2">${r.gd || 0}</td>
+                        <td class="p-3 text-right text-[#00ff85] font-black">${r.points || 0}</td>
                     </tr>`).join('');
             }
         }
@@ -194,7 +208,7 @@
         }
 
         initHub();
-        setInterval(initHub, 60000); // Auto-refresh every minute
+        setInterval(initHub, 60000); 
     </script>
 </body>
 </html>
