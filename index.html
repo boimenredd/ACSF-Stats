@@ -10,8 +10,8 @@
     <style>
         :root { --accent: #00ff85; --bg: #0b0e11; --card: #161b22; --border: #30363d; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; overflow-x: hidden; }
-        header { background: rgba(11, 14, 17, 0.95); backdrop-blur: 12px; border-bottom: 1px solid var(--border); position: fixed; top: 0; width: 100%; max-width: 448px; z-index: 100; }
-
+        header { background: rgba(11, 14, 17, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: fixed; top: 0; width: 100%; max-width: 448px; z-index: 100; }
+        
         .date-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px; margin-top: 70px; }
         .date-display { font-weight: 900; font-size: 14px; text-transform: uppercase; text-align: center; flex: 1; }
         .nav-arrow { width: 36px; height: 36px; background: #222; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; font-weight: bold; }
@@ -79,12 +79,94 @@
     </nav>
 
 <script>
-const LOGOS = { "Liverpool": "https://resources.premierleague.com/premierleague25/badges-alt/14.svg", "Newcastle": "https://resources.premierleague.com/premierleague25/badges-alt/4.svg", "Chelsea": "https://resources.premierleague.com/premierleague25/badges-alt/8.svg", "Aston Villa": "https://resources.premierleague.com/premierleague25/badges-alt/7.svg", "Man City": "https://resources.premierleague.com/premierleague25/badges-alt/43.svg", "Man United": "https://resources.premierleague.com/premierleague25/badges-alt/1.svg", "Arsenal": "https://resources.premierleague.com/premierleague25/badges-alt/3.svg", "Southampton": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c9/FC_Southampton.svg/1051px-FC_Southampton.svg.png", "Bournemouth": "https://resources.premierleague.com/premierleague25/badges-alt/91.svg", "Leeds": "https://resources.premierleague.com/premierleague25/badges-alt/2.svg", "Brighton": "https://resources.premierleague.com/premierleague25/badges-alt/36.svg", "West Ham": "https://resources.premierleague.com/premierleague25/badges-alt/21.svg", "Brentford": "https://resources.premierleague.com/premierleague25/badges-alt/94.svg", "Tottenham": "https://resources.premierleague.com/premierleague25/badges-alt/6.svg", "Crystal Palace": "https://resources.premierleague.com/premierleague25/badges-alt/31.svg", "Leicester": "https://upload.wikimedia.org/wikipedia/en/thumb/2/2d/Leicester_City_crest.svg/1200px-Leicester_City_crest.svg.png", "Nott'm Forest": "https://resources.premierleague.com/premierleague25/badges-alt/17.svg", "Nottingham": "https://resources.premierleague.com/premierleague25/badges-alt/17.svg", "Sunderland": "https://resources.premierleague.com/premierleague25/badges-alt/56.svg", "Burnley": "https://resources.premierleague.com/premierleague25/badges-alt/90.svg", "Wolves": "https://resources.premierleague.com/premierleague25/badges-alt/39.svg", "Fulham": "https://resources.premierleague.com/premierleague25/badges-alt/54.svg", "Everton": "https://resources.premierleague.com/premierleague25/badges-alt/11.svg", "Ipswich": "https://resources.premierleague.com/premierleague25/badges-alt/40.svg", "Barcelona": "https://ssl.gstatic.com/onebox/media/sports/logos/paYnEE8hcrP96neHRNofhQ_48x48.png", "Real Madrid": "https://ssl.gstatic.com/onebox/media/sports/logos/Th4fAVAZeCJWRcKoLW7koA_48x48.png", "Sevilla": "https://ssl.gstatic.com/onebox/media/sports/logos/hCTs5EX3WjCMC5Jl3QE4Rw_48x48.png", "Real Sociedad": "https://ssl.gstatic.com/onebox/media/sports/logos/w8tb1aeBfVZIj9tZXf7eZg_48x48.png", "Girona": "https://ssl.gstatic.com/onebox/media/sports/logos/sHiSmLm_rA0BOC5MfrNt8A_48x48.png", "Atletico Madrid": "https://ssl.gstatic.com/onebox/media/sports/logos/pEqmA7CL-VRo4Llq3rwIPA_48x48.png", "Athletic Bilbao": "https://ssl.gstatic.com/onebox/media/sports/logos/OSL_5Zm6kYPP1J17Bo5uDA_48x48.png", "Athletic": "https://ssl.gstatic.com/onebox/media/sports/logos/OSL_5Zm6kYPP1J17Bo5uDA_48x48.png", "Elche": "https://ssl.gstatic.com/onebox/media/sports/logos/uyyqqxLIYT_lQIXRyMI_RA_48x48.png", "Osasuna": "https://ssl.gstatic.com/onebox/media/sports/logos/pk-hNCNpGM_JDoHHvLVF-Q_48x48.png", "Villarreal": "https://ssl.gstatic.com/onebox/media/sports/logos/WKH7Ak5cYD6Qm1EEqXzmVw_48x48.png", "Levante": "https://ssl.gstatic.com/onebox/media/sports/logos/SQB-jlVosxVV1Ce79FhbOA_48x48.png", "Las Palmas": "https://upload.wikimedia.org/wikipedia/sco/thumb/2/20/UD_Las_Palmas_logo.svg/1188px-UD_Las_Palmas_logo.svg.png", "Mallorca": "https://ssl.gstatic.com/onebox/media/sports/logos/Ss21P4CUmigjrEtcoapjVg_48x48.png", "Espanyol": "https://ssl.gstatic.com/onebox/media/sports/logos/TKitIqelDyN6M-kYt4Uc0g_48x48.png", "Valencia": "https://ssl.gstatic.com/onebox/media/sports/logos/QPbjvDwI_0Wuu4tCS2O6uw_48x48.png", "Real Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png", "Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png", "Oviedo": "https://ssl.gstatic.com/onebox/media/sports/logos/2hbZVQulcYqiPFXkWDkB_g_48x48.png", "Celta Vigo": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png", "Celta": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png", "Rayo Vallecano": "https://ssl.gstatic.com/onebox/media/sports/logos/i5LifmxEVIl0sbvIysiyhw_48x48.png", "Alaves": "https://ssl.gstatic.com/onebox/media/sports/logos/RUcTOeFcBc7q7uku1nR_iQ_48x48.png", "Miami": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755405/assets/logos/mls-clubs/Club_Logo-Miami_tyqe64.png", "LAFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v174775309/assets/logos/mls-clubs/Club_Logo-LAFC_djrhru.png", "Atlanta": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747499879/assets/logos/mls-clubs/Club_Logo-Atlanta_jtk7ku.png", "Toronto": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265251/assets/logos/mls-clubs/Club_Logo-Toronto_vz6hao.png", "San Diego": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748261519/assets/logos/mls-clubs/Club_Logo-San_Diego_nwpyul.png", "Orlando": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747769281/assets/logos/mls-clubs/Club_Logo-Orlando_ryyn7a.png", "Houston": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500939/assets/logos/mls-clubs/Club_Logo-Houston_oifm77.png", "Charlotte": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500045/assets/logos/mls-clubs/Club_Logo-Charlotte_p7sznf.png", "Salt Lake": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747776403/assets/logos/mls-clubs/Club_Logo-Salt_Lake_City_hpvde5.png", "Vancouver": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265547/assets/logos/mls-clubs/Club_Logo-Vancouver_ao9phl.png", "LA Galaxy": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755165/assets/logos/mls-clubs/Club_Logo-LA_Galaxy_fg0wjp.png", "Seattle": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265125/assets/logos/mls-clubs/Club_Logo-Seattle_e6jk2x.png", "Columbus": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500414/assets/logos/mls-clubs/Club_Logo-Columbus_light_z3eq8l.png", "Montreal": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755806/assets/logos/mls-clubs/Club_Logo-Montreal_beeqnh.png", "San Jose": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748262048/assets/logos/mls-clubs/Club_Logo-San_Jose_opzlmo.png", "NY Red Bulls": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771783/assets/logos/mls-clubs/Club_Logo-RBNY_dwawvt.png", "Colorado": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500322/assets/logos/mls-clubs/Club_Logo-Colorado_n5kpss.png", "New England": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1766020750/assets/NE_Logo_PRI_FC_RGB_480x480_fdx2us.png", "Minnesota": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754826/assets/logos/mls-clubs/Club_Logo-Minnesota_ftweor.png", "Chicago": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500178/assets/logos/mls-clubs/Club_Logo-Chicago_jm2yev.png", "Portland": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771943/assets/logos/mls-clubs/Club_Logo-Portland_jrihbf.png", "Nashville": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754937/assets/logos/mls-clubs/Club_Logo-Nashville_owcihx.png", "Austin": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500115/assets/logos/mls-clubs/Club_Logo-Austin_u0tpqe.png", "FC Dallas": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500587/assets/logos/mls-clubs/Club_Logo-Dallas_oxywdo.png", "Dallas": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500587/assets/logos/mls-clubs/Club_Logo-Dallas_oxywdo.png", "St Louis": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265198/assets/logos/mls-clubs/Club_Logo-St._Louis_oikgm5.png", "NYCFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755975/assets/logos/mls-clubs/Club_Logo-NYC_vhnmkv.png", "Philadelphia": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747772038/assets/logos/mls-clubs/Club_Logo-Philadelphia_l8yj9f.png", "Sporting KC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265350/assets/logos/mls-clubs/Club_Logo-Sporting_Kansas_City_rrkzdb.png", "DC United": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500514/assets/logos/mls-clubs/Club_Logo-DC_United_igj4qy.png", "Cincinnati": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500252/assets/logos/mls-clubs/Club_Logo-Cincinatti_ohmgcp.png" };
+const LOGOS = { 
+    "Liverpool": "https://resources.premierleague.com/premierleague25/badges-alt/14.svg", 
+    "Newcastle": "https://resources.premierleague.com/premierleague25/badges-alt/4.svg", 
+    "Chelsea": "https://resources.premierleague.com/premierleague25/badges-alt/8.svg", 
+    "Aston Villa": "https://resources.premierleague.com/premierleague25/badges-alt/7.svg", 
+    "Man City": "https://resources.premierleague.com/premierleague25/badges-alt/43.svg", 
+    "Man United": "https://resources.premierleague.com/premierleague25/badges-alt/1.svg", 
+    "Arsenal": "https://resources.premierleague.com/premierleague25/badges-alt/3.svg", 
+    "Southampton": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c9/FC_Southampton.svg/1051px-FC_Southampton.svg.png", 
+    "Bournemouth": "https://resources.premierleague.com/premierleague25/badges-alt/91.svg", 
+    "Leeds": "https://resources.premierleague.com/premierleague25/badges-alt/2.svg", 
+    "Brighton": "https://resources.premierleague.com/premierleague25/badges-alt/36.svg", 
+    "West Ham": "https://resources.premierleague.com/premierleague25/badges-alt/21.svg", 
+    "Brentford": "https://resources.premierleague.com/premierleague25/badges-alt/94.svg", 
+    "Tottenham": "https://resources.premierleague.com/premierleague25/badges-alt/6.svg", 
+    "Crystal Palace": "https://resources.premierleague.com/premierleague25/badges-alt/31.svg", 
+    "Leicester": "https://upload.wikimedia.org/wikipedia/en/thumb/2/2d/Leicester_City_crest.svg/1200px-Leicester_City_crest.svg.png", 
+    "Nott'm Forest": "https://resources.premierleague.com/premierleague25/badges-alt/17.svg", 
+    "Nottingham": "https://resources.premierleague.com/premierleague25/badges-alt/17.svg", 
+    "Sunderland": "https://resources.premierleague.com/premierleague25/badges-alt/56.svg", 
+    "Burnley": "https://resources.premierleague.com/premierleague25/badges-alt/90.svg", 
+    "Wolves": "https://resources.premierleague.com/premierleague25/badges-alt/39.svg", 
+    "Fulham": "https://resources.premierleague.com/premierleague25/badges-alt/54.svg", 
+    "Everton": "https://resources.premierleague.com/premierleague25/badges-alt/11.svg", 
+    "Ipswich": "https://resources.premierleague.com/premierleague25/badges-alt/40.svg", 
+    "Barcelona": "https://ssl.gstatic.com/onebox/media/sports/logos/paYnEE8hcrP96neHRNofhQ_48x48.png", 
+    "Real Madrid": "https://ssl.gstatic.com/onebox/media/sports/logos/Th4fAVAZeCJWRcKoLW7koA_48x48.png", 
+    "Sevilla": "https://ssl.gstatic.com/onebox/media/sports/logos/hCTs5EX3WjCMC5Jl3QE4Rw_48x48.png", 
+    "Real Sociedad": "https://ssl.gstatic.com/onebox/media/sports/logos/w8tb1aeBfVZIj9tZXf7eZg_48x48.png", 
+    "Girona": "https://ssl.gstatic.com/onebox/media/sports/logos/sHiSmLm_rA0BOC5MfrNt8A_48x48.png", 
+    "Atletico Madrid": "https://ssl.gstatic.com/onebox/media/sports/logos/pEqmA7CL-VRo4Llq3rwIPA_48x48.png", 
+    "Athletic Bilbao": "https://ssl.gstatic.com/onebox/media/sports/logos/OSL_5Zm6kYPP1J17Bo5uDA_48x48.png", 
+    "Athletic": "https://ssl.gstatic.com/onebox/media/sports/logos/OSL_5Zm6kYPP1J17Bo5uDA_48x48.png", 
+    "Elche": "https://ssl.gstatic.com/onebox/media/sports/logos/uyyqqxLIYT_lQIXRyMI_RA_48x48.png", 
+    "Osasuna": "https://ssl.gstatic.com/onebox/media/sports/logos/pk-hNCNpGM_JDoHHvLVF-Q_48x48.png", 
+    "Villarreal": "https://ssl.gstatic.com/onebox/media/sports/logos/WKH7Ak5cYD6Qm1EEqXzmVw_48x48.png", 
+    "Levante": "https://ssl.gstatic.com/onebox/media/sports/logos/SQB-jlVosxVV1Ce79FhbOA_48x48.png", 
+    "Las Palmas": "https://upload.wikimedia.org/wikipedia/sco/thumb/2/20/UD_Las_Palmas_logo.svg/1188px-UD_Las_Palmas_logo.svg.png", 
+    "Mallorca": "https://ssl.gstatic.com/onebox/media/sports/logos/Ss21P4CUmigjrEtcoapjVg_48x48.png", 
+    "Espanyol": "https://ssl.gstatic.com/onebox/media/sports/logos/TKitIqelDyN6M-kYt4Uc0g_48x48.png", 
+    "Valencia": "https://ssl.gstatic.com/onebox/media/sports/logos/QPbjvDwI_0Wuu4tCS2O6uw_48x48.png", 
+    "Real Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png", 
+    "Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png", 
+    "Oviedo": "https://ssl.gstatic.com/onebox/media/sports/logos/2hbZVQulcYqiPFXkWDkB_g_48x48.png", 
+    "Celta Vigo": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png", 
+    "Celta": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png", 
+    "Rayo Vallecano": "https://ssl.gstatic.com/onebox/media/sports/logos/i5LifmxEVIl0sbvIysiyhw_48x48.png", 
+    "Alaves": "https://ssl.gstatic.com/onebox/media/sports/logos/RUcTOeFcBc7q7uku1nR_iQ_48x48.png", 
+    "Getafe": "https://ssl.gstatic.com/onebox/media/sports/logos/KfkDhn99TYUcNr8aBaLjqA_48x48.png",
+    "Leganes": "https://ssl.gstatic.com/onebox/media/sports/logos/WM1T3GdEWT_BvbUQ0UInaw_48x48.png",
+    "Valladolid": "https://ssl.gstatic.com/onebox/media/sports/logos/fsE7yqRo-8qLhH4dqKBMNg_48x48.png",
+    "Miami": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755405/assets/logos/mls-clubs/Club_Logo-Miami_tyqe64.png", 
+    "LAFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v174775309/assets/logos/mls-clubs/Club_Logo-LAFC_djrhru.png", 
+    "Atlanta": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747499879/assets/logos/mls-clubs/Club_Logo-Atlanta_jtk7ku.png", 
+    "Toronto": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265251/assets/logos/mls-clubs/Club_Logo-Toronto_vz6hao.png", 
+    "San Diego": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748261519/assets/logos/mls-clubs/Club_Logo-San_Diego_nwpyul.png", 
+    "Orlando": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747769281/assets/logos/mls-clubs/Club_Logo-Orlando_ryyn7a.png", 
+    "Houston": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500939/assets/logos/mls-clubs/Club_Logo-Houston_oifm77.png", 
+    "Charlotte": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500045/assets/logos/mls-clubs/Club_Logo-Charlotte_p7sznf.png", 
+    "Salt Lake": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747776403/assets/logos/mls-clubs/Club_Logo-Salt_Lake_City_hpvde5.png", 
+    "Vancouver": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265547/assets/logos/mls-clubs/Club_Logo-Vancouver_ao9phl.png", 
+    "LA Galaxy": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755165/assets/logos/mls-clubs/Club_Logo-LA_Galaxy_fg0wjp.png", 
+    "Seattle": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265125/assets/logos/mls-clubs/Club_Logo-Seattle_e6jk2x.png", 
+    "Columbus": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500414/assets/logos/mls-clubs/Club_Logo-Columbus_light_z3eq8l.png", 
+    "Montreal": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755806/assets/logos/mls-clubs/Club_Logo-Montreal_beeqnh.png", 
+    "San Jose": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748262048/assets/logos/mls-clubs/Club_Logo-San_Jose_opzlmo.png", 
+    "NY Red Bulls": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771783/assets/logos/mls-clubs/Club_Logo-RBNY_dwawvt.png", 
+    "Colorado": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500322/assets/logos/mls-clubs/Club_Logo-Colorado_n5kpss.png", 
+    "New England": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1766020750/assets/NE_Logo_PRI_FC_RGB_480x480_fdx2us.png", 
+    "Minnesota": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754826/assets/logos/mls-clubs/Club_Logo-Minnesota_ftweor.png", 
+    "Chicago": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500178/assets/logos/mls-clubs/Club_Logo-Chicago_jm2yev.png", 
+    "Portland": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771943/assets/logos/mls-clubs/Club_Logo-Portland_jrihbf.png", 
+    "Nashville": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754937/assets/logos/mls-clubs/Club_Logo-Nashville_owcihx.png", 
+    "Austin": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500115/assets/logos/mls-clubs/Club_Logo-Austin_u0tpqe.png", 
+    "FC Dallas": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500587/assets/logos/mls-clubs/Club_Logo-Dallas_oxywdo.png", 
+    "Dallas": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500587/assets/logos/mls-clubs/Club_Logo-Dallas_oxywdo.png", 
+    "St Louis": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265198/assets/logos/mls-clubs/Club_Logo-St._Louis_oikgm5.png", 
+    "NYCFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755975/assets/logos/mls-clubs/Club_Logo-NYC_vhnmkv.png", 
+    "Philadelphia": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747772038/assets/logos/mls-clubs/Club_Logo-Philadelphia_l8yj9f.png", 
+    "Sporting KC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265350/assets/logos/mls-clubs/Club_Logo-Sporting_Kansas_City_rrkzdb.png", 
+    "DC United": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500514/assets/logos/mls-clubs/Club_Logo-DC_United_igj4qy.png", 
+    "Cincinnati": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500252/assets/logos/mls-clubs/Club_Logo-Cincinatti_ohmgcp.png" 
+};
 
 const SCHEDULE_URLS = {
-    PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=0&single=true&output=csv',
-    LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1737121812&single=true&output=csv',
-    MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=0&single=true&output=csv'
+    PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv',
+    LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1516477023&single=true&output=csv',
+    MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1689966801&single=true&output=csv'
 };
 
 const STANDINGS_URLS = {
@@ -100,7 +182,6 @@ const LEAGUE_META = {
 };
 
 let allMatches = [], uniqueDates = [], dateIdx = 0;
-let refreshInterval;
 
 function getLogo(team) {
     if (!team) return "";
@@ -113,93 +194,87 @@ function getLogo(team) {
 
 function parseSheetDate(raw) {
     if (!raw) return null;
-    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Oct."];
-
-    let cleanRaw = raw.trim();
-    let matchday = '';
-    const mdRegex = /^(Matchday|MD)\s*(\d+)/i;
-    const match = cleanRaw.match(mdRegex);
-    if (match) {
-        matchday = `${match[1]} ${match[2]}`;
-        cleanRaw = cleanRaw.replace(mdRegex, '').replace(/^\s*-\s*/, '').trim();
-    }
-
-    let monthMatch = null;
-    let earliestPos = Infinity;
-
-    months.forEach(m => {
-        let pos = cleanRaw.indexOf(m);
-        if (pos !== -1 && pos < earliestPos) {
-            earliestPos = pos;
-            monthMatch = m;
+    
+    const monthMap = {
+        "January": 0, "February": 1, "March": 2, "April": 3, "May": 4, "June": 5,
+        "July": 6, "August": 7, "September": 8, "October": 9, "November": 10, "December": 11,
+        "Jan": 0, "Feb": 1, "Mar": 2, "Apr": 3, "Jun": 6, 
+        "Jul": 6, "Aug": 7, "Sep": 8, "Oct": 9, "Nov": 10, "Dec": 11
+    };
+    
+    let str = raw.trim();
+    
+    // Handle formats like "Matchday1Aug 15" or "2Aug 22"
+    let match = str.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\.?\s*(\d+)/i);
+    
+    if (!match) return null;
+    
+    let monthStr = match[1];
+    let day = parseInt(match[2]);
+    
+    // Find month number
+    let month = -1;
+    for (let key in monthMap) {
+        if (key.toLowerCase() === monthStr.toLowerCase()) {
+            month = monthMap[key];
+            break;
         }
-    });
-
-    if (!monthMatch) return null;
-
-    let dateStr = cleanRaw.substring(earliestPos)
-        .replace(/(\d+)(st|nd|rd|th)/, "$1")
-        .replace("Oct.", "Oct");
-
-    let year = 2025;
-    if (["Jan", "Feb", "Mar", "Apr", "May"].some(m => dateStr.includes(m))) {
-        year = 2026;
     }
-
-    let d = new Date(`${dateStr}, ${year}`);
-    if (isNaN(d.getTime())) return null;
-    d.setHours(0,0,0,0);
-    return { date: d, matchday };
+    
+    if (month === -1) return null;
+    
+    // Determine year: Aug-Dec = 2024/2025, Jan-May = 2025/2026
+    let year = (month >= 7) ? 2024 : 2025;
+    
+    let d = new Date(year, month, day);
+    d.setHours(0, 0, 0, 0);
+    return d;
 }
 
-async function loadData() {
+async function init() {
     const keys = ['PREM', 'LALIGA', 'MLS'];
     const dateMap = {};
-    const matches = [];
-    await Promise.all(keys.map(async (k) => {
-        return new Promise(res => {
+    for (let k of keys) {
+        await new Promise(res => {
             Papa.parse(SCHEDULE_URLS[k], {
                 download: true,
                 complete: (results) => {
                     results.data.forEach((row, i) => {
-                        if (i === 0 || !row[1]) return;
-                        const parsed = parseSheetDate(row[0]);
-                        if (parsed && parsed.date) {
-                            matches.push({ league: k, date: parsed.date, home: row[1], away: row[2], score: row[3] || 'v', matchday: parsed.matchday });
-                            dateMap[parsed.date.getTime()] = true;
+                        if (i === 0 || !row[0] || !row[1] || !row[2]) return;
+                        
+                        const d = parseSheetDate(row[0]);
+                        if (d) {
+                            allMatches.push({ 
+                                league: k, 
+                                date: d, 
+                                home: (row[1] || '').trim(), 
+                                away: (row[2] || '').trim(), 
+                                score: (row[3] || 'v').trim() 
+                            });
+                            dateMap[d.getTime()] = true;
                         }
                     });
                     res();
                 }
             });
         });
-    }));
-    return { matches, dateMap };
-}
-
-async function init() {
-    const { matches, dateMap } = await loadData();
-    allMatches = matches;
+    }
     uniqueDates = Object.keys(dateMap).map(Number).sort((a,b) => a - b);
-
+    
     if (uniqueDates.length > 0) {
         jumpToToday();
     } else {
         document.getElementById('dateText').textContent = "NO DATA FOUND";
     }
-
-    if (!refreshInterval) {
-        refreshInterval = setInterval(refreshData, 60000); // Refresh every 1 minute
-    }
-}
-
-async function refreshData() {
-    const currentDate = uniqueDates[dateIdx];
-    const { matches, dateMap } = await loadData();
-    allMatches = matches;
-    uniqueDates = Object.keys(dateMap).map(Number).sort((a,b) => a - b);
-    dateIdx = uniqueDates.findIndex(d => d === currentDate) || 0;
-    renderMatches();
+    
+    setInterval(() => {
+        const currentDateIdx = dateIdx;
+        allMatches = [];
+        init().then(() => {
+            dateIdx = currentDateIdx;
+            renderMatches();
+        });
+    }, 60000);
 }
 
 function jumpToToday() {
@@ -226,14 +301,9 @@ function renderMatches() {
     container.innerHTML = ['PREM', 'LALIGA', 'MLS'].map(lg => {
         const matches = filtered.filter(m => m.league === lg);
         if (matches.length === 0) return '';
-        const mds = new Set(matches.map(m => m.matchday).filter(md => md));
-        let mdText = '';
-        if (mds.size === 1) {
-            mdText = ` - ${[...mds][0]}`;
-        }
         return `
             <div class="league-container">
-                <div class="league-header"><span>${LEAGUE_META[lg].flag}</span><span>${LEAGUE_META[lg].name}${mdText}</span></div>
+                <div class="league-header"><span>${LEAGUE_META[lg].flag}</span><span>${LEAGUE_META[lg].name}</span></div>
                 ${matches.map(m => {
                     return `
                     <div class="match-row">
@@ -256,7 +326,7 @@ function renderStandings(lg) {
     const legend = document.getElementById('legend');
 
     head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="pr-4 text-right">PTS</th>`;
-
+    
     Papa.parse(STANDINGS_URLS[lg], {
         download: true, header: true,
         complete: (res) => {
@@ -306,14 +376,14 @@ function changeDate(step) {
 function switchTab(t) {
     document.getElementById('hub-tab').classList.toggle('hidden', t !== 'hub');
     document.getElementById('standings-tab').classList.toggle('hidden', t !== 'standings');
-
+    
     document.querySelectorAll('.nav-item').forEach(el => {
         const spanText = el.querySelector('span:last-child').textContent;
         if (t === 'hub' && spanText === 'MAIN HUB') el.classList.add('active');
         else if (t === 'standings' && spanText === 'STANDINGS') el.classList.add('active');
         else el.classList.remove('active');
     });
-
+    
     if (t === 'standings') renderStandings('PREM');
 }
 
