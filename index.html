@@ -6,7 +6,7 @@
     <title>ScoreHub Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #00ff85; --bg: #0b0e11; --card: #161b22; --border: #30363d; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; overflow-x: hidden; }
@@ -26,6 +26,11 @@
         .nav-btn { font-size: 10px; font-weight: 800; color: #8b949e; cursor: pointer; text-transform: uppercase; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .nav-btn.active { color: var(--accent); }
         .nav-btn i { font-size: 16px; font-style: normal; }
+
+        /* Standing Table Styles */
+        .wdl-column { font-family: 'Roboto Mono', monospace; font-weight: 700; color: #d1d5db; letter-spacing: -0.05em; }
+        th { font-size: 9px; color: #8b949e; padding: 10px 4px; }
+        td { padding: 12px 4px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); }
     </style>
 </head>
 <body class="max-w-md mx-auto pb-24">
@@ -47,22 +52,22 @@
 
         <div id="tab-standings" class="hidden">
             <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
-                <button onclick="renderTable('PREM')" class="text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap">PREMIER LEAGUE</button>
-                <button onclick="renderTable('LALIGA')" class="text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap">LA LIGA</button>
-                <button onclick="renderTable('MLS')" class="text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap">MLS</button>
+                <button onclick="renderTable('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap active:bg-[#00ff85] active:text-black">PREMIER LEAGUE</button>
+                <button onclick="renderTable('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap">LA LIGA</button>
+                <button onclick="renderTable('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap">MLS</button>
             </div>
-            <div class="px-4 overflow-x-auto">
-                <div class="bg-zinc-900/50 rounded-xl border border-zinc-800">
+            <div class="px-2 overflow-x-auto">
+                <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 min-w-[380px]">
                     <table class="w-full text-left text-[11px]">
-                        <thead class="bg-zinc-800 text-[9px] font-black text-zinc-500 uppercase">
-                            <tr id="tableHead"></tr>
+                        <thead>
+                            <tr id="tableHead" class="uppercase"></tr>
                         </thead>
                         <tbody id="standingsContent"></tbody>
                     </table>
                 </div>
             </div>
         </div>
-        
+
         <div id="tab-stats" class="hidden p-10 text-center text-zinc-500 font-bold uppercase text-xs">
             Stats Coming Soon...
         </div>
@@ -91,7 +96,7 @@
         }
 
         function parseFlexibleDate(dateStr) {
-            if (!dateStr || !/[a-zA-Z]/.test(dateStr)) return null; // Must contain letters (Month names)
+            if (!dateStr || !/[a-zA-Z]/.test(dateStr)) return null;
             let clean = dateStr.replace(/(\d+)(st|nd|rd|th)/i, "$1").trim();
             if (!clean.includes("2025")) clean += " 2025";
             let d = new Date(clean);
@@ -105,32 +110,19 @@
                     Papa.parse(SHEETS[league].sch, {
                         download: true, header: true, skipEmptyLines: 'greedy',
                         complete: (res) => {
-                            let leagueMatches = [];
                             let lastDate = null;
-                            // Clean up headers and process rows
-                            res.data.forEach(row => {
+                            resolve(res.data.map(row => {
                                 const m = normalizeRow(row);
-                                // Check if this row is a date marker (in matchday column)
                                 const possibleDate = parseFlexibleDate(m.matchday);
                                 if (possibleDate) lastDate = possibleDate;
-                                
-                                // Only add if we have a home and away team
-                                if (m.home && m.away) {
-                                    leagueMatches.push({
-                                        ...m,
-                                        league: league,
-                                        assignedDate: lastDate ? lastDate.toDateString() : null
-                                    });
-                                }
-                            });
-                            resolve(leagueMatches);
+                                return (m.home && m.away) ? {...m, league: league, assignedDate: lastDate ? lastDate.toDateString() : null} : null;
+                            }).filter(x => x));
                         }
                     });
                 });
             });
 
-            const results = await Promise.all(loaders);
-            allMatches = results.flat();
+            allMatches = (await Promise.all(loaders)).flat();
             renderUnifiedMatches();
             
             Object.keys(SHEETS).forEach(l => {
@@ -146,7 +138,6 @@
             const list = document.getElementById('unifiedMatchList');
             list.innerHTML = '';
             const groups = {};
-            
             allMatches.forEach(m => {
                 if (m.assignedDate) {
                     if (!groups[m.assignedDate]) groups[m.assignedDate] = [];
@@ -171,57 +162,52 @@
                             <div class="flex flex-col w-1/2">
                                 <span class="league-tag tag-${m.league}">${m.league}</span>
                                 <div class="flex flex-col gap-2">
-                                    <div class="flex items-center gap-2"><div class="w-3 h-3 bg-zinc-800 rounded-full"></div><span class="text-xs font-bold truncate">${m.home || 'TBD'}</span></div>
-                                    <div class="flex items-center gap-2"><div class="w-3 h-3 bg-zinc-800 rounded-full"></div><span class="text-xs font-bold truncate">${m.away || 'TBD'}</span></div>
+                                    <div class="flex items-center gap-2"><div class="w-3 h-3 bg-zinc-800 rounded-full"></div><span class="text-xs font-bold truncate">${m.home}</span></div>
+                                    <div class="flex items-center gap-2"><div class="w-3 h-3 bg-zinc-800 rounded-full"></div><span class="text-xs font-bold truncate">${m.away}</span></div>
                                 </div>
                             </div>
                             <div class="score-box">
-                                <span>${m.result ? m.result.split('-')[0] : '-'}</span>
-                                <span>${m.result ? m.result.split('-')[1] : '-'}</span>
+                                <span>${m.result?.split('-')[0] || '-'}</span>
+                                <span>${m.result?.split('-')[1] || '-'}</span>
                             </div>
                         </div>
                     `);
                 });
             });
-
-            if (document.getElementById('scroll-target')) {
-                window.scrollTo({ top: document.getElementById('scroll-target').offsetTop - 100, behavior: 'smooth' });
-            }
+            if (document.getElementById('scroll-target')) window.scrollTo({ top: document.getElementById('scroll-target').offsetTop - 100, behavior: 'smooth' });
         }
 
         function renderTable(league) {
             const data = tableData[league] || [];
+            const isMls = league === 'MLS';
             const head = document.getElementById('tableHead');
             const body = document.getElementById('standingsContent');
-            
-            const getWDL = (r) => {
-                if (r['w-d-l']) return r['w-d-l'];
-                return `${r.w || 0}-${r.d || 0}-${r.l || 0}`;
-            };
 
-            if (league === 'MLS') {
-                head.innerHTML = '<th class="p-3">#</th><th class="p-3">Team</th><th class="p-2">GP</th><th class="p-2 text-center">W-D-L</th><th class="p-2">GD</th><th class="p-3 text-right">PTS</th>';
-                body.innerHTML = data.map(r => `
-                    <tr class="border-b border-zinc-800/40 font-bold">
-                        <td class="p-3 text-zinc-500">${r['#'] || r.position || ''}</td>
-                        <td class="p-3 text-white truncate max-w-[100px]">${r.team || ''}</td>
-                        <td class="p-2 text-zinc-400">${r.gp || 0}</td>
-                        <td class="p-2 text-center text-[10px] font-mono">${getWDL(r)}</td>
-                        <td class="p-2">${r.gd || 0}</td>
-                        <td class="p-3 text-right text-[#00ff85] font-black">${r.pts || 0}</td>
-                    </tr>`).join('');
-            } else {
-                head.innerHTML = '<th class="p-3">POS</th><th class="p-3">Team</th><th class="p-2">MP</th><th class="p-2 text-center">W-D-L</th><th class="p-2">GD</th><th class="p-3 text-right">PTS</th>';
-                body.innerHTML = data.map(r => `
-                    <tr class="border-b border-zinc-800/40 font-bold">
-                        <td class="p-3 text-zinc-500">${r.position || r['#'] || ''}</td>
-                        <td class="p-3 text-white truncate max-w-[100px]">${r.team || ''}</td>
-                        <td class="p-2 text-zinc-400">${r.mp || 0}</td>
-                        <td class="p-2 text-center text-[10px] font-mono">${getWDL(r)}</td>
-                        <td class="p-2">${r.gd || 0}</td>
-                        <td class="p-3 text-right text-[#00ff85] font-black">${r.points || r.pts || 0}</td>
-                    </tr>`).join('');
-            }
+            head.innerHTML = `
+                <th class="pl-4">${isMls ? '#' : 'POS'}</th>
+                <th>Team</th>
+                <th class="text-center">${isMls ? 'GP' : 'MP'}</th>
+                <th class="text-center">W-D-L</th>
+                <th class="text-center">GF</th>
+                <th class="text-center">GA</th>
+                <th class="text-center">GD</th>
+                <th class="pr-4 text-right">PTS</th>
+            `;
+
+            body.innerHTML = data.map(r => {
+                const wdl = r['w-d-l'] || `${r.w || 0}-${r.d || 0}-${r.l || 0}`;
+                return `
+                <tr class="font-bold">
+                    <td class="pl-4 text-zinc-500">${r.position || r['#'] || ''}</td>
+                    <td class="text-white truncate max-w-[85px]">${r.team || ''}</td>
+                    <td class="text-center text-zinc-400 font-mono">${r.mp || r.gp || 0}</td>
+                    <td class="text-center wdl-column text-[10px]">${wdl}</td>
+                    <td class="text-center text-zinc-500">${r.gf || 0}</td>
+                    <td class="text-center text-zinc-500">${r.ga || 0}</td>
+                    <td class="text-center">${r.gd || 0}</td>
+                    <td class="pr-4 text-right text-[#00ff85] font-black">${r.points || r.pts || 0}</td>
+                </tr>`;
+            }).join('');
         }
 
         function switchTab(tab) {
@@ -229,6 +215,7 @@
                 document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
                 document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
             });
+            // Automatically default to Premier League when Standings tab is opened
             if (tab === 'standings') renderTable('PREM');
         }
 
