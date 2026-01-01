@@ -19,7 +19,7 @@
         .league-tag { font-size: 8px; font-weight: 900; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-bottom: 6px; display: inline-block; }
         .tag-PREM { background: #3d195d; color: white; }
         .tag-LALIGA { background: #ee252e; color: white; }
-        .tag-MLS { background: #f5f5f5; color: black; }
+        .tag-MLS { background: #001f52; color: white; }
 
         .score-box { background: #000; padding: 6px 12px; border-radius: 6px; font-weight: 900; display: flex; gap: 10px; border: 1px solid #21262d; min-width: 60px; justify-content: center; }
         .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #161b22; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
@@ -27,13 +27,11 @@
         .nav-btn.active { color: var(--accent); }
         .nav-btn i { font-size: 16px; font-style: normal; }
 
-        /* Standing Table Styles */
         .wdl-column { font-family: 'Roboto Mono', monospace; font-weight: 700; color: #d1d5db; letter-spacing: -0.05em; }
-        th { font-size: 9px; color: #8b949e; padding: 10px 4px; }
-        td { padding: 12px 4px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); }
+        .qualify-indicator { width: 3px; height: 18px; border-radius: 2px; margin-right: 8px; }
     </style>
 </head>
-<body class="max-w-md mx-auto pb-24">
+<body class="max-w-md mx-auto pb-32">
 
     <header>
         <div class="p-4 flex justify-between items-center">
@@ -52,7 +50,7 @@
 
         <div id="tab-standings" class="hidden">
             <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
-                <button onclick="renderTable('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap active:bg-[#00ff85] active:text-black">PREMIER LEAGUE</button>
+                <button onclick="renderTable('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap">PREMIER LEAGUE</button>
                 <button onclick="renderTable('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap">LA LIGA</button>
                 <button onclick="renderTable('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-4 py-2 rounded-full whitespace-nowrap">MLS</button>
             </div>
@@ -60,12 +58,13 @@
                 <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 min-w-[380px]">
                     <table class="w-full text-left text-[11px]">
                         <thead>
-                            <tr id="tableHead" class="uppercase"></tr>
+                            <tr id="tableHead" class="uppercase bg-zinc-800/50"></tr>
                         </thead>
                         <tbody id="standingsContent"></tbody>
                     </table>
                 </div>
             </div>
+            <div id="tableLegend" class="mt-6 px-4 flex flex-wrap gap-4"></div>
         </div>
 
         <div id="tab-stats" class="hidden p-10 text-center text-zinc-500 font-bold uppercase text-xs">
@@ -80,6 +79,69 @@
     </nav>
 
     <script>
+        const LOGOS = {
+            "Liverpool": "https://resources.premierleague.com/premierleague25/badges-alt/14.svg",
+            "Newcastle": "https://resources.premierleague.com/premierleague25/badges-alt/4.svg",
+            "Chelsea": "https://resources.premierleague.com/premierleague25/badges-alt/8.svg",
+            "Aston Villa": "https://resources.premierleague.com/premierleague25/badges-alt/7.svg",
+            "Man City": "https://resources.premierleague.com/premierleague25/badges-alt/43.svg",
+            "Man Utd": "https://resources.premierleague.com/premierleague25/badges-alt/1.svg",
+            "Arsenal": "https://resources.premierleague.com/premierleague25/badges-alt/3.svg",
+            "Southampton": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c9/FC_Southampton.svg/1051px-FC_Southampton.svg.png",
+            "Bournemouth": "https://resources.premierleague.com/premierleague25/badges-alt/91.svg",
+            "Leeds": "https://resources.premierleague.com/premierleague25/badges-alt/2.svg",
+            "Brighton": "https://resources.premierleague.com/premierleague25/badges-alt/36.svg",
+            "West Ham": "https://resources.premierleague.com/premierleague25/badges-alt/21.svg",
+            "Brentford": "https://resources.premierleague.com/premierleague25/badges-alt/94.svg",
+            "Tottenham": "https://resources.premierleague.com/premierleague25/badges-alt/6.svg",
+            "Crystal Palace": "https://resources.premierleague.com/premierleague25/badges-alt/31.svg",
+            "Leicester": "https://upload.wikimedia.org/wikipedia/en/thumb/2/2d/Leicester_City_crest.svg/1200px-Leicester_City_crest.svg.png",
+            "Nott'm Forest": "https://resources.premierleague.com/premierleague25/badges-alt/17.svg",
+            "Sunderland": "https://resources.premierleague.com/premierleague25/badges-alt/56.svg",
+            "Burnley": "https://resources.premierleague.com/premierleague25/badges-alt/90.svg",
+            "Wolves": "https://resources.premierleague.com/premierleague25/badges-alt/39.svg",
+            "Barcelona": "https://ssl.gstatic.com/onebox/media/sports/logos/paYnEE8hcrP96neHRNofhQ_48x48.png",
+            "Real Madrid": "https://ssl.gstatic.com/onebox/media/sports/logos/Th4fAVAZeCJWRcKoLW7koA_48x48.png",
+            "Sevilla": "https://ssl.gstatic.com/onebox/media/sports/logos/hCTs5EX3WjCMC5Jl3QE4Rw_48x48.png",
+            "Real Sociedad": "https://ssl.gstatic.com/onebox/media/sports/logos/w8tb1aeBfVZIj9tZXf7eZg_48x48.png",
+            "Girona": "https://ssl.gstatic.com/onebox/media/sports/logos/sHiSmLm_rA0BOC5MfrNt8A_48x48.png",
+            "Atletico Madrid": "https://ssl.gstatic.com/onebox/media/sports/logos/pEqmA7CL-VRo4Llq3rwIPA_48x48.png",
+            "Athletic Bilbao": "https://ssl.gstatic.com/onebox/media/sports/logos/OSL_5Zm6kYPP1J17Bo5uDA_48x48.png",
+            "Elche": "https://ssl.gstatic.com/onebox/media/sports/logos/uyyqqxLIYT_lQIXRyMI_RA_48x48.png",
+            "Osasuna": "https://ssl.gstatic.com/onebox/media/sports/logos/pk-hNCNpGM_JDoHHvLVF-Q_48x48.png",
+            "Villarreal": "https://ssl.gstatic.com/onebox/media/sports/logos/WKH7Ak5cYD6Qm1EEqXzmVw_48x48.png",
+            "Levante": "https://ssl.gstatic.com/onebox/media/sports/logos/SQB-jlVosxVV1Ce79FhbOA_48x48.png",
+            "Las Palmas": "https://upload.wikimedia.org/wikipedia/sco/thumb/2/20/UD_Las_Palmas_logo.svg/1188px-UD_Las_Palmas_logo.svg.png",
+            "Mallorca": "https://ssl.gstatic.com/onebox/media/sports/logos/Ss21P4CUmigjrEtcoapjVg_48x48.png",
+            "Espanyol": "https://ssl.gstatic.com/onebox/media/sports/logos/TKitIqelDyN6M-kYt4Uc0g_48x48.png",
+            "Valencia": "https://ssl.gstatic.com/onebox/media/sports/logos/QPbjvDwI_0Wuu4tCS2O6uw_48x48.png",
+            "Real Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png",
+            "Real Oviedo": "https://ssl.gstatic.com/onebox/media/sports/logos/2hbZVQulcYqiPFXkWDkB_g_48x48.png",
+            "Celta Vigo": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png",
+            "Rayo Vallecano": "https://ssl.gstatic.com/onebox/media/sports/logos/i5LifmxEVIl0sbvIysiyhw_48x48.png",
+            "Alaves": "https://ssl.gstatic.com/onebox/media/sports/logos/RUcTOeFcBc7q7uku1nR_iQ_48x48.png",
+            "Inter Miami": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755405/assets/logos/mls-clubs/Club_Logo-Miami_tyqe64.png",
+            "LAFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755309/assets/logos/mls-clubs/Club_Logo-LAFC_djrhru.png",
+            "Atlanta Utd": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747499879/assets/logos/mls-clubs/Club_Logo-Atlanta_jtk7ku.png",
+            "Toronto FC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265251/assets/logos/mls-clubs/Club_Logo-Toronto_vz6hao.png",
+            "San Diego": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748261519/assets/logos/mls-clubs/Club_Logo-San_Diego_nwpyul.png",
+            "Orlando City": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747769281/assets/logos/mls-clubs/Club_Logo-Orlando_ryyn7a.png",
+            "Houston Dynamo": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500939/assets/logos/mls-clubs/Club_Logo-Houston_oifm77.png",
+            "Charlotte FC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500045/assets/logos/mls-clubs/Club_Logo-Charlotte_p7sznf.png",
+            "Real Salt Lake": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747776403/assets/logos/mls-clubs/Club_Logo-Salt_Lake_City_hpvde5.png",
+            "Vancouver Whitecaps": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265547/assets/logos/mls-clubs/Club_Logo-Vancouver_ao9phl.png",
+            "LA Galaxy": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755165/assets/logos/mls-clubs/Club_Logo-LA_Galaxy_fg0wjp.png",
+            "Seattle Sounders": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265125/assets/logos/mls-clubs/Club_Logo-Seattle_e6jk2x.png",
+            "Columbus Crew": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500414/assets/logos/mls-clubs/Club_Logo-Columbus_light_z3eq8l.png",
+            "CF Montreal": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755806/assets/logos/mls-clubs/Club_Logo-Montreal_beeqnh.png",
+            "San Jose Earthquakes": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748262048/assets/logos/mls-clubs/Club_Logo-San_Jose_opzlmo.png",
+            "New York RB": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771783/assets/logos/mls-clubs/Club_Logo-RBNY_dwawvt.png",
+            "Colorado Rapids": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500322/assets/logos/mls-clubs/Club_Logo-Colorado_n5kpss.png",
+            "New England": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1766020750/assets/NE_Logo_PRI_FC_RGB_480x480_fdx2us.png",
+            "Minnesota Utd": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754826/assets/logos/mls-clubs/Club_Logo-Minnesota_ftweor.png",
+            "Chicago Fire": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500178/assets/logos/mls-clubs/Club_Logo-Chicago_jm2yev.png"
+        };
+
         const SHEETS = {
             PREM: { sch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv', tbl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=935978435&single=true&output=csv' },
             LALIGA: { sch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1516477023&single=true&output=csv', tbl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv' },
@@ -89,18 +151,18 @@
         let allMatches = [];
         let tableData = {};
 
+        function getLogo(team) {
+            if (!team) return "";
+            for (let key in LOGOS) {
+                if (team.includes(key) || key.includes(team)) return LOGOS[key];
+            }
+            return "";
+        }
+
         function normalizeRow(row) {
             const normalized = {};
             for (let key in row) normalized[key.toLowerCase().trim()] = row[key];
             return normalized;
-        }
-
-        function parseFlexibleDate(dateStr) {
-            if (!dateStr || !/[a-zA-Z]/.test(dateStr)) return null;
-            let clean = dateStr.replace(/(\d+)(st|nd|rd|th)/i, "$1").trim();
-            if (!clean.includes("2025")) clean += " 2025";
-            let d = new Date(clean);
-            return isNaN(d.getTime()) ? null : d;
         }
 
         async function initHub() {
@@ -113,9 +175,9 @@
                             let lastDate = null;
                             resolve(res.data.map(row => {
                                 const m = normalizeRow(row);
-                                const possibleDate = parseFlexibleDate(m.matchday);
-                                if (possibleDate) lastDate = possibleDate;
-                                return (m.home && m.away) ? {...m, league: league, assignedDate: lastDate ? lastDate.toDateString() : null} : null;
+                                let d = m.matchday;
+                                if (d && /[a-zA-Z]/.test(d)) lastDate = d;
+                                return (m.home && m.away) ? {...m, league: league, assignedDate: lastDate} : null;
                             }).filter(x => x));
                         }
                     });
@@ -145,15 +207,10 @@
                 }
             });
 
-            const sortedDates = Object.keys(groups).sort((a,b) => new Date(a) - new Date(b));
-            const todayKey = new Date().toDateString();
-
-            sortedDates.forEach(dateKey => {
-                const isToday = dateKey === todayKey;
+            Object.keys(groups).forEach(dateKey => {
                 const header = document.createElement('div');
                 header.className = 'date-divider';
-                if (isToday) header.id = 'scroll-target';
-                header.innerText = isToday ? "TODAY" : new Date(dateKey).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+                header.innerText = dateKey.toUpperCase();
                 list.appendChild(header);
 
                 groups[dateKey].forEach(m => {
@@ -162,8 +219,8 @@
                             <div class="flex flex-col w-1/2">
                                 <span class="league-tag tag-${m.league}">${m.league}</span>
                                 <div class="flex flex-col gap-2">
-                                    <div class="flex items-center gap-2"><div class="w-3 h-3 bg-zinc-800 rounded-full"></div><span class="text-xs font-bold truncate">${m.home}</span></div>
-                                    <div class="flex items-center gap-2"><div class="w-3 h-3 bg-zinc-800 rounded-full"></div><span class="text-xs font-bold truncate">${m.away}</span></div>
+                                    <div class="flex items-center gap-2"><img src="${getLogo(m.home)}" class="w-4 h-4 object-contain"><span class="text-xs font-bold truncate">${m.home}</span></div>
+                                    <div class="flex items-center gap-2"><img src="${getLogo(m.away)}" class="w-4 h-4 object-contain"><span class="text-xs font-bold truncate">${m.away}</span></div>
                                 </div>
                             </div>
                             <div class="score-box">
@@ -174,7 +231,23 @@
                     `);
                 });
             });
-            if (document.getElementById('scroll-target')) window.scrollTo({ top: document.getElementById('scroll-target').offsetTop - 100, behavior: 'smooth' });
+        }
+
+        function getQualifyStyle(league, pos) {
+            pos = parseInt(pos);
+            if (league === 'MLS') {
+                if (pos === 1) return { color: "#fbbf24", label: "Supporter Shield Champion" };
+                if (pos >= 2 && pos <= 8) return { color: "#22c55e", label: "Playoff Qualification" };
+                if (pos === 18) return { color: "#eab308", label: "Relegation Playoff" };
+                if (pos >= 19) return { color: "#ef4444", label: "Relegation" };
+            } else {
+                if (pos === 1) return { color: "#00ff85", label: "League Champion" };
+                if (pos >= 2 && pos <= 4) return { color: "#3b82f6", label: "Champions League" };
+                if (pos === 5) return { color: "#fbbf24", label: "Europa League" };
+                if (pos === 6) return { color: "#15803d", label: "Conference League" };
+                if (pos >= 18) return { color: "#ef4444", label: "Relegation" };
+            }
+            return null;
         }
 
         function renderTable(league) {
@@ -182,24 +255,21 @@
             const isMls = league === 'MLS';
             const head = document.getElementById('tableHead');
             const body = document.getElementById('standingsContent');
+            const legend = document.getElementById('tableLegend');
 
-            head.innerHTML = `
-                <th class="pl-4">${isMls ? '#' : 'POS'}</th>
-                <th>Team</th>
-                <th class="text-center">${isMls ? 'GP' : 'MP'}</th>
-                <th class="text-center">W-D-L</th>
-                <th class="text-center">GF</th>
-                <th class="text-center">GA</th>
-                <th class="text-center">GD</th>
-                <th class="pr-4 text-right">PTS</th>
-            `;
+            head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">${isMls ? 'GP' : 'MP'}</th><th class="text-center">W-D-L</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="pr-4 text-right">PTS</th>`;
 
             body.innerHTML = data.map(r => {
+                const pos = r.position || r['#'] || '';
+                const style = getQualifyStyle(league, pos);
                 const wdl = r['w-d-l'] || `${r.w || 0}-${r.d || 0}-${r.l || 0}`;
                 return `
-                <tr class="font-bold">
-                    <td class="pl-4 text-zinc-500">${r.position || r['#'] || ''}</td>
-                    <td class="text-white truncate max-w-[85px]">${r.team || ''}</td>
+                <tr class="font-bold border-b border-zinc-800/30">
+                    <td class="pl-4 py-4 flex items-center">
+                        <div class="qualify-indicator" style="background: ${style ? style.color : 'transparent'}"></div>
+                        <span class="text-zinc-500">${pos}</span>
+                    </td>
+                    <td><div class="flex items-center gap-2"><img src="${getLogo(r.team)}" class="w-4 h-4 object-contain"><span class="text-white truncate max-w-[85px]">${r.team || ''}</span></div></td>
                     <td class="text-center text-zinc-400 font-mono">${r.mp || r.gp || 0}</td>
                     <td class="text-center wdl-column text-[10px]">${wdl}</td>
                     <td class="text-center text-zinc-500">${r.gf || 0}</td>
@@ -208,6 +278,18 @@
                     <td class="pr-4 text-right text-[#00ff85] font-black">${r.points || r.pts || 0}</td>
                 </tr>`;
             }).join('');
+
+            // Dynamic Legend
+            const rules = league === 'MLS' ? 
+                [{c:'#fbbf24', l:'Shield Champ'}, {c:'#22c55e', l:'Playoffs'}, {c:'#eab308', l:'Rel. Playoff'}, {c:'#ef4444', l:'Relegation'}] :
+                [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#15803d', l:'UECL'}, {c:'#ef4444', l:'Rel'}];
+            
+            legend.innerHTML = rules.map(rule => `
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full" style="background:${rule.c}"></div>
+                    <span class="text-[9px] font-black text-zinc-500 uppercase">${rule.l}</span>
+                </div>
+            `).join('');
         }
 
         function switchTab(tab) {
@@ -215,7 +297,6 @@
                 document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
                 document.getElementById(`nav-${t}`).classList.toggle('active', t === tab);
             });
-            // Automatically default to Premier League when Standings tab is opened
             if (tab === 'standings') renderTable('PREM');
         }
 
