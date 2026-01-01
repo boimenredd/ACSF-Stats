@@ -9,50 +9,52 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #00ff85; --bg: #0b0e11; --card: #161b22; --border: #30363d; }
-        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; overflow-x: hidden; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         
-        /* Sticky Header */
-        header { background: rgba(11, 14, 17, 0.9); backdrop-blur: 12px; border-bottom: 1px solid var(--border); }
+        header { background: rgba(11, 14, 17, 0.95); backdrop-blur: 12px; border-bottom: 1px solid var(--border); position: fixed; top: 0; width: 100%; max-width: 448px; z-index: 100; }
         
-        /* Match List Scrolling */
-        #matchList { scroll-behavior: smooth; }
-        .date-divider { position: sticky; top: 120px; background: var(--bg); z-index: 10; padding: 10px 0; font-size: 11px; font-weight: 900; color: #8b949e; letter-spacing: 0.1em; }
+        .date-divider { position: sticky; top: 115px; background: var(--bg); z-index: 10; padding: 12px 16px; font-size: 11px; font-weight: 900; color: #8b949e; letter-spacing: 0.1em; border-bottom: 1px solid #1f2428; }
+        .match-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin: 8px 16px; display: flex; justify-content: space-between; align-items: center; }
         
-        /* Score Styling */
-        .score-box { background: #000; padding: 6px 12px; border-radius: 8px; font-weight: 900; display: flex; gap: 8px; border: 1px solid #21262d; }
-        .live-dot { height: 6px; width: 6px; background: #ff453a; border-radius: 50%; animation: pulse 1.5s infinite; }
+        .score-box { background: #000; padding: 6px 12px; border-radius: 6px; font-weight: 900; display: flex; gap: 10px; border: 1px solid #21262d; min-width: 60px; justify-content: center; }
+        .live-indicator { height: 6px; width: 6px; background: #ff453a; border-radius: 50%; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-        /* Navigation */
-        .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #161b22; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px; z-index: 100; }
-        .nav-link { font-size: 10px; font-weight: 800; color: #8b949e; cursor: pointer; text-align: center; }
-        .nav-link.active { color: var(--accent); }
+        .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #161b22; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
+        .nav-btn { font-size: 10px; font-weight: 800; color: #8b949e; cursor: pointer; text-transform: uppercase; }
+        .nav-btn.active { color: var(--accent); }
+        
+        .league-pill { padding: 8px 16px; border-radius: 20px; font-size: 10px; font-weight: 900; white-space: nowrap; transition: 0.2s; }
+        .league-pill.active { background: #fff; color: #000; }
+        .league-pill.inactive { background: #21262d; color: #8b949e; }
     </style>
 </head>
-<body class="max-w-md mx-auto pb-20">
+<body class="max-w-md mx-auto pb-24">
 
-    <header class="fixed top-0 w-full max-w-md z-50">
+    <header>
         <div class="p-4 flex justify-between items-center">
             <h1 class="text-xl font-black italic tracking-tighter">SCORE<span class="text-[#00ff85]">HUB</span></h1>
-            <span id="localTime" class="text-[10px] font-mono text-zinc-500"></span>
+            <div id="status-dot" class="flex items-center gap-2">
+                <span class="text-[9px] font-bold text-zinc-500 uppercase">Live Sync</span>
+                <div class="w-2 h-2 rounded-full bg-green-500"></div>
+            </div>
         </div>
         
-        <div class="flex gap-2 overflow-x-auto px-4 pb-3 no-scrollbar">
-            <button onclick="changeLeague('PREM')" id="btn-PREM" class="px-4 py-2 rounded-full text-[10px] font-black bg-white text-black">PREMIER LEAGUE</button>
-            <button onclick="changeLeague('LALIGA')" id="btn-LALIGA" class="px-4 py-2 rounded-full text-[10px] font-black bg-zinc-800 text-zinc-400">LA LIGA</button>
-            <button onclick="changeLeague('MLS')" id="btn-MLS" class="px-4 py-2 rounded-full text-[10px] font-black bg-zinc-800 text-zinc-400">MLS</button>
+        <div class="flex gap-2 overflow-x-auto px-4 pb-4 no-scrollbar">
+            <button onclick="setLeague('PREM')" id="pill-PREM" class="league-pill active">PREMIER LEAGUE</button>
+            <button onclick="setLeague('LALIGA')" id="pill-LALIGA" class="league-pill inactive">LA LIGA</button>
+            <button onclick="setLeague('MLS')" id="pill-MLS" class="league-pill inactive">MLS</button>
         </div>
     </header>
 
-    <main class="mt-32 px-4">
-        <section id="match-view">
-            <div id="matchList">
-                </div>
-        </section>
+    <main class="mt-32">
+        <div id="tab-matches">
+            <div id="matchList"></div>
+        </div>
 
-        <section id="table-view" class="hidden">
-            <div class="bg-zinc-900/50 rounded-xl overflow-hidden border border-zinc-800">
+        <div id="tab-standings" class="hidden px-4">
+            <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 overflow-hidden">
                 <table class="w-full text-left text-xs">
                     <thead class="bg-zinc-800 text-[9px] font-black text-zinc-500 uppercase">
                         <tr>
@@ -65,127 +67,154 @@
                     <tbody id="standingsContent"></tbody>
                 </table>
             </div>
-        </section>
+        </div>
     </main>
 
     <nav class="nav-bottom">
-        <div onclick="showTab('match')" id="nav-match" class="nav-link active">MATCHES</div>
-        <div onclick="showTab('table')" id="nav-table" class="nav-link">STANDINGS</div>
-        <div onclick="showTab('stats')" id="nav-stats" class="nav-link">PLAYER STATS</div>
+        <div onclick="switchTab('matches')" id="nav-matches" class="nav-btn active">Matches</div>
+        <div onclick="switchTab('standings')" id="nav-standings" class="nav-btn">Standings</div>
+        <div onclick="alert('Stats coming soon!')" class="nav-btn">Stats</div>
     </nav>
 
     <script>
-        const CONFIG = {
-            PREM: { sch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv', tbl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=935978435&single=true&output=csv' },
-            LALIGA: { sch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1516477023&single=true&output=csv', tbl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv' },
-            MLS: { sch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAT0GInc6QMrh4OdSjMk63NmcvN_1lyKpDnwYifaQBqtBMu3JAWrJRr0DqzEFt1iPbkV7vZPMOcuis/pub?gid=0&single=true&output=csv', tbl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv' }
+        const SHEETS = {
+            PREM: { 
+                sch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv',
+                tbl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=935978435&single=true&output=csv'
+            },
+            LALIGA: { 
+                sch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1516477023&single=true&output=csv',
+                tbl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv'
+            },
+            MLS: { 
+                sch: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTAT0GInc6QMrh4OdSjMk63NmcvN_1lyKpDnwYifaQBqtBMu3JAWrJRr0DqzEFt1iPbkV7vZPMOcuis/pub?gid=0&single=true&output=csv',
+                tbl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv'
+            }
         };
 
-        let activeLeague = 'PREM';
+        let currentLeague = 'PREM';
 
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('localTime').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', timeZoneName: 'short'});
+        function parseFlexibleDate(dateStr) {
+            if (!dateStr) return null;
+            // Clean "th", "st", "nd", "rd" and ensure 2025
+            let clean = dateStr.replace(/(\d+)(st|nd|rd|th)/i, "$1");
+            if (!clean.includes("2025")) clean += " 2025";
+            return new Date(clean);
         }
 
-        async function loadData() {
-            const schUrl = CONFIG[activeLeague].sch;
-            const tblUrl = CONFIG[activeLeague].tbl;
-
-            Papa.parse(schUrl, {
+        async function loadAllData() {
+            const config = SHEETS[currentLeague];
+            
+            // Fetch Schedule
+            Papa.parse(config.sch, {
                 download: true, header: true,
-                complete: (results) => renderMatches(results.data)
+                complete: (res) => renderMatches(res.data)
             });
 
-            Papa.parse(tblUrl, {
+            // Fetch Table
+            Papa.parse(config.tbl, {
                 download: true, header: true,
-                complete: (results) => renderTable(results.data)
+                complete: (res) => renderTable(res.data)
             });
         }
 
         function renderMatches(data) {
-            const container = document.getElementById('matchList');
-            container.innerHTML = '';
-            
-            // Grouping by Date
-            const grouped = data.reduce((acc, match) => {
-                if(!match.Date) return acc;
-                if(!acc[match.Date]) acc[match.Date] = [];
-                acc[match.Date].push(match);
+            const list = document.getElementById('matchList');
+            list.innerHTML = '';
+
+            // Group by formatted date
+            const groups = data.reduce((acc, match) => {
+                const d = parseFlexibleDate(match.Date);
+                if (!d || isNaN(d)) return acc;
+                const key = d.toDateString();
+                if (!acc[key]) acc[key] = [];
+                acc[key].push(match);
                 return acc;
             }, {});
 
-            const todayStr = new Date().toLocaleDateString('en-US', { timeZone: 'America/New_York' });
+            const today = new Date().toDateString();
 
-            Object.keys(grouped).forEach(date => {
-                const dateHeader = document.createElement('div');
-                dateHeader.className = 'date-divider';
-                dateHeader.id = `date-${date.replace(/\//g, '-')}`;
-                dateHeader.innerText = date === todayStr ? "TODAY" : date;
-                container.appendChild(dateHeader);
+            Object.keys(groups).forEach(dateKey => {
+                const isToday = dateKey === today;
+                const dateObj = new Date(dateKey);
+                
+                // Date Header
+                const header = document.createElement('div');
+                header.className = 'date-divider';
+                header.id = isToday ? 'scroll-target' : '';
+                header.innerText = isToday ? "TODAY" : dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+                list.appendChild(header);
 
-                grouped[date].forEach(m => {
+                groups[dateKey].forEach(m => {
+                    const isLive = m.Status?.toLowerCase() === 'live';
                     const card = `
-                        <div class="bg-[#161b22] border border-zinc-800 p-4 rounded-xl mb-3 flex justify-between items-center">
+                        <div class="match-card">
                             <div class="flex flex-col gap-2 w-1/2">
-                                <div class="flex items-center gap-2"><div class="w-4 h-4 bg-zinc-700 rounded-sm"></div><span class="text-xs font-bold">${m.Home_Team}</span></div>
-                                <div class="flex items-center gap-2"><div class="w-4 h-4 bg-zinc-700 rounded-sm"></div><span class="text-xs font-bold">${m.Away_Team}</span></div>
-                            </div>
-                            <div class="flex flex-col items-end">
-                                <div class="score-box">
-                                    <span class="${m.Status === 'Live' ? 'text-green-400' : 'text-white'}">${m.Home_Score || 0}</span>
-                                    <span class="${m.Status === 'Live' ? 'text-green-400' : 'text-white'}">${m.Away_Score || 0}</span>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-5 h-5 bg-zinc-800 rounded-sm"></div>
+                                    <span class="text-xs font-bold truncate">${m.Home_Team}</span>
                                 </div>
-                                <div class="flex items-center gap-1 mt-1">
-                                    ${m.Status === 'Live' ? '<div class="live-dot"></div>' : ''}
-                                    <span class="text-[8px] font-black uppercase text-zinc-500">${m.Status || 'Scheduled'}</span>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-5 h-5 bg-zinc-800 rounded-sm"></div>
+                                    <span class="text-xs font-bold truncate">${m.Away_Team}</span>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-end gap-1">
+                                <div class="score-box">
+                                    <span class="${isLive ? 'text-[#00ff85]' : ''}">${m.Home_Score || 0}</span>
+                                    <span class="${isLive ? 'text-[#00ff85]' : ''}">${m.Away_Score || 0}</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    ${isLive ? '<div class="live-indicator"></div>' : ''}
+                                    <span class="text-[8px] font-black uppercase ${isLive ? 'text-red-500' : 'text-zinc-500'}">${m.Status || 'FT'}</span>
                                 </div>
                             </div>
                         </div>
                     `;
-                    container.insertAdjacentHTML('beforeend', card);
+                    list.insertAdjacentHTML('beforeend', card);
                 });
             });
 
             // Auto-scroll to Today
-            const todayEl = document.getElementById(`date-${todayStr.replace(/\//g, '-')}`);
-            if(todayEl) window.scrollTo({ top: todayEl.offsetTop - 140, behavior: 'smooth' });
+            const target = document.getElementById('scroll-target');
+            if (target) {
+                window.scrollTo({ top: target.offsetTop - 120, behavior: 'smooth' });
+            }
         }
 
         function renderTable(data) {
-            const body = document.getElementById('standingsContent');
-            body.innerHTML = data.map((row, i) => `
-                <tr class="border-b border-zinc-800/50">
+            const content = document.getElementById('standingsContent');
+            content.innerHTML = data.map((row, i) => `
+                <tr class="border-b border-zinc-800/40">
                     <td class="p-3 font-bold text-zinc-500">${i+1}</td>
-                    <td class="p-3 font-bold text-white">${row.Team}</td>
-                    <td class="p-3 text-center text-zinc-400 font-mono">${row.GD}</td>
-                    <td class="p-3 text-right font-black text-[#00ff85]">${row.PTS}</td>
+                    <td class="p-3 flex items-center gap-2">
+                        <div class="w-4 h-4 bg-zinc-800 rounded-full"></div>
+                        <span class="font-bold">${row.Team}</span>
+                    </td>
+                    <td class="p-3 text-center text-zinc-400 font-mono">${row.GD || 0}</td>
+                    <td class="p-3 text-right font-black text-[#00ff85]">${row.PTS || 0}</td>
                 </tr>
             `).join('');
         }
 
-        function changeLeague(league) {
-            activeLeague = league;
-            ['PREM', 'LALIGA', 'MLS'].forEach(l => {
-                const btn = document.getElementById(`btn-${l}`);
-                btn.className = l === league ? 
-                    'px-4 py-2 rounded-full text-[10px] font-black bg-white text-black' : 
-                    'px-4 py-2 rounded-full text-[10px] font-black bg-zinc-800 text-zinc-400';
+        function setLeague(l) {
+            currentLeague = l;
+            document.querySelectorAll('.league-pill').forEach(p => {
+                p.classList.replace('active', 'inactive');
+                if (p.id === `pill-${l}`) p.classList.replace('inactive', 'active');
             });
-            loadData();
+            loadAllData();
         }
 
-        function showTab(tab) {
-            document.getElementById('match-view').classList.toggle('hidden', tab !== 'match');
-            document.getElementById('table-view').classList.toggle('hidden', tab !== 'table');
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            document.getElementById(`nav-${tab}`).classList.add('active');
+        function switchTab(tab) {
+            document.getElementById('tab-matches').classList.toggle('hidden', tab !== 'matches');
+            document.getElementById('tab-standings').classList.toggle('hidden', tab !== 'standings');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.id === `nav-${tab}`));
         }
 
-        setInterval(updateClock, 1000);
-        setInterval(loadData, 60000); // Live refresh every minute
-        updateClock();
-        loadData();
+        // Initial Load & Refresh Interval
+        loadAllData();
+        setInterval(loadAllData, 30000); // Sync every 30 seconds
     </script>
 </body>
 </html>
