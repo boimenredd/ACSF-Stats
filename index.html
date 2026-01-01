@@ -44,6 +44,8 @@
         .collapsed .matches-container { display: none; }
         .chevron { transition: transform 0.2s; }
         .collapsed .chevron { transform: rotate(-90deg); }
+        
+        .loading-msg { padding: 20px; text-align: center; color: #8b949e; font-size: 12px; font-weight: 700; }
     </style>
 </head>
 <body class="max-w-md mx-auto pb-32">
@@ -73,7 +75,7 @@
                 <div class="filter-pill" onclick="filterLeague('MLS')">MLS</div>
             </div>
 
-            <div id="matchesList"></div>
+            <div id="matchesList" class="loading-msg">Loading matches...</div>
         </div>
 
         <div id="tab-standings" class="hidden">
@@ -137,9 +139,13 @@
             "Crystal Palace": "https://resources.premierleague.com/premierleague25/badges-alt/31.svg",
             "Leicester": "https://upload.wikimedia.org/wikipedia/en/thumb/2/2d/Leicester_City_crest.svg/1200px-Leicester_City_crest.svg.png",
             "Nott'm Forest": "https://resources.premierleague.com/premierleague25/badges-alt/17.svg",
+            "Nottingham": "https://resources.premierleague.com/premierleague25/badges-alt/17.svg",
             "Sunderland": "https://resources.premierleague.com/premierleague25/badges-alt/56.svg",
             "Burnley": "https://resources.premierleague.com/premierleague25/badges-alt/90.svg",
             "Wolves": "https://resources.premierleague.com/premierleague25/badges-alt/39.svg",
+            "Fulham": "https://resources.premierleague.com/premierleague25/badges-alt/54.svg",
+            "Everton": "https://resources.premierleague.com/premierleague25/badges-alt/11.svg",
+            "Ipswich": "https://resources.premierleague.com/premierleague25/badges-alt/40.svg",
             "Barcelona": "https://ssl.gstatic.com/onebox/media/sports/logos/paYnEE8hcrP96neHRNofhQ_48x48.png",
             "Real Madrid": "https://ssl.gstatic.com/onebox/media/sports/logos/Th4fAVAZeCJWRcKoLW7koA_48x48.png",
             "Sevilla": "https://ssl.gstatic.com/onebox/media/sports/logos/hCTs5EX3WjCMC5Jl3QE4Rw_48x48.png",
@@ -147,6 +153,7 @@
             "Girona": "https://ssl.gstatic.com/onebox/media/sports/logos/sHiSmLm_rA0BOC5MfrNt8A_48x48.png",
             "Atletico Madrid": "https://ssl.gstatic.com/onebox/media/sports/logos/pEqmA7CL-VRo4Llq3rwIPA_48x48.png",
             "Athletic Bilbao": "https://ssl.gstatic.com/onebox/media/sports/logos/OSL_5Zm6kYPP1J17Bo5uDA_48x48.png",
+            "Athletic": "https://ssl.gstatic.com/onebox/media/sports/logos/OSL_5Zm6kYPP1J17Bo5uDA_48x48.png",
             "Elche": "https://ssl.gstatic.com/onebox/media/sports/logos/uyyqqxLIYT_lQIXRyMI_RA_48x48.png",
             "Osasuna": "https://ssl.gstatic.com/onebox/media/sports/logos/pk-hNCNpGM_JDoHHvLVF-Q_48x48.png",
             "Villarreal": "https://ssl.gstatic.com/onebox/media/sports/logos/WKH7Ak5cYD6Qm1EEqXzmVw_48x48.png",
@@ -156,11 +163,15 @@
             "Espanyol": "https://ssl.gstatic.com/onebox/media/sports/logos/TKitIqelDyN6M-kYt4Uc0g_48x48.png",
             "Valencia": "https://ssl.gstatic.com/onebox/media/sports/logos/QPbjvDwI_0Wuu4tCS2O6uw_48x48.png",
             "Real Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png",
+            "Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png",
             "Real Oviedo": "https://ssl.gstatic.com/onebox/media/sports/logos/2hbZVQulcYqiPFXkWDkB_g_48x48.png",
             "Celta Vigo": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png",
+            "Celta": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png",
             "Rayo Vallecano": "https://ssl.gstatic.com/onebox/media/sports/logos/i5LifmxEVIl0sbvIysiyhw_48x48.png",
             "Alaves": "https://ssl.gstatic.com/onebox/media/sports/logos/RUcTOeFcBc7q7uku1nR_iQ_48x48.png",
             "Getafe": "https://ssl.gstatic.com/onebox/media/sports/logos/jqll6zSd9TZofPk5CR_B1w_48x48.png",
+            "Leganes": "https://ssl.gstatic.com/onebox/media/sports/logos/c0FJxye3t46n10AUIEK0cA_48x48.png",
+            "Valladolid": "https://ssl.gstatic.com/onebox/media/sports/logos/SN1BSVY-lrUj6Y_ZJsOa5Q_48x48.png",
             "Miami": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755405/assets/logos/mls-clubs/Club_Logo-Miami_tyqe64.png",
             "LAFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v174775309/assets/logos/mls-clubs/Club_Logo-LAFC_djrhru.png",
             "Atlanta": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747499879/assets/logos/mls-clubs/Club_Logo-Atlanta_jtk7ku.png",
@@ -180,11 +191,22 @@
             "Colorado": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500322/assets/logos/mls-clubs/Club_Logo-Colorado_n5kpss.png",
             "New England": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1766020750/assets/NE_Logo_PRI_FC_RGB_480x480_fdx2us.png",
             "Minnesota": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754826/assets/logos/mls-clubs/Club_Logo-Minnesota_ftweor.png",
-            "Chicago": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500178/assets/logos/mls-clubs/Club_Logo-Chicago_jm2yev.png"
+            "Chicago": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500178/assets/logos/mls-clubs/Club_Logo-Chicago_jm2yev.png",
+            "Portland": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771943/assets/logos/mls-clubs/Club_Logo-Portland_jrihbf.png",
+            "Nashville": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754937/assets/logos/mls-clubs/Club_Logo-Nashville_owcihx.png",
+            "Austin": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500115/assets/logos/mls-clubs/Club_Logo-Austin_u0tpqe.png",
+            "FC Dallas": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500587/assets/logos/mls-clubs/Club_Logo-Dallas_oxywdo.png",
+            "Dallas": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500587/assets/logos/mls-clubs/Club_Logo-Dallas_oxywdo.png",
+            "St Louis": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265198/assets/logos/mls-clubs/Club_Logo-St._Louis_oikgm5.png",
+            "NYCFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755975/assets/logos/mls-clubs/Club_Logo-NYC_vhnmkv.png",
+            "Philadelphia": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747772038/assets/logos/mls-clubs/Club_Logo-Philadelphia_l8yj9f.png",
+            "Sporting KC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265350/assets/logos/mls-clubs/Club_Logo-Sporting_Kansas_City_rrkzdb.png",
+            "DC United": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500514/assets/logos/mls-clubs/Club_Logo-DC_United_igj4qy.png",
+            "Cincinnati": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500252/assets/logos/mls-clubs/Club_Logo-Cincinatti_ohmgcp.png"
         };
 
         const LEAGUE_FLAGS = {
-            PREM: '🏴󐁧󐁢󐁥󐁮󐁧󐁿',
+            PREM: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
             LALIGA: '🇪🇸',
             MLS: '🇺🇸'
         };
@@ -195,34 +217,44 @@
             MLS: 'USA - MLS'
         };
 
-        let currentDate = new Date('2025-12-31'); // Start at current date
+        let currentDate = new Date('2025-08-15'); // Start with a date that has matches
         let allMatches = [];
         let currentFilter = 'all';
+        let allDates = [];
 
         function getLogo(team) {
-            if (!team) return "";
+            if (!team) return "https://via.placeholder.com/28?text=?";
+            team = team.trim();
             for (let key in LOGOS) {
-                if (team.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(team.toLowerCase())) return LOGOS[key];
+                if (team.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(team.toLowerCase())) {
+                    return LOGOS[key];
+                }
             }
-            return "https://via.placeholder.com/28?text=?"; 
+            return "https://via.placeholder.com/28?text=" + team.charAt(0);
         }
 
         function parseDate(dateStr) {
-            const formats = [
-                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/, // MM/DD/YYYY or M/D/YYYY
-                /^(\d{4})-(\d{2})-(\d{2})$/ // YYYY-MM-DD
-            ];
+            if (!dateStr) return null;
+            dateStr = dateStr.trim();
             
-            for (let format of formats) {
-                const match = dateStr.match(format);
-                if (match) {
-                    if (format.source.startsWith('^(\\d{4})')) {
-                        return new Date(match[1], match[2] - 1, match[3]);
-                    } else {
-                        return new Date(match[3], match[1] - 1, match[2]);
-                    }
-                }
+            // Try MM/DD/YYYY or M/D/YYYY
+            let match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (match) {
+                return new Date(match[3], match[1] - 1, match[2]);
             }
+            
+            // Try YYYY-MM-DD
+            match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (match) {
+                return new Date(match[1], match[2] - 1, match[3]);
+            }
+            
+            // Try other common formats
+            const parsed = new Date(dateStr);
+            if (!isNaN(parsed.getTime())) {
+                return parsed;
+            }
+            
             return null;
         }
 
@@ -240,6 +272,7 @@
 
         async function loadAllMatches() {
             allMatches = [];
+            let loadedCount = 0;
             
             for (let league of ['PREM', 'LALIGA', 'MLS']) {
                 await new Promise((resolve) => {
@@ -248,28 +281,60 @@
                         header: true,
                         skipEmptyLines: 'greedy',
                         complete: (res) => {
+                            console.log(`${league} loaded:`, res.data.length, 'rows');
+                            
                             res.data.forEach(row => {
-                                const dateStr = row.Date || row.date || '';
+                                // Check all possible column names
+                                const dateStr = row.Date || row.date || row.DATE || row['Match Date'] || '';
+                                const home = (row.Home || row.home || row.HOME || row['Home Team'] || '').trim();
+                                const away = (row.Away || row.away || row.AWAY || row['Away Team'] || '').trim();
+                                const homeScore = row['Home Score'] || row['home score'] || row.HomeScore || row['Home Goals'] || '';
+                                const awayScore = row['Away Score'] || row['away score'] || row.AwayScore || row['Away Goals'] || '';
+                                const time = row.Time || row.time || row.TIME || '';
+                                
                                 const date = parseDate(dateStr);
-                                if (date) {
+                                
+                                if (date && home && away) {
                                     allMatches.push({
                                         league: league,
                                         date: date,
-                                        home: row.Home || row.home || '',
-                                        away: row.Away || row.away || '',
-                                        homeScore: row['Home Score'] || row['home score'] || row.HomeScore || '',
-                                        awayScore: row['Away Score'] || row['away score'] || row.AwayScore || '',
-                                        time: row.Time || row.time || ''
+                                        home: home,
+                                        away: away,
+                                        homeScore: homeScore,
+                                        awayScore: awayScore,
+                                        time: time
                                     });
+                                    loadedCount++;
                                 }
                             });
+                            
+                            resolve();
+                        },
+                        error: (err) => {
+                            console.error(`Error loading ${league}:`, err);
                             resolve();
                         }
                     });
                 });
             }
             
+            console.log('Total matches loaded:', loadedCount);
+            
             allMatches.sort((a, b) => a.date - b.date);
+            
+            // Get all unique dates
+            const dateSet = new Set();
+            allMatches.forEach(m => {
+                const dateKey = `${m.date.getFullYear()}-${m.date.getMonth()}-${m.date.getDate()}`;
+                dateSet.add(dateKey);
+            });
+            allDates = Array.from(dateSet).sort();
+            
+            // Set current date to first date with matches
+            if (allMatches.length > 0) {
+                currentDate = new Date(allMatches[0].date);
+            }
+            
             renderMatches();
         }
 
@@ -313,12 +378,12 @@
                                 <div class="match-card">
                                     <div class="flex-1">
                                         <div class="team-row">
-                                            <img src="${getLogo(m.home)}" class="team-logo">
+                                            <img src="${getLogo(m.home)}" class="team-logo" onerror="this.src='https://via.placeholder.com/28?text=?'">
                                             <span class="team-name">${m.home}</span>
                                             ${hasScore ? `<span class="score">${m.homeScore}</span>` : ''}
                                         </div>
                                         <div class="team-row">
-                                            <img src="${getLogo(m.away)}" class="team-logo">
+                                            <img src="${getLogo(m.away)}" class="team-logo" onerror="this.src='https://via.placeholder.com/28?text=?'">
                                             <span class="team-name">${m.away}</span>
                                             ${hasScore ? `<span class="score">${m.awayScore}</span>` : ''}
                                         </div>
@@ -343,8 +408,10 @@
         }
 
         function resetToToday() {
-            currentDate = new Date('2025-12-31');
-            renderMatches();
+            if (allMatches.length > 0) {
+                currentDate = new Date(allMatches[0].date);
+                renderMatches();
+            }
         }
 
         function filterLeague(league) {
@@ -386,7 +453,7 @@
                             </td>
                             <td>
                                 <div class="flex items-center gap-4">
-                                    <img src="${getLogo(team)}" class="w-8 h-8 object-contain">
+                                    <img src="${getLogo(team)}" class="w-8 h-8 object-contain" onerror="this.src='https://via.placeholder.com/32?text=?'">
                                     <span class="text-white truncate max-w-[120px]">${team}</span>
                                 </div>
                             </td>
