@@ -526,115 +526,96 @@ function backToView() {
 }
 
 async function loadStats(league) {
+    console.log('Loading stats for:', league);
+    
     if (!STATS_URLS[league].leaderboard) {
+        console.log('No leaderboard URL for', league);
         statsData[league] = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {}, loaded: true };
         return;
     }
     
-    if (statsData[league].loaded) return;
+    if (statsData[league].loaded) {
+        console.log('Stats already loaded for', league);
+        return;
+    }
     
     const data = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {} };
     
     try {
-        // Load leaderboard
-        if (STATS_URLS[league].leaderboard) {
-            await new Promise((resolve, reject) => {
-                Papa.parse(STATS_URLS[league].leaderboard, {
-                    download: true,
-                    complete: (r) => {
-                        r.data.forEach((row, i) => {
-                            if (i === 0) return;
-                            // Goals (columns A-D: rank, name, goals, team)
-                            if (row[0] && row[1] && row[2]) {
-                                data.goals.push({ rank: row[0], name: row[1], value: row[2], team: row[3] });
-                            }
-                            // Assists (skip 2 columns, then G-J: rank, name, assists, team)
-                            if (row[6] && row[7] && row[8]) {
-                                data.assists.push({ rank: row[6], name: row[7], value: row[8], team: row[9] });
-                            }
-                            // Clean Sheets (skip 2 more columns, then M-P: rank, name, cs, team)
-                            if (row[12] && row[13] && row[14]) {
-                                data.cleanSheets.push({ rank: row[12], name: row[13], value: row[14], team: row[15] });
-                            }
-                        });
-                        resolve();
-                    },
-                    error: (err) => {
-                        console.error('Error parsing leaderboard:', err);
-                        reject(err);
-                    }
-                });
+        // Load leaderboard - simplified
+        console.log('Fetching leaderboard...');
+        const leaderboardData = await new Promise((resolve) => {
+            Papa.parse(STATS_URLS[league].leaderboard, {
+                download: true,
+                complete: (r) => {
+                    console.log('Leaderboard loaded, rows:', r.data.length);
+                    resolve(r.data);
+                },
+                error: (err) => {
+                    console.error('Leaderboard error:', err);
+                    resolve([]);
+                }
             });
-        }
+        });
         
-        // Load average ratings
+        leaderboardData.forEach((row, i) => {
+            if (i === 0) return;
+            if (row[1] && row[2]) {
+                data.goals.push({ rank: row[0], name: row[1], value: row[2], team: row[3] });
+            }
+            if (row[7] && row[8]) {
+                data.assists.push({ rank: row[6], name: row[7], value: row[8], team: row[9] });
+            }
+            if (row[13] && row[14]) {
+                data.cleanSheets.push({ rank: row[12], name: row[13], value: row[14], team: row[15] });
+            }
+        });
+        
+        console.log('Goals:', data.goals.length, 'Assists:', data.assists.length, 'CS:', data.cleanSheets.length);
+        
+        // Load average ratings - simplified
         if (STATS_URLS[league].avgRatings) {
-            await new Promise((resolve, reject) => {
+            console.log('Fetching avg ratings...');
+            const ratingsData = await new Promise((resolve) => {
                 Papa.parse(STATS_URLS[league].avgRatings, {
                     download: true,
                     complete: (r) => {
-                        r.data.forEach((row, i) => {
-                            if (i === 0) return;
-                            // Column H=7: rank, I=8: name, J=9: position, K=10: avg rating, L=11: team, M=12: matches
-                            if (row[8] && row[10]) {
-                                data.ratings.push({ 
-                                    rank: row[7], 
-                                    name: row[8], 
-                                    position: row[9], 
-                                    value: row[10], 
-                                    team: row[11], 
-                                    matches: row[12] 
-                                });
-                                if (!data.players[row[8]]) {
-                                    data.players[row[8]] = { 
-                                        name: row[8], 
-                                        team: row[11], 
-                                        position: row[9], 
-                                        goals: 0, 
-                                        assists: 0, 
-                                        cs: 0, 
-                                        avgRating: row[10], 
-                                        matches: row[12], 
-                                        recentRatings: [] 
-                                    };
-                                }
-                            }
-                        });
-                        resolve();
+                        console.log('Avg ratings loaded, rows:', r.data.length);
+                        resolve(r.data);
                     },
                     error: (err) => {
-                        console.error('Error parsing avg ratings:', err);
-                        reject(err);
+                        console.error('Avg ratings error:', err);
+                        resolve([]);
                     }
                 });
             });
-        }
-        
-        // Load ratings log for recent ratings
-        if (STATS_URLS[league].ratingsLog) {
-            await new Promise((resolve, reject) => {
-                Papa.parse(STATS_URLS[league].ratingsLog, {
-                    download: true,
-                    complete: (r) => {
-                        const reversed = [...r.data].reverse();
-                        reversed.forEach((row, i) => {
-                            if (i === 0) return;
-                            const name = row[0]; // Column A
-                            const rating = row[2]; // Column C
-                            if (name && rating && data.players[name]) {
-                                if (data.players[name].recentRatings.length < 5) {
-                                    data.players[name].recentRatings.push(rating);
-                                }
-                            }
-                        });
-                        resolve();
-                    },
-                    error: (err) => {
-                        console.error('Error parsing ratings log:', err);
-                        resolve(); // Don't fail if ratings log fails
-                    }
-                });
+            
+            ratingsData.forEach((row, i) => {
+                if (i === 0) return;
+                if (row[8] && row[10]) {
+                    data.ratings.push({ 
+                        rank: row[7], 
+                        name: row[8], 
+                        position: row[9], 
+                        value: row[10], 
+                        team: row[11], 
+                        matches: row[12] 
+                    });
+                    data.players[row[8]] = { 
+                        name: row[8], 
+                        team: row[11], 
+                        position: row[9], 
+                        goals: 0, 
+                        assists: 0, 
+                        cs: 0, 
+                        avgRating: row[10], 
+                        matches: row[12], 
+                        recentRatings: [] 
+                    };
+                }
             });
+            
+            console.log('Ratings:', data.ratings.length, 'Players:', Object.keys(data.players).length);
         }
         
         // Add goals/assists/cs to players
@@ -649,6 +630,7 @@ async function loadStats(league) {
         });
         
         statsData[league] = { ...data, loaded: true };
+        console.log('Stats loaded successfully for', league);
     } catch (e) {
         console.error('Error loading stats for', league, ':', e);
         statsData[league] = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {}, loaded: true };
