@@ -245,7 +245,7 @@ const STATS_URLS = {
     }
 };
 
-let allMatches = [], uniqueDates = [], dateIdx = 0, currentView = 'hub', currentTeam = null, currentPlayer = null;
+let allMatches = [], uniqueDates = [], dateIdx = 0, currentView = 'hub', currentTeam = null, currentPlayer = null, statsData = { PREM: {}, LALIGA: {}, MLS: {}, COMBINED: {} };
 
 function getLogo(team) {
     if (!team) return "";
