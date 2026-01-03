@@ -38,11 +38,18 @@
         .stat-card { background: #1a1a1a; border-radius: 12px; padding: 16px; border: 1px solid #222; }
         .search-input { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 12px 16px; color: #fff; width: 100%; font-size: 14px; }
         .search-input:focus { outline: none; border-color: var(--accent); }
+        .header-search-input { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 8px 10px; color: #fff; width: 165px; font-size: 12px; }
+        .header-search-input:focus { outline: none; border-color: var(--accent); }
     </style>
 </head>
 <body class="max-w-md mx-auto pb-24">
 
-    <header class="p-4"><h1 class="text-xl font-black italic uppercase">Score<span class="text-[#00ff85]">Hub</span></h1></header>
+    <header class="p-4">
+        <div class="flex items-center justify-between gap-3">
+            <h1 class="text-xl font-black italic uppercase">Score<span class="text-[#00ff85]">Hub</span></h1>
+            <input type="text" id="globalSearch" class="header-search-input" placeholder="Search teams or players..." onkeyup="searchPlayer(event, 'globalSearch')">
+        </div>
+    </header>
 
     <main id="hub-tab">
         <div class="date-nav">
@@ -75,7 +82,7 @@
 
     <div id="stats-tab" class="hidden pt-20 pb-6">
         <div class="px-4 mb-4">
-            <input type="text" id="playerSearch" class="search-input" placeholder="Search for a player..." onkeyup="searchPlayer(event)">
+            <input type="text" id="playerSearch" class="search-input" placeholder="Search teams or players..." onkeyup="searchPlayer(event)">
         </div>
         <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
             <button id="stat-btn-PREM" onclick="renderStats('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
@@ -268,39 +275,39 @@ function parseSheetDate(raw) {
     
     let str = raw.trim();
     
-    // Check if this is a matchday marker (starts with number or "Matchday")
-    if (/^(Matchday)?\d+[A-Z]/i.test(str) || /^(Matchday)?\d+$/.test(str)) {
-        return 'MATCHDAY_MARKER';
-    }
-    
     // Check if "2025" is explicitly in the date string
     const has2025 = str.includes('2025');
     
-    // Handle formats like "Aug 15" or "August 15"
+    // Handle formats like "Aug 15" or "August 15" (even if "Matchday" text is present)
     let match = str.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\.?\s*(\d+)/i);
-    
-    if (!match) return null;
-    
-    let monthStr = match[1];
-    let day = parseInt(match[2]);
-    
-    // Find month number
-    let month = -1;
-    for (let key in monthMap) {
-        if (key.toLowerCase() === monthStr.toLowerCase()) {
-            month = monthMap[key];
-            break;
+    if (match) {
+        let monthStr = match[1];
+        let day = parseInt(match[2]);
+        
+        // Find month number
+        let month = -1;
+        for (let key in monthMap) {
+            if (key.toLowerCase() === monthStr.toLowerCase()) {
+                month = monthMap[key];
+                break;
+            }
         }
+        if (month === -1) return null;
+        
+        // Determine year based on "2025" indicator
+        let year = has2025 ? 2025 : 2026;
+        
+        let d = new Date(year, month, day);
+        d.setHours(0, 0, 0, 0);
+        return d;
     }
     
-    if (month === -1) return null;
+    // Check if this is a matchday marker (starts with number or "Matchday")
+    if (/^(Matchday)?\s*\d+[A-Z]?/i.test(str) || /^(Matchday)?\s*\d+\s*$/i.test(str)) {
+        return 'MATCHDAY_MARKER';
+    }
     
-    // Determine year based on "2025" indicator
-    let year = has2025 ? 2025 : 2026;
-    
-    let d = new Date(year, month, day);
-    d.setHours(0, 0, 0, 0);
-    return d;
+    return null;
 }
 
 async function init() {
@@ -461,7 +468,9 @@ function renderStandings(lg) {
         }
     });
 
-    const rules = lg === 'MLS' ? [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#ef4444', l:'Rel'}] : [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#ef4444', l:'Rel'}];
+    const rules = lg === 'MLS'
+        ? [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#facc15', l:'Rel PO'}, {c:'#ef4444', l:'Rel'}]
+        : [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#166534', l:'UECL'}, {c:'#ef4444', l:'Rel'}];
     legend.innerHTML = rules.map(rule => `<div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${rule.c}"></div><span class="text-[9px] font-black text-zinc-500 uppercase">${rule.l}</span></div>`).join('');
 }
 
@@ -470,11 +479,13 @@ function getQualifyColor(lg, pos) {
     if (lg === 'MLS') {
         if (pos === 1) return '#fbbf24';
         if (pos <= 8) return '#22c55e';
-        if (pos >= 25) return '#ef4444';
+        if (pos === 18) return '#facc15';
+        if (pos >= 19) return '#ef4444';
     } else {
         if (pos === 1) return '#00ff85';
         if (pos <= 4) return '#3b82f6';
         if (pos === 5) return '#fbbf24';
+        if (pos === 6) return '#166534';
         if (pos >= 18) return '#ef4444';
     }
     return 'transparent';
@@ -742,10 +753,69 @@ function displayStats(data) {
     `;
 }
 
-function searchPlayer(e) {
+function _norm(s) {
+    return (s || '').toString().trim().toLowerCase();
+}
+
+function _bestMatch(query, candidates) {
+    const q = _norm(query);
+    if (!q) return null;
+    const exact = candidates.find(c => _norm(c) === q);
+    if (exact) return exact;
+    const starts = candidates.find(c => _norm(c).startsWith(q));
+    if (starts) return starts;
+    const incl = candidates.find(c => _norm(c).includes(q));
+    if (incl) return incl;
+    return null;
+}
+
+function _guessLeagueForTeam(teamName) {
+    const logo = getLogo(teamName) || '';
+    if (logo.includes('mlssoccer')) return 'MLS';
+    if (logo.includes('premierleague')) return 'PREM';
+    return 'LALIGA';
+}
+
+function _findTeamLeague(teamName) {
+    const t = _norm(teamName);
+    const m = allMatches.find(x => _norm(x.home) === t || _norm(x.away) === t);
+    if (m) return m.league;
+    return _guessLeagueForTeam(teamName);
+}
+
+async function searchPlayer(e, inputId = 'playerSearch') {
     if (e.key !== 'Enter') return;
-    const query = document.getElementById('playerSearch').value.trim();
-    if (query) viewPlayer(query);
+    const el = document.getElementById(inputId);
+    if (!el) return;
+    const query = el.value.trim();
+    if (!query) return;
+
+    await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
+
+    const playerCandidates = [];
+    ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
+        const players = statsData[lg].players ? Object.keys(statsData[lg].players) : [];
+        playerCandidates.push(...players);
+    });
+    const matchedPlayer = _bestMatch(query, playerCandidates);
+    if (matchedPlayer) {
+        viewPlayer(matchedPlayer);
+        return;
+    }
+
+    const teamCandidates = Array.from(new Set([
+        ...allMatches.map(m => m.home),
+        ...allMatches.map(m => m.away),
+        ...Object.keys(LOGOS)
+    ].filter(Boolean)));
+
+    const matchedTeam = _bestMatch(query, teamCandidates);
+    if (matchedTeam) {
+        viewTeam(matchedTeam, _findTeamLeague(matchedTeam));
+        return;
+    }
+
+    viewPlayer(query);
 }
 
 function getPlayerInitials(name) {
