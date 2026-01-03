@@ -204,6 +204,259 @@ const LOGOS = {
     "Cincinnati": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500252/assets/logos/mls-clubs/Club_Logo-Cincinatti_ohmgcp.png"
 };
 
+function _normMatch(s) {
+    return (s || '')
+        .toString()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+        .replace(/\s+/g, ' ');
+}
+
+const TEAM_ALIASES = {
+    /* Existing */
+    "real oviedo": "Oviedo",
+    "oviedo": "Oviedo",
+
+    "nott m forest": "Nott'm Forest",
+    "nottingham forest": "Nott'm Forest",
+    "nottingham": "Nott'm Forest",
+
+    "leeds": "Leeds",
+    "leeds united": "Leeds",
+
+    "man united": "Man United",
+    "manchester united": "Man United",
+    "man utd": "Man United",
+
+    "man city": "Man City",
+    "manchester city": "Man City",
+
+    "newcastle": "Newcastle",
+    "newcastle united": "Newcastle",
+
+    "tottenham": "Tottenham",
+    "spurs": "Tottenham",
+    "tottenham hotspur": "Tottenham",
+
+    "athletic": "Athletic Bilbao",
+    "athletic bilbao": "Athletic Bilbao",
+    "athletic club": "Athletic Bilbao",
+
+    "betis": "Real Betis",
+    "real betis": "Real Betis",
+
+    "celta": "Celta Vigo",
+    "celta vigo": "Celta Vigo",
+    "celta de vigo": "Celta Vigo",
+
+    "dallas": "FC Dallas",
+    "fc dallas": "FC Dallas",
+
+    /* La Liga common aliases */
+    "real madrid cf": "Real Madrid",
+    "real madrid": "Real Madrid",
+    "madrid": "Real Madrid",
+    "r madrid": "Real Madrid",
+
+    "fc barcelona": "Barcelona",
+    "barcelona": "Barcelona",
+    "barca": "Barcelona",
+    "bar a": "Barcelona",
+    "fcb": "Barcelona",
+
+    "atletico madrid": "Atletico Madrid",
+    "atletico": "Atletico Madrid",
+    "atleti": "Atletico Madrid",
+    "atl madrid": "Atletico Madrid",
+    "atleti madrid": "Atletico Madrid",
+
+    "real sociedad": "Real Sociedad",
+    "sociedad": "Real Sociedad",
+    "la real": "Real Sociedad",
+
+    "sevilla fc": "Sevilla",
+    "sevilla": "Sevilla",
+
+    "valencia cf": "Valencia",
+    "valencia": "Valencia",
+
+    "villarreal cf": "Villarreal",
+    "villarreal": "Villarreal",
+
+    "girona fc": "Girona",
+    "girona": "Girona",
+
+    "osasuna": "Osasuna",
+    "ca osasuna": "Osasuna",
+    "atletico osasuna": "Osasuna",
+
+    "rayo": "Rayo Vallecano",
+    "rayo vallecano": "Rayo Vallecano",
+
+    "getafe cf": "Getafe",
+    "getafe": "Getafe",
+
+    "deportivo alaves": "Alaves",
+    "alaves": "Alaves",
+    "alav s": "Alaves",
+
+    "ud las palmas": "Las Palmas",
+    "las palmas": "Las Palmas",
+
+    "rcd mallorca": "Mallorca",
+    "mallorca": "Mallorca",
+
+    "rcd espanyol": "Espanyol",
+    "espanyol": "Espanyol",
+
+    "real valladolid": "Valladolid",
+    "valladolid": "Valladolid",
+
+    "cd leganes": "Leganes",
+    "leganes": "Leganes",
+
+    "levante ud": "Levante",
+    "levante": "Levante",
+
+    "elche cf": "Elche",
+    "elche": "Elche",
+
+    /* MLS common aliases */
+    "inter miami": "Miami",
+    "inter miami cf": "Miami",
+    "inter miami c f": "Miami",
+    "miami": "Miami",
+
+    "los angeles fc": "LAFC",
+    "los angeles f c": "LAFC",
+    "lafc": "LAFC",
+
+    "la galaxy": "LA Galaxy",
+    "l a galaxy": "LA Galaxy",
+    "los angeles galaxy": "LA Galaxy",
+    "galaxy": "LA Galaxy",
+
+    "new york city": "NYCFC",
+    "new york city fc": "NYCFC",
+    "new york city f c": "NYCFC",
+    "nycfc": "NYCFC",
+
+    "new york red bulls": "NY Red Bulls",
+    "new york redbulls": "NY Red Bulls",
+    "red bulls": "NY Red Bulls",
+    "ny red bulls": "NY Red Bulls",
+    "rbny": "NY Red Bulls",
+
+    "sporting kansas city": "Sporting KC",
+    "sporting kansas": "Sporting KC",
+    "sporting kc": "Sporting KC",
+    "skc": "Sporting KC",
+    "kansas city": "Sporting KC",
+
+    "d c united": "DC United",
+    "dc united": "DC United",
+    "d c": "DC United",
+
+    "st louis city": "St Louis",
+    "st louis city sc": "St Louis",
+    "st louis city s c": "St Louis",
+    "st louis": "St Louis",
+    "st louis sc": "St Louis",
+
+    "real salt lake": "Salt Lake",
+    "salt lake": "Salt Lake",
+    "rsl": "Salt Lake",
+
+    "seattle sounders": "Seattle",
+    "seattle sounders fc": "Seattle",
+    "seattle": "Seattle",
+    "sounders": "Seattle",
+
+    "portland timbers": "Portland",
+    "portland": "Portland",
+    "timbers": "Portland",
+
+    "orlando city": "Orlando",
+    "orlando city sc": "Orlando",
+    "orlando": "Orlando",
+
+    "atlanta united": "Atlanta",
+    "atlanta united fc": "Atlanta",
+    "atlanta": "Atlanta",
+
+    "toronto fc": "Toronto",
+    "toronto": "Toronto",
+
+    "san diego fc": "San Diego",
+    "san diego": "San Diego",
+
+    "houston dynamo": "Houston",
+    "houston dynamo fc": "Houston",
+    "houston": "Houston",
+
+    "charlotte fc": "Charlotte",
+    "charlotte": "Charlotte",
+
+    "vancouver whitecaps": "Vancouver",
+    "vancouver whitecaps fc": "Vancouver",
+    "vancouver": "Vancouver",
+    "whitecaps": "Vancouver",
+
+    "columbus crew": "Columbus",
+    "columbus crew sc": "Columbus",
+    "columbus": "Columbus",
+
+    "cf montreal": "Montreal",
+    "c f montreal": "Montreal",
+    "club de foot montreal": "Montreal",
+    "montreal": "Montreal",
+
+    "san jose earthquakes": "San Jose",
+    "san jose": "San Jose",
+    "earthquakes": "San Jose",
+
+    "colorado rapids": "Colorado",
+    "colorado": "Colorado",
+    "rapids": "Colorado",
+
+    "new england revolution": "New England",
+    "new england": "New England",
+    "revolution": "New England",
+
+    "minnesota united": "Minnesota",
+    "minnesota united fc": "Minnesota",
+    "minnesota": "Minnesota",
+    "loons": "Minnesota",
+
+    "chicago fire": "Chicago",
+    "chicago fire fc": "Chicago",
+    "chicago": "Chicago",
+
+    "nashville sc": "Nashville",
+    "nashville": "Nashville",
+
+    "austin fc": "Austin",
+    "austin": "Austin",
+
+    "philadelphia union": "Philadelphia",
+    "philadelphia": "Philadelphia",
+
+    "fc cincinnati": "Cincinnati",
+    "cincinnati": "Cincinnati"
+};
+
+function canonicalTeamName(name) {
+    const raw = (name || '').toString().trim();
+    const key = _normMatch(raw);
+    if (!key) return raw;
+    return TEAM_ALIASES[key] || raw;
+}
+
+function sameTeam(a, b) {
+    return canonicalTeamName(a) === canonicalTeamName(b);
+}
+
 const SCHEDULE_URLS = {
     PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv',
     LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1516477023&single=true&output=csv',
@@ -338,11 +591,11 @@ async function loadPlayerPhotoToElement(url, imgEl, fallbackEl) {
 
 function getLogo(team) {
     if (!team) return "";
-    team = team.trim();
+    const t = canonicalTeamName(team).trim();
     for (let key in LOGOS) {
-        if (team.toLowerCase().includes(key.toLowerCase())) return LOGOS[key];
+        if (t.toLowerCase().includes(key.toLowerCase())) return LOGOS[key];
     }
-    return `https://via.placeholder.com/24?text=${team.charAt(0)}`;
+    return `https://via.placeholder.com/24?text=${t.charAt(0)}`;
 }
 
 function parseSheetDate(raw) {
@@ -385,15 +638,6 @@ function parseSheetDate(raw) {
     }
 
     return null;
-}
-
-function _normMatch(s) {
-    return (s || '')
-        .toString()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, ' ')
-        .trim()
-        .replace(/\s+/g, ' ');
 }
 
 function _editDistance(a, b, limit = 999) {
@@ -519,11 +763,15 @@ async function init() {
 
     const pushMatch = (league, date, row) => {
         if (!date || !row[1] || !row[2]) return;
+        const home = (row[1] || '').trim();
+        const away = (row[2] || '').trim();
         allMatches.push({
             league,
             date,
-            home: (row[1] || '').trim(),
-            away: (row[2] || '').trim(),
+            home,
+            away,
+            homeKey: canonicalTeamName(home),
+            awayKey: canonicalTeamName(away),
             score: (row[3] || 'v').trim()
         });
         dateMap[date.getTime()] = true;
@@ -651,6 +899,24 @@ function renderMatches() {
     }).join('');
 }
 
+function _stripLeadingPosFromTeam(pos, team) {
+    const t = (team || '').toString().trim();
+    const p = (pos || '').toString().trim();
+
+    const m = t.match(/^\s*(\d{1,2})\s*[\.\)\-:]?\s+(.+)\s*$/);
+    if (!m) return { pos: p, team: t };
+
+    const lead = m[1];
+    const rest = m[2].trim();
+
+    if (!p) return { pos: lead, team: rest };
+    const pn = parseInt(p, 10);
+    const ln = parseInt(lead, 10);
+    if (!Number.isNaN(pn) && !Number.isNaN(ln) && pn === ln) return { pos: p, team: rest };
+
+    return { pos: p, team: t };
+}
+
 function renderStandings(lg) {
     document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active-league'));
     document.getElementById(`btn-${lg}`).classList.add('active-league');
@@ -664,8 +930,12 @@ function renderStandings(lg) {
         download: true, header: true,
         complete: (res) => {
             body.innerHTML = res.data.map(r => {
-                const pos = r.Position || r.position || r['#'] || '';
-                const team = r.Team || r.team || '';
+                let pos = r.Position || r.position || r['#'] || '';
+                let team = r.Team || r.team || '';
+                const fixed = _stripLeadingPosFromTeam(pos, team);
+                pos = fixed.pos;
+                team = fixed.team;
+
                 const gf = r.GF || 0; const ga = r.GA || 0;
                 const color = getQualifyColor(lg, pos);
                 return `<tr class="border-b border-zinc-800/30">
@@ -711,20 +981,6 @@ function changeDate(step) {
 }
 
 function switchTab(t) {
-    document.getElementById('hub-tab').classList.toggle('hidden', t !== 'hub');
-    document.getElementById('standings-tab').classList.toggle('hidden', t !== 'standings');
-
-    document.querySelectorAll('.nav-item').forEach(el => {
-        const spanText = el.querySelector('span:last-child').textContent;
-        if (t === 'hub' && spanText === 'MAIN HUB') el.classList.add('active');
-        else if (t === 'standings' && spanText === 'STANDINGS') el.classList.add('active');
-        else el.classList.remove('active');
-    });
-
-    if (t === 'standings') renderStandings('PREM');
-}
-
-function switchTab(t) {
     currentView = t;
     document.getElementById('hub-tab').classList.toggle('hidden', t !== 'hub');
     document.getElementById('standings-tab').classList.toggle('hidden', t !== 'standings');
@@ -754,7 +1010,8 @@ function _buildTeamPlayerIndex(playersObj) {
     const idx = {};
     Object.keys(playersObj || {}).forEach(k => {
         const p = playersObj[k];
-        const teamNorm = _normMatch(p.team);
+        const teamKey = (p.teamKey || canonicalTeamName(p.team) || '').toString();
+        const teamNorm = _normMatch(teamKey);
         if (!idx[teamNorm]) idx[teamNorm] = { keys: [], byExactName: {}, keyToNameNorm: {} };
         const nameNorm = _normMatch(p.name);
         idx[teamNorm].keys.push(k);
@@ -765,7 +1022,8 @@ function _buildTeamPlayerIndex(playersObj) {
 }
 
 function _resolvePlayerKeyForEntry(teamIndex, league, team, name) {
-    const teamNorm = _normMatch(team);
+    const teamKey = canonicalTeamName(team);
+    const teamNorm = _normMatch(teamKey);
     const nameNorm = _normMatch(name);
 
     const bucket = teamIndex[teamNorm];
@@ -799,34 +1057,21 @@ function _resolvePlayerKeyForEntry(teamIndex, league, team, name) {
 }
 
 async function loadStats(league) {
-    console.log('Loading stats for:', league);
-
     if (!STATS_URLS[league].leaderboard) {
-        console.log('No leaderboard URL for', league);
         statsData[league] = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {}, loaded: true };
         return;
     }
 
-    if (statsData[league].loaded) {
-        console.log('Stats already loaded for', league);
-        return;
-    }
+    if (statsData[league].loaded) return;
 
     const data = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {} };
 
     try {
-        console.log('Fetching leaderboard...');
         const leaderboardData = await new Promise((resolve) => {
             Papa.parse(STATS_URLS[league].leaderboard, {
                 download: true,
-                complete: (r) => {
-                    console.log('Leaderboard loaded, rows:', r.data.length);
-                    resolve(r.data);
-                },
-                error: (err) => {
-                    console.error('Leaderboard error:', err);
-                    resolve([]);
-                }
+                complete: (r) => resolve(r.data),
+                error: () => resolve([])
             });
         });
 
@@ -851,7 +1096,8 @@ async function loadStats(league) {
                 if (row[8] && row[10]) {
                     const name = row[8];
                     const team = row[11];
-                    const key = _makePlayerKey(league, team, name);
+                    const teamKey = canonicalTeamName(team);
+                    const key = _makePlayerKey(league, teamKey, name);
 
                     const photoUrl = _extractPhotoUrlFromRow(row);
                     const nationality = _extractNationalityFromRow(row, team);
@@ -872,6 +1118,7 @@ async function loadStats(league) {
                         league,
                         name,
                         team,
+                        teamKey,
                         position: row[9],
                         goals: 0,
                         assists: 0,
@@ -892,13 +1139,16 @@ async function loadStats(league) {
             const resolvedKey = _resolvePlayerKeyForEntry(teamIndex, league, entry.team, entry.name);
             if (resolvedKey) return resolvedKey;
 
-            const key = _makePlayerKey(league, entry.team, entry.name);
+            const teamKey = canonicalTeamName(entry.team);
+            const key = _makePlayerKey(league, teamKey, entry.name);
+
             if (!data.players[key]) {
                 data.players[key] = {
                     key,
                     league,
                     name: entry.name,
                     team: entry.team,
+                    teamKey,
                     position: '',
                     goals: 0,
                     assists: 0,
@@ -909,13 +1159,15 @@ async function loadStats(league) {
                     nationality: '',
                     photoUrl: ''
                 };
-                const tNorm = _normMatch(entry.team);
+
+                const tNorm = _normMatch(teamKey);
                 if (!teamIndex[tNorm]) teamIndex[tNorm] = { keys: [], byExactName: {}, keyToNameNorm: {} };
                 teamIndex[tNorm].keys.push(key);
                 const nNorm = _normMatch(entry.name);
                 if (!teamIndex[tNorm].byExactName[nNorm]) teamIndex[tNorm].byExactName[nNorm] = key;
                 teamIndex[tNorm].keyToNameNorm[key] = nNorm;
             }
+
             return key;
         }
 
@@ -1055,10 +1307,29 @@ function _guessLeagueForTeam(teamName) {
 }
 
 function _findTeamLeague(teamName) {
-    const t = _norm(teamName);
-    const m = allMatches.find(x => _norm(x.home) === t || _norm(x.away) === t);
+    const tk = canonicalTeamName(teamName);
+    const m = allMatches.find(x => x.homeKey === tk || x.awayKey === tk);
     if (m) return m.league;
     return _guessLeagueForTeam(teamName);
+}
+
+function _resolveTeamFromQuery(query) {
+    const rep = {};
+    const add = (t) => {
+        if (!t) return;
+        const k = canonicalTeamName(t);
+        if (!rep[k]) rep[k] = t;
+    };
+
+    allMatches.forEach(m => { add(m.home); add(m.away); });
+    Object.keys(LOGOS).forEach(add);
+    Object.keys(TEAM_ALIASES).forEach(aliasNorm => add(TEAM_ALIASES[aliasNorm]));
+
+    const qKey = canonicalTeamName(query);
+    if (rep[qKey]) return rep[qKey];
+
+    const candidates = Object.values(rep);
+    return _bestMatch(query, candidates);
 }
 
 async function searchPlayer(e, inputId = 'globalSearch') {
@@ -1084,13 +1355,7 @@ async function searchPlayer(e, inputId = 'globalSearch') {
         return;
     }
 
-    const teamCandidates = Array.from(new Set([
-        ...allMatches.map(m => m.home),
-        ...allMatches.map(m => m.away),
-        ...Object.keys(LOGOS)
-    ].filter(Boolean)));
-
-    const matchedTeam = _bestMatch(query, teamCandidates);
+    const matchedTeam = _resolveTeamFromQuery(query);
     if (matchedTeam) {
         viewTeam(matchedTeam, _findTeamLeague(matchedTeam));
         return;
@@ -1172,6 +1437,19 @@ async function viewPlayer(playerKeyOrName) {
                     <div class="text-xs text-zinc-500 mt-1">AVG RATING</div>
                 </div>
             </div>
+
+            ${playerData.recentRatings && playerData.recentRatings.length > 0 ? `
+            <div class="stat-card">
+                <h3 class="text-sm font-black text-[#00ff85] mb-4">LAST 5 RATINGS</h3>
+                <div class="flex gap-2">
+                    ${playerData.recentRatings.map(r => `
+                        <div class="flex-1 bg-zinc-900 rounded-lg py-3 text-center">
+                            <div class="font-black text-[#00ff85]">${parseFloat(r).toFixed(1)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
         </div>
     `;
 
@@ -1194,10 +1472,12 @@ async function viewTeam(teamName, league) {
 
     await loadStats(league);
 
-    const teamPlayers = Object.values(statsData[league].players || {}).filter(p => p.team === teamName);
+    const teamKey = canonicalTeamName(teamName);
+
+    const teamPlayers = Object.values(statsData[league].players || {}).filter(p => (p.teamKey || canonicalTeamName(p.team)) === teamKey);
 
     const teamMatches = allMatches
-        .filter(m => m.league === league && (m.home === teamName || m.away === teamName))
+        .filter(m => m.league === league && (m.homeKey === teamKey || m.awayKey === teamKey))
         .sort((a, b) => a.date - b.date);
 
     const today = new Date();
@@ -1217,7 +1497,7 @@ async function viewTeam(teamName, league) {
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">LAST 5 RESULTS</h3>
                 ${past.map(m => {
-                    const isHome = m.home === teamName;
+                    const isHome = m.homeKey === teamKey;
                     const opponent = isHome ? m.away : m.home;
                     return `
                     <div class="flex items-center justify-between py-3 border-b border-zinc-800">
@@ -1235,7 +1515,7 @@ async function viewTeam(teamName, league) {
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">NEXT 5 FIXTURES</h3>
                 ${future.map(m => {
-                    const isHome = m.home === teamName;
+                    const isHome = m.homeKey === teamKey;
                     const opponent = isHome ? m.away : m.home;
                     const dObj = m.date;
                     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
