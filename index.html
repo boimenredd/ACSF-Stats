@@ -213,8 +213,26 @@ function _normMatch(s) {
         .replace(/\s+/g, ' ');
 }
 
+const TEAM_EMOJIS = {
+    "Man United": "🔴",
+    "Man City": "🔵",
+    "Liverpool": "🔴",
+    "Arsenal": "🔴",
+    "Chelsea": "🔵",
+    "Tottenham": "⚪",
+    "Newcastle": "⚫",
+    "Barcelona": "🔵🔴",
+    "Real Madrid": "⚪",
+    "Atletico Madrid": "🔴⚪",
+    "Miami": "🩷",
+    "LAFC": "🖤💛",
+    "LA Galaxy": "⭐",
+    "Seattle": "🌲",
+    "NYCFC": "🗽",
+    "NY Red Bulls": "🐂"
+};
+
 const TEAM_ALIASES = {
-    /* Existing */
     "real oviedo": "Oviedo",
     "oviedo": "Oviedo",
 
@@ -253,7 +271,6 @@ const TEAM_ALIASES = {
     "dallas": "FC Dallas",
     "fc dallas": "FC Dallas",
 
-    /* La Liga common aliases */
     "real madrid cf": "Real Madrid",
     "real madrid": "Real Madrid",
     "madrid": "Real Madrid",
@@ -322,7 +339,6 @@ const TEAM_ALIASES = {
     "elche cf": "Elche",
     "elche": "Elche",
 
-    /* MLS common aliases */
     "inter miami": "Miami",
     "inter miami cf": "Miami",
     "inter miami c f": "Miami",
@@ -455,6 +471,11 @@ function canonicalTeamName(name) {
 
 function sameTeam(a, b) {
     return canonicalTeamName(a) === canonicalTeamName(b);
+}
+
+function getTeamEmoji(teamName) {
+    const key = canonicalTeamName(teamName || '');
+    return TEAM_EMOJIS[key] || "🛡️";
 }
 
 const SCHEDULE_URLS = {
@@ -783,32 +804,6 @@ function _extractPhotoUrlFromRow(row) {
         if (!v) continue;
         if (/^https?:\/\//i.test(v) && /\.(png|jpg|jpeg|webp|gif)(\?.*)?$/i.test(v)) return v;
         if (/^https?:\/\//i.test(v) && /image|img|photo|headshot|avatar/i.test(v)) return v;
-    }
-    return '';
-}
-
-function _extractNationalityFromRow(row, fallbackTeam) {
-    const cells = row || [];
-    const teamNorm = _normMatch(fallbackTeam || '');
-    for (let idx of [13, 14, 15, 16, 17]) {
-        const v = (cells[idx] || '').toString().trim();
-        if (!v) continue;
-        if (/^https?:\/\//i.test(v)) continue;
-        if (/^\d+(\.\d+)?$/.test(v)) continue;
-        const n = _normMatch(v);
-        if (!n) continue;
-        if (teamNorm && n === teamNorm) continue;
-        if (n.length >= 2 && n.length <= 30) return v;
-    }
-    for (let i = cells.length - 1; i >= 0; i--) {
-        const v = (cells[i] || '').toString().trim();
-        if (!v) continue;
-        if (/^https?:\/\//i.test(v)) continue;
-        if (/^\d+(\.\d+)?$/.test(v)) continue;
-        const n = _normMatch(v);
-        if (!n) continue;
-        if (teamNorm && n === teamNorm) continue;
-        if (n.length >= 2 && n.length <= 30) return v;
     }
     return '';
 }
@@ -1156,7 +1151,6 @@ async function loadStats(league) {
                     const key = _makePlayerKey(league, teamKey, name);
 
                     const photoUrl = _extractPhotoUrlFromRow(row);
-                    const nationality = _extractNationalityFromRow(row, team);
 
                     data.ratings.push({
                         rank: row[7],
@@ -1182,7 +1176,6 @@ async function loadStats(league) {
                         avgRating: row[10],
                         matches: row[12],
                         recentRatings: [],
-                        nationality,
                         photoUrl
                     };
                 }
@@ -1212,7 +1205,6 @@ async function loadStats(league) {
                     avgRating: 0,
                     matches: 0,
                     recentRatings: [],
-                    nationality: '',
                     photoUrl: ''
                 };
 
@@ -1282,7 +1274,7 @@ function displayStats(data) {
                             <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
                             <div>
                                 <div class="font-bold text-sm">${p.name}</div>
-                                <div class="text-[10px] text-zinc-500">${p.team}</div>
+                                <div class="text-[10px] text-zinc-500"><span class="mr-1">${getTeamEmoji(p.team)}</span>${p.team}</div>
                             </div>
                         </div>
                         <span class="text-[#00ff85] font-black">${p.value}</span>
@@ -1298,7 +1290,7 @@ function displayStats(data) {
                             <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
                             <div>
                                 <div class="font-bold text-sm">${p.name}</div>
-                                <div class="text-[10px] text-zinc-500">${p.team}</div>
+                                <div class="text-[10px] text-zinc-500"><span class="mr-1">${getTeamEmoji(p.team)}</span>${p.team}</div>
                             </div>
                         </div>
                         <span class="text-[#00ff85] font-black">${p.value}</span>
@@ -1314,7 +1306,7 @@ function displayStats(data) {
                             <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
                             <div>
                                 <div class="font-bold text-sm">${p.name}</div>
-                                <div class="text-[10px] text-zinc-500">${p.team}</div>
+                                <div class="text-[10px] text-zinc-500"><span class="mr-1">${getTeamEmoji(p.team)}</span>${p.team}</div>
                             </div>
                         </div>
                         <span class="text-[#00ff85] font-black">${p.value}</span>
@@ -1330,7 +1322,7 @@ function displayStats(data) {
                             <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
                             <div>
                                 <div class="font-bold text-sm">${p.name}</div>
-                                <div class="text-[10px] text-zinc-500">${p.team} • ${p.matches || 0} apps</div>
+                                <div class="text-[10px] text-zinc-500"><span class="mr-1">${getTeamEmoji(p.team)}</span>${p.team} • ${p.matches || 0} apps</div>
                             </div>
                         </div>
                         <span class="text-[#00ff85] font-black">${parseFloat(p.value).toFixed(2)}</span>
@@ -1456,7 +1448,7 @@ async function viewPlayer(playerKeyOrName) {
 
     const isGK = playerData.position && playerData.position.toLowerCase().includes('gk');
     const photoUrl = (playerData.photoUrl || '').toString().trim();
-    const nationality = (playerData.nationality || '').toString().trim();
+    const teamEmoji = getTeamEmoji(playerData.team);
 
     content.innerHTML = `
         <div class="space-y-6">
@@ -1467,9 +1459,11 @@ async function viewPlayer(playerKeyOrName) {
                 </div>
                 <div class="text-center">
                     <h2 class="text-2xl font-black">${playerData.name}</h2>
-                    <p class="text-zinc-500 text-sm">${playerData.team}</p>
+                    <p class="text-zinc-500 text-sm">
+                        <span class="mr-1">${teamEmoji}</span>
+                        <span class="cursor-pointer hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(playerData.team)}', '${playerData.league}')">${playerData.team}</span>
+                    </p>
                     <p class="text-zinc-600 text-xs mt-1">${playerData.position || 'N/A'}</p>
-                    ${nationality ? `<p class="text-zinc-600 text-xs mt-1">${nationality}</p>` : ``}
                 </div>
             </div>
 
