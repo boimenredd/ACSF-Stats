@@ -12,7 +12,7 @@
         :root { --accent: #00ff85; --bg: #0b0e11; --card: #161b22; --border: #30363d; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; overflow-x: hidden; }
         header { background: rgba(11, 14, 17, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: fixed; top: 0; width: 100%; max-width: 448px; z-index: 100; }
-        
+
         .date-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px; margin-top: 70px; }
         .date-display { font-weight: 900; font-size: 14px; text-transform: uppercase; text-align: center; flex: 1; }
         .nav-arrow { width: 36px; height: 36px; background: #222; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; font-weight: bold; }
@@ -81,9 +81,6 @@
     </div>
 
     <div id="stats-tab" class="hidden pt-20 pb-6">
-        <div class="px-4 mb-4">
-            <input type="text" id="playerSearch" class="search-input" placeholder="Search teams or players..." onkeyup="searchPlayer(event)">
-        </div>
         <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
             <button id="stat-btn-PREM" onclick="renderStats('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
             <button id="stat-btn-LALIGA" onclick="renderStats('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
@@ -123,88 +120,88 @@
     </nav>
 
 <script>
-const LOGOS = { 
-    "Liverpool": "https://resources.premierleague.com/premierleague25/badges-alt/14.svg", 
-    "Newcastle": "https://resources.premierleague.com/premierleague25/badges-alt/4.svg", 
-    "Chelsea": "https://resources.premierleague.com/premierleague25/badges-alt/8.svg", 
-    "Aston Villa": "https://resources.premierleague.com/premierleague25/badges-alt/7.svg", 
-    "Man City": "https://resources.premierleague.com/premierleague25/badges-alt/43.svg", 
-    "Man United": "https://resources.premierleague.com/premierleague25/badges-alt/1.svg", 
-    "Arsenal": "https://resources.premierleague.com/premierleague25/badges-alt/3.svg", 
-    "Southampton": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c9/FC_Southampton.svg/1051px-FC_Southampton.svg.png", 
-    "Bournemouth": "https://resources.premierleague.com/premierleague25/badges-alt/91.svg", 
-    "Leeds": "https://resources.premierleague.com/premierleague25/badges-alt/2.svg", 
-    "Brighton": "https://resources.premierleague.com/premierleague25/badges-alt/36.svg", 
-    "West Ham": "https://resources.premierleague.com/premierleague25/badges-alt/21.svg", 
-    "Brentford": "https://resources.premierleague.com/premierleague25/badges-alt/94.svg", 
-    "Tottenham": "https://resources.premierleague.com/premierleague25/badges-alt/6.svg", 
-    "Crystal Palace": "https://resources.premierleague.com/premierleague25/badges-alt/31.svg", 
-    "Leicester": "https://upload.wikimedia.org/wikipedia/en/thumb/2/2d/Leicester_City_crest.svg/1200px-Leicester_City_crest.svg.png", 
-    "Nott'm Forest": "https://resources.premierleague.com/premierleague25/badges-alt/17.svg", 
-    "Nottingham": "https://resources.premierleague.com/premierleague25/badges-alt/17.svg", 
-    "Sunderland": "https://resources.premierleague.com/premierleague25/badges-alt/56.svg", 
-    "Burnley": "https://resources.premierleague.com/premierleague25/badges-alt/90.svg", 
-    "Wolves": "https://resources.premierleague.com/premierleague25/badges-alt/39.svg", 
-    "Fulham": "https://resources.premierleague.com/premierleague25/badges-alt/54.svg", 
-    "Everton": "https://resources.premierleague.com/premierleague25/badges-alt/11.svg", 
-    "Ipswich": "https://resources.premierleague.com/premierleague25/badges-alt/40.svg", 
-    "Barcelona": "https://ssl.gstatic.com/onebox/media/sports/logos/paYnEE8hcrP96neHRNofhQ_48x48.png", 
-    "Real Madrid": "https://ssl.gstatic.com/onebox/media/sports/logos/Th4fAVAZeCJWRcKoLW7koA_48x48.png", 
-    "Sevilla": "https://ssl.gstatic.com/onebox/media/sports/logos/hCTs5EX3WjCMC5Jl3QE4Rw_48x48.png", 
-    "Real Sociedad": "https://ssl.gstatic.com/onebox/media/sports/logos/w8tb1aeBfVZIj9tZXf7eZg_48x48.png", 
-    "Girona": "https://ssl.gstatic.com/onebox/media/sports/logos/sHiSmLm_rA0BOC5MfrNt8A_48x48.png", 
-    "Atletico Madrid": "https://ssl.gstatic.com/onebox/media/sports/logos/pEqmA7CL-VRo4Llq3rwIPA_48x48.png", 
-    "Athletic Bilbao": "https://ssl.gstatic.com/onebox/media/sports/logos/OSL_5Zm6kYPP1J17Bo5uDA_48x48.png", 
-    "Athletic": "https://ssl.gstatic.com/onebox/media/sports/logos/OSL_5Zm6kYPP1J17Bo5uDA_48x48.png", 
-    "Elche": "https://ssl.gstatic.com/onebox/media/sports/logos/uyyqqxLIYT_lQIXRyMI_RA_48x48.png", 
-    "Osasuna": "https://ssl.gstatic.com/onebox/media/sports/logos/pk-hNCNpGM_JDoHHvLVF-Q_48x48.png", 
-    "Villarreal": "https://ssl.gstatic.com/onebox/media/sports/logos/WKH7Ak5cYD6Qm1EEqXzmVw_48x48.png", 
-    "Levante": "https://ssl.gstatic.com/onebox/media/sports/logos/SQB-jlVosxVV1Ce79FhbOA_48x48.png", 
-    "Las Palmas": "https://upload.wikimedia.org/wikipedia/sco/thumb/2/20/UD_Las_Palmas_logo.svg/1188px-UD_Las_Palmas_logo.svg.png", 
-    "Mallorca": "https://ssl.gstatic.com/onebox/media/sports/logos/Ss21P4CUmigjrEtcoapjVg_48x48.png", 
-    "Espanyol": "https://ssl.gstatic.com/onebox/media/sports/logos/TKitIqelDyN6M-kYt4Uc0g_48x48.png", 
-    "Valencia": "https://ssl.gstatic.com/onebox/media/sports/logos/QPbjvDwI_0Wuu4tCS2O6uw_48x48.png", 
-    "Real Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png", 
-    "Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png", 
-    "Oviedo": "https://ssl.gstatic.com/onebox/media/sports/logos/2hbZVQulcYqiPFXkWDkB_g_48x48.png", 
-    "Celta Vigo": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png", 
-    "Celta": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png", 
-    "Rayo Vallecano": "https://ssl.gstatic.com/onebox/media/sports/logos/i5LifmxEVIl0sbvIysiyhw_48x48.png", 
-    "Alaves": "https://ssl.gstatic.com/onebox/media/sports/logos/RUcTOeFcBc7q7uku1nR_iQ_48x48.png", 
+const LOGOS = {
+    "Liverpool": "https://resources.premierleague.com/premierleague25/badges-alt/14.svg",
+    "Newcastle": "https://resources.premierleague.com/premierleague25/badges-alt/4.svg",
+    "Chelsea": "https://resources.premierleague.com/premierleague25/badges-alt/8.svg",
+    "Aston Villa": "https://resources.premierleague.com/premierleague25/badges-alt/7.svg",
+    "Man City": "https://resources.premierleague.com/premierleague25/badges-alt/43.svg",
+    "Man United": "https://resources.premierleague.com/premierleague25/badges-alt/1.svg",
+    "Arsenal": "https://resources.premierleague.com/premierleague25/badges-alt/3.svg",
+    "Southampton": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c9/FC_Southampton.svg/1051px-FC_Southampton.svg.png",
+    "Bournemouth": "https://resources.premierleague.com/premierleague25/badges-alt/91.svg",
+    "Leeds": "https://resources.premierleague.com/premierleague25/badges-alt/2.svg",
+    "Brighton": "https://resources.premierleague.com/premierleague25/badges-alt/36.svg",
+    "West Ham": "https://resources.premierleague.com/premierleague25/badges-alt/21.svg",
+    "Brentford": "https://resources.premierleague.com/premierleague25/badges-alt/94.svg",
+    "Tottenham": "https://resources.premierleague.com/premierleague25/badges-alt/6.svg",
+    "Crystal Palace": "https://resources.premierleague.com/premierleague25/badges-alt/31.svg",
+    "Leicester": "https://upload.wikimedia.org/wikipedia/en/thumb/2/2d/Leicester_City_crest.svg/1200px-Leicester_City_crest.svg.png",
+    "Nott'm Forest": "https://resources.premierleague.com/premierleague25/badges-alt/17.svg",
+    "Nottingham": "https://resources.premierleague.com/premierleague25/badges-alt/17.svg",
+    "Sunderland": "https://resources.premierleague.com/premierleague25/badges-alt/56.svg",
+    "Burnley": "https://resources.premierleague.com/premierleague25/badges-alt/90.svg",
+    "Wolves": "https://resources.premierleague.com/premierleague25/badges-alt/39.svg",
+    "Fulham": "https://resources.premierleague.com/premierleague25/badges-alt/54.svg",
+    "Everton": "https://resources.premierleague.com/premierleague25/badges-alt/11.svg",
+    "Ipswich": "https://resources.premierleague.com/premierleague25/badges-alt/40.svg",
+    "Barcelona": "https://ssl.gstatic.com/onebox/media/sports/logos/paYnEE8hcrP96neHRNofhQ_48x48.png",
+    "Real Madrid": "https://ssl.gstatic.com/onebox/media/sports/logos/Th4fAVAZeCJWRcKoLW7koA_48x48.png",
+    "Sevilla": "https://ssl.gstatic.com/onebox/media/sports/logos/hCTs5EX3WjCMC5Jl3QE4Rw_48x48.png",
+    "Real Sociedad": "https://ssl.gstatic.com/onebox/media/sports/logos/w8tb1aeBfVZIj9tZXf7eZg_48x48.png",
+    "Girona": "https://ssl.gstatic.com/onebox/media/sports/logos/sHiSmLm_rA0BOC5MfrNt8A_48x48.png",
+    "Atletico Madrid": "https://ssl.gstatic.com/onebox/media/sports/logos/pEqmA7CL-VRo4Llq3rwIPA_48x48.png",
+    "Athletic Bilbao": "https://ssl.gstatic.com/onebox/media/sports/logos/OSL_5Zm6kYPP1J17Bo5uDA_48x48.png",
+    "Athletic": "https://ssl.gstatic.com/onebox/media/sports/logos/OSL_5Zm6kYPP1J17Bo5uDA_48x48.png",
+    "Elche": "https://ssl.gstatic.com/onebox/media/sports/logos/uyyqqxLIYT_lQIXRyMI_RA_48x48.png",
+    "Osasuna": "https://ssl.gstatic.com/onebox/media/sports/logos/pk-hNCNpGM_JDoHHvLVF-Q_48x48.png",
+    "Villarreal": "https://ssl.gstatic.com/onebox/media/sports/logos/WKH7Ak5cYD6Qm1EEqXzmVw_48x48.png",
+    "Levante": "https://ssl.gstatic.com/onebox/media/sports/logos/SQB-jlVosxVV1Ce79FhbOA_48x48.png",
+    "Las Palmas": "https://upload.wikimedia.org/wikipedia/sco/thumb/2/20/UD_Las_Palmas_logo.svg/1188px-UD_Las_Palmas_logo.svg.png",
+    "Mallorca": "https://ssl.gstatic.com/onebox/media/sports/logos/Ss21P4CUmigjrEtcoapjVg_48x48.png",
+    "Espanyol": "https://ssl.gstatic.com/onebox/media/sports/logos/TKitIqelDyN6M-kYt4Uc0g_48x48.png",
+    "Valencia": "https://ssl.gstatic.com/onebox/media/sports/logos/QPbjvDwI_0Wuu4tCS2O6uw_48x48.png",
+    "Real Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png",
+    "Betis": "https://ssl.gstatic.com/onebox/media/sports/logos/XDClkrMKtkm3UTP2YKN6oQ_48x48.png",
+    "Oviedo": "https://ssl.gstatic.com/onebox/media/sports/logos/2hbZVQulcYqiPFXkWDkB_g_48x48.png",
+    "Celta Vigo": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png",
+    "Celta": "https://ssl.gstatic.com/onebox/media/sports/logos/wpdhixHP_sloegfP0UlwAw_48x48.png",
+    "Rayo Vallecano": "https://ssl.gstatic.com/onebox/media/sports/logos/i5LifmxEVIl0sbvIysiyhw_48x48.png",
+    "Alaves": "https://ssl.gstatic.com/onebox/media/sports/logos/RUcTOeFcBc7q7uku1nR_iQ_48x48.png",
     "Getafe": "https://ssl.gstatic.com/onebox/media/sports/logos/KfkDhn99TYUcNr8aBaLjqA_48x48.png",
     "Leganes": "https://ssl.gstatic.com/onebox/media/sports/logos/WM1T3GdEWT_BvbUQ0UInaw_48x48.png",
     "Valladolid": "https://ssl.gstatic.com/onebox/media/sports/logos/fsE7yqRo-8qLhH4dqKBMNg_48x48.png",
-    "Miami": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755405/assets/logos/mls-clubs/Club_Logo-Miami_tyqe64.png", 
-    "LAFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v174775309/assets/logos/mls-clubs/Club_Logo-LAFC_djrhru.png", 
-    "Atlanta": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747499879/assets/logos/mls-clubs/Club_Logo-Atlanta_jtk7ku.png", 
-    "Toronto": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265251/assets/logos/mls-clubs/Club_Logo-Toronto_vz6hao.png", 
-    "San Diego": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748261519/assets/logos/mls-clubs/Club_Logo-San_Diego_nwpyul.png", 
-    "Orlando": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747769281/assets/logos/mls-clubs/Club_Logo-Orlando_ryyn7a.png", 
-    "Houston": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500939/assets/logos/mls-clubs/Club_Logo-Houston_oifm77.png", 
-    "Charlotte": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500045/assets/logos/mls-clubs/Club_Logo-Charlotte_p7sznf.png", 
-    "Salt Lake": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747776403/assets/logos/mls-clubs/Club_Logo-Salt_Lake_City_hpvde5.png", 
-    "Vancouver": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265547/assets/logos/mls-clubs/Club_Logo-Vancouver_ao9phl.png", 
-    "LA Galaxy": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755165/assets/logos/mls-clubs/Club_Logo-LA_Galaxy_fg0wjp.png", 
-    "Seattle": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265125/assets/logos/mls-clubs/Club_Logo-Seattle_e6jk2x.png", 
-    "Columbus": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500414/assets/logos/mls-clubs/Club_Logo-Columbus_light_z3eq8l.png", 
-    "Montreal": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755806/assets/logos/mls-clubs/Club_Logo-Montreal_beeqnh.png", 
-    "San Jose": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748262048/assets/logos/mls-clubs/Club_Logo-San_Jose_opzlmo.png", 
-    "NY Red Bulls": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771783/assets/logos/mls-clubs/Club_Logo-RBNY_dwawvt.png", 
-    "Colorado": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500322/assets/logos/mls-clubs/Club_Logo-Colorado_n5kpss.png", 
-    "New England": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1766020750/assets/NE_Logo_PRI_FC_RGB_480x480_fdx2us.png", 
-    "Minnesota": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754826/assets/logos/mls-clubs/Club_Logo-Minnesota_ftweor.png", 
-    "Chicago": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500178/assets/logos/mls-clubs/Club_Logo-Chicago_jm2yev.png", 
-    "Portland": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771943/assets/logos/mls-clubs/Club_Logo-Portland_jrihbf.png", 
-    "Nashville": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754937/assets/logos/mls-clubs/Club_Logo-Nashville_owcihx.png", 
-    "Austin": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500115/assets/logos/mls-clubs/Club_Logo-Austin_u0tpqe.png", 
-    "FC Dallas": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500587/assets/logos/mls-clubs/Club_Logo-Dallas_oxywdo.png", 
-    "Dallas": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500587/assets/logos/mls-clubs/Club_Logo-Dallas_oxywdo.png", 
-    "St Louis": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265198/assets/logos/mls-clubs/Club_Logo-St._Louis_oikgm5.png", 
-    "NYCFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755975/assets/logos/mls-clubs/Club_Logo-NYC_vhnmkv.png", 
-    "Philadelphia": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747772038/assets/logos/mls-clubs/Club_Logo-Philadelphia_l8yj9f.png", 
-    "Sporting KC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265350/assets/logos/mls-clubs/Club_Logo-Sporting_Kansas_City_rrkzdb.png", 
-    "DC United": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500514/assets/logos/mls-clubs/Club_Logo-DC_United_igj4qy.png", 
-    "Cincinnati": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500252/assets/logos/mls-clubs/Club_Logo-Cincinatti_ohmgcp.png" 
+    "Miami": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755405/assets/logos/mls-clubs/Club_Logo-Miami_tyqe64.png",
+    "LAFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v174775309/assets/logos/mls-clubs/Club_Logo-LAFC_djrhru.png",
+    "Atlanta": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747499879/assets/logos/mls-clubs/Club_Logo-Atlanta_jtk7ku.png",
+    "Toronto": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265251/assets/logos/mls-clubs/Club_Logo-Toronto_vz6hao.png",
+    "San Diego": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748261519/assets/logos/mls-clubs/Club_Logo-San_Diego_nwpyul.png",
+    "Orlando": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747769281/assets/logos/mls-clubs/Club_Logo-Orlando_ryyn7a.png",
+    "Houston": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500939/assets/logos/mls-clubs/Club_Logo-Houston_oifm77.png",
+    "Charlotte": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500045/assets/logos/mls-clubs/Club_Logo-Charlotte_p7sznf.png",
+    "Salt Lake": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747776403/assets/logos/mls-clubs/Club_Logo-Salt_Lake_City_hpvde5.png",
+    "Vancouver": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265547/assets/logos/mls-clubs/Club_Logo-Vancouver_ao9phl.png",
+    "LA Galaxy": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755165/assets/logos/mls-clubs/Club_Logo-LA_Galaxy_fg0wjp.png",
+    "Seattle": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265125/assets/logos/mls-clubs/Club_Logo-Seattle_e6jk2x.png",
+    "Columbus": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500414/assets/logos/mls-clubs/Club_Logo-Columbus_light_z3eq8l.png",
+    "Montreal": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755806/assets/logos/mls-clubs/Club_Logo-Montreal_beeqnh.png",
+    "San Jose": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748262048/assets/logos/mls-clubs/Club_Logo-San_Jose_opzlmo.png",
+    "NY Red Bulls": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771783/assets/logos/mls-clubs/Club_Logo-RBNY_dwawvt.png",
+    "Colorado": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500322/assets/logos/mls-clubs/Club_Logo-Colorado_n5kpss.png",
+    "New England": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1766020750/assets/NE_Logo_PRI_FC_RGB_480x480_fdx2us.png",
+    "Minnesota": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754826/assets/logos/mls-clubs/Club_Logo-Minnesota_ftweor.png",
+    "Chicago": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500178/assets/logos/mls-clubs/Club_Logo-Chicago_jm2yev.png",
+    "Portland": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747771943/assets/logos/mls-clubs/Club_Logo-Portland_jrihbf.png",
+    "Nashville": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747754937/assets/logos/mls-clubs/Club_Logo-Nashville_owcihx.png",
+    "Austin": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500115/assets/logos/mls-clubs/Club_Logo-Austin_u0tpqe.png",
+    "FC Dallas": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500587/assets/logos/mls-clubs/Club_Logo-Dallas_oxywdo.png",
+    "Dallas": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500587/assets/logos/mls-clubs/Club_Logo-Dallas_oxywdo.png",
+    "St Louis": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265198/assets/logos/mls-clubs/Club_Logo-St._Louis_oikgm5.png",
+    "NYCFC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747755975/assets/logos/mls-clubs/Club_Logo-NYC_vhnmkv.png",
+    "Philadelphia": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747772038/assets/logos/mls-clubs/Club_Logo-Philadelphia_l8yj9f.png",
+    "Sporting KC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265350/assets/logos/mls-clubs/Club_Logo-Sporting_Kansas_City_rrkzdb.png",
+    "DC United": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500514/assets/logos/mls-clubs/Club_Logo-DC_United_igj4qy.png",
+    "Cincinnati": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500252/assets/logos/mls-clubs/Club_Logo-Cincinatti_ohmgcp.png"
 };
 
 const SCHEDULE_URLS = {
@@ -265,26 +262,28 @@ function getLogo(team) {
 
 function parseSheetDate(raw) {
     if (!raw) return null;
-    
+
+    const str = raw.trim();
+    const monthNameRegex = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|June|July|August|September|October|November|December)/i;
+
+    if (/matchday/i.test(str) || (!monthNameRegex.test(str) && /^\s*\d+[A-Z]?\b/i.test(str))) {
+        return 'MATCHDAY_MARKER';
+    }
+
     const monthMap = {
         "January": 0, "February": 1, "March": 2, "April": 3, "May": 4, "June": 5,
         "July": 6, "August": 7, "September": 8, "October": 9, "November": 10, "December": 11,
-        "Jan": 0, "Feb": 1, "Mar": 2, "Apr": 3, "Jun": 6, 
+        "Jan": 0, "Feb": 1, "Mar": 2, "Apr": 3, "Jun": 5,
         "Jul": 6, "Aug": 7, "Sep": 8, "Oct": 9, "Nov": 10, "Dec": 11
     };
-    
-    let str = raw.trim();
-    
-    // Check if "2025" is explicitly in the date string
+
     const has2025 = str.includes('2025');
-    
-    // Handle formats like "Aug 15" or "August 15" (even if "Matchday" text is present)
+
     let match = str.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\.?\s*(\d+)/i);
     if (match) {
-        let monthStr = match[1];
-        let day = parseInt(match[2]);
-        
-        // Find month number
+        const monthStr = match[1];
+        const day = parseInt(match[2], 10);
+
         let month = -1;
         for (let key in monthMap) {
             if (key.toLowerCase() === monthStr.toLowerCase()) {
@@ -293,61 +292,145 @@ function parseSheetDate(raw) {
             }
         }
         if (month === -1) return null;
-        
-        // Determine year based on "2025" indicator
-        let year = has2025 ? 2025 : 2026;
-        
-        let d = new Date(year, month, day);
+
+        const year = has2025 ? 2025 : 2026;
+        const d = new Date(year, month, day);
         d.setHours(0, 0, 0, 0);
         return d;
     }
-    
-    // Check if this is a matchday marker (starts with number or "Matchday")
-    if (/^(Matchday)?\s*\d+[A-Z]?/i.test(str) || /^(Matchday)?\s*\d+\s*$/i.test(str)) {
-        return 'MATCHDAY_MARKER';
-    }
-    
+
     return null;
+}
+
+function _normMatch(s) {
+    return (s || '')
+        .toString()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+        .replace(/\s+/g, ' ');
+}
+
+function _editDistance(a, b, limit = 999) {
+    a = _normMatch(a);
+    b = _normMatch(b);
+    if (a === b) return 0;
+    if (!a) return b.length;
+    if (!b) return a.length;
+
+    const al = a.length, bl = b.length;
+    if (Math.abs(al - bl) > limit) return limit + 1;
+
+    const prev = new Array(bl + 1);
+    const curr = new Array(bl + 1);
+    for (let j = 0; j <= bl; j++) prev[j] = j;
+
+    for (let i = 1; i <= al; i++) {
+        curr[0] = i;
+        let minRow = curr[0];
+        const ca = a.charCodeAt(i - 1);
+        for (let j = 1; j <= bl; j++) {
+            const cost = ca === b.charCodeAt(j - 1) ? 0 : 1;
+            const v = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+            curr[j] = v;
+            if (v < minRow) minRow = v;
+        }
+        if (minRow > limit) return limit + 1;
+        for (let j = 0; j <= bl; j++) prev[j] = curr[j];
+    }
+    return prev[bl];
+}
+
+function _makePlayerKey(league, team, name) {
+    return `${league}:::${(team || '').trim()}:::${(name || '').trim()}`;
+}
+
+function _splitPlayerKey(key) {
+    const parts = (key || '').split(':::');
+    if (parts.length < 3) return { league: null, team: null, name: key };
+    return { league: parts[0], team: parts[1], name: parts.slice(2).join(':::') };
+}
+
+function _bestFuzzyPlayerMatch(query, candidates) {
+    const q = _normMatch(query);
+    if (!q) return null;
+
+    let best = null;
+    let best2 = null;
+
+    for (const c of candidates) {
+        const n1 = _normMatch(c.name);
+        const n2 = _normMatch(`${c.name} ${c.team || ''}`);
+        const lim = Math.max(2, Math.floor(Math.max(q.length, n1.length) * 0.25));
+
+        const d1 = _editDistance(q, n1, lim);
+        const d2 = _editDistance(q, n2, lim);
+        const d = Math.min(d1, d2);
+
+        if (best === null || d < best.d) {
+            best2 = best;
+            best = { c, d };
+        } else if (best2 === null || d < best2.d) {
+            best2 = { c, d };
+        }
+    }
+
+    if (!best) return null;
+
+    const nameLen = Math.max(_normMatch(best.c.name).length, q.length);
+    const threshold = Math.max(2, Math.floor(nameLen * 0.25));
+
+    if (best.d > threshold) return null;
+    if (best2 && best2.d === best.d) return null;
+
+    return best.c;
+}
+
+function _jsEscapeSingle(s) {
+    return (s || '').toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
 async function init() {
     const keys = ['PREM', 'LALIGA', 'MLS'];
     allMatches = [];
     const dateMap = {};
-    
+
     for (let k of keys) {
         await new Promise(res => {
             Papa.parse(SCHEDULE_URLS[k], {
                 download: true,
                 complete: (results) => {
                     let currentDate = null;
-                    
+                    let awaitingDate = false;
+
                     results.data.forEach((row, i) => {
-                        if (i === 0) return; // Skip header
-                        
-                        // Check column A for dates or matchday markers
+                        if (i === 0) return;
+
                         const cellA = row[0];
                         if (cellA) {
                             const parsedDate = parseSheetDate(cellA);
-                            
-                            // If it's a matchday marker, reset currentDate
+
                             if (parsedDate === 'MATCHDAY_MARKER') {
                                 currentDate = null;
+                                awaitingDate = true;
+                                return;
                             }
-                            // If it's an actual date, use it
-                            else if (parsedDate && parsedDate !== 'MATCHDAY_MARKER') {
+
+                            if (parsedDate && parsedDate !== 'MATCHDAY_MARKER') {
                                 currentDate = parsedDate;
+                                awaitingDate = false;
                             }
                         }
-                        
-                        // If we have a current date and team names, add the match
+
+                        if (awaitingDate) return;
+
                         if (currentDate && row[1] && row[2]) {
-                            allMatches.push({ 
-                                league: k, 
-                                date: currentDate, 
-                                home: (row[1] || '').trim(), 
-                                away: (row[2] || '').trim(), 
-                                score: (row[3] || 'v').trim() 
+                            allMatches.push({
+                                league: k,
+                                date: currentDate,
+                                home: (row[1] || '').trim(),
+                                away: (row[2] || '').trim(),
+                                score: (row[3] || 'v').trim()
                             });
                             dateMap[currentDate.getTime()] = true;
                         }
@@ -357,15 +440,15 @@ async function init() {
             });
         });
     }
-    
+
     uniqueDates = Object.keys(dateMap).map(Number).sort((a,b) => a - b);
-    
+
     if (uniqueDates.length > 0) {
         jumpToToday();
     } else {
         document.getElementById('dateText').textContent = "NO DATA FOUND";
     }
-    
+
     setInterval(() => {
         const currentDateIdx = dateIdx;
         const tempMatches = allMatches;
@@ -380,12 +463,10 @@ async function init() {
 }
 
 function jumpToToday() {
-    // Use actual current date
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const nowTime = now.getTime();
-    
-    // Find today or the next upcoming game day
+
     let foundIdx = -1;
     for (let i = 0; i < uniqueDates.length; i++) {
         if (uniqueDates[i] >= nowTime) {
@@ -393,12 +474,8 @@ function jumpToToday() {
             break;
         }
     }
-    
-    // If no future dates, show the most recent date
-    if (foundIdx === -1) {
-        foundIdx = uniqueDates.length - 1;
-    }
-    
+    if (foundIdx === -1) foundIdx = uniqueDates.length - 1;
+
     dateIdx = foundIdx;
     renderMatches();
 }
@@ -445,7 +522,7 @@ function renderStandings(lg) {
     const legend = document.getElementById('legend');
 
     head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="pr-4 text-right">PTS</th>`;
-    
+
     Papa.parse(STANDINGS_URLS[lg], {
         download: true, header: true,
         complete: (res) => {
@@ -499,14 +576,14 @@ function changeDate(step) {
 function switchTab(t) {
     document.getElementById('hub-tab').classList.toggle('hidden', t !== 'hub');
     document.getElementById('standings-tab').classList.toggle('hidden', t !== 'standings');
-    
+
     document.querySelectorAll('.nav-item').forEach(el => {
         const spanText = el.querySelector('span:last-child').textContent;
         if (t === 'hub' && spanText === 'MAIN HUB') el.classList.add('active');
         else if (t === 'standings' && spanText === 'STANDINGS') el.classList.add('active');
         else el.classList.remove('active');
     });
-    
+
     if (t === 'standings') renderStandings('PREM');
 }
 
@@ -517,7 +594,7 @@ function switchTab(t) {
     document.getElementById('stats-tab').classList.toggle('hidden', t !== 'stats');
     document.getElementById('team-tab').classList.add('hidden');
     document.getElementById('player-tab').classList.add('hidden');
-    
+
     document.querySelectorAll('.nav-item').forEach(el => {
         const spanText = el.querySelector('span:last-child').textContent;
         if (t === 'hub' && spanText === 'MAIN HUB') el.classList.add('active');
@@ -525,7 +602,7 @@ function switchTab(t) {
         else if (t === 'stats' && spanText === 'STATS') el.classList.add('active');
         else el.classList.remove('active');
     });
-    
+
     if (t === 'standings') renderStandings('PREM');
     if (t === 'stats') renderStats('PREM');
 }
@@ -536,24 +613,71 @@ function backToView() {
     else if (currentView === 'stats') switchTab('stats');
 }
 
+function _buildTeamPlayerIndex(playersObj) {
+    const idx = {}; // teamNorm -> { keys: [], byExactName: {nameNorm:key}, keyToNameNorm: {key:nameNorm} }
+    Object.keys(playersObj || {}).forEach(k => {
+        const p = playersObj[k];
+        const teamNorm = _normMatch(p.team);
+        if (!idx[teamNorm]) idx[teamNorm] = { keys: [], byExactName: {}, keyToNameNorm: {} };
+        const nameNorm = _normMatch(p.name);
+        idx[teamNorm].keys.push(k);
+        if (!idx[teamNorm].byExactName[nameNorm]) idx[teamNorm].byExactName[nameNorm] = k;
+        idx[teamNorm].keyToNameNorm[k] = nameNorm;
+    });
+    return idx;
+}
+
+function _resolvePlayerKeyForEntry(teamIndex, league, team, name) {
+    const teamNorm = _normMatch(team);
+    const nameNorm = _normMatch(name);
+
+    const bucket = teamIndex[teamNorm];
+    if (!bucket) return null;
+
+    if (bucket.byExactName[nameNorm]) return bucket.byExactName[nameNorm];
+
+    let bestKey = null;
+    let bestD = null;
+    let secondBestD = null;
+
+    for (const k of bucket.keys) {
+        const candidateNorm = bucket.keyToNameNorm[k];
+        const lim = Math.max(2, Math.floor(Math.max(nameNorm.length, candidateNorm.length) * 0.25));
+        const d = _editDistance(nameNorm, candidateNorm, lim);
+
+        if (bestD === null || d < bestD) {
+            secondBestD = bestD;
+            bestD = d;
+            bestKey = k;
+        } else if (secondBestD === null || d < secondBestD) {
+            secondBestD = d;
+        }
+    }
+
+    const threshold = Math.max(2, Math.floor(Math.max(nameNorm.length, 1) * 0.25));
+    if (bestD === null || bestD > threshold) return null;
+    if (secondBestD !== null && secondBestD === bestD) return null;
+
+    return bestKey;
+}
+
 async function loadStats(league) {
     console.log('Loading stats for:', league);
-    
+
     if (!STATS_URLS[league].leaderboard) {
         console.log('No leaderboard URL for', league);
         statsData[league] = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {}, loaded: true };
         return;
     }
-    
+
     if (statsData[league].loaded) {
         console.log('Stats already loaded for', league);
         return;
     }
-    
+
     const data = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {} };
-    
+
     try {
-        // Load leaderboard - simplified
         console.log('Fetching leaderboard...');
         const leaderboardData = await new Promise((resolve) => {
             Papa.parse(STATS_URLS[league].leaderboard, {
@@ -568,23 +692,22 @@ async function loadStats(league) {
                 }
             });
         });
-        
+
         leaderboardData.forEach((row, i) => {
             if (i === 0) return;
             if (row[1] && row[2]) {
-                data.goals.push({ rank: row[0], name: row[1], value: row[2], team: row[3] });
+                data.goals.push({ rank: row[0], name: row[1], value: row[2], team: row[3], league });
             }
             if (row[7] && row[8]) {
-                data.assists.push({ rank: row[6], name: row[7], value: row[8], team: row[9] });
+                data.assists.push({ rank: row[6], name: row[7], value: row[8], team: row[9], league });
             }
             if (row[13] && row[14]) {
-                data.cleanSheets.push({ rank: row[12], name: row[13], value: row[14], team: row[15] });
+                data.cleanSheets.push({ rank: row[12], name: row[13], value: row[14], team: row[15], league });
             }
         });
-        
+
         console.log('Goals:', data.goals.length, 'Assists:', data.assists.length, 'CS:', data.cleanSheets.length);
-        
-        // Load average ratings - simplified
+
         if (STATS_URLS[league].avgRatings) {
             console.log('Fetching avg ratings...');
             const ratingsData = await new Promise((resolve) => {
@@ -600,46 +723,91 @@ async function loadStats(league) {
                     }
                 });
             });
-            
+
             ratingsData.forEach((row, i) => {
                 if (i === 0) return;
                 if (row[8] && row[10]) {
-                    data.ratings.push({ 
-                        rank: row[7], 
-                        name: row[8], 
-                        position: row[9], 
-                        value: row[10], 
-                        team: row[11], 
-                        matches: row[12] 
+                    const name = row[8];
+                    const team = row[11];
+                    const key = _makePlayerKey(league, team, name);
+
+                    data.ratings.push({
+                        rank: row[7],
+                        name,
+                        position: row[9],
+                        value: row[10],
+                        team,
+                        matches: row[12],
+                        league,
+                        key
                     });
-                    data.players[row[8]] = { 
-                        name: row[8], 
-                        team: row[11], 
-                        position: row[9], 
-                        goals: 0, 
-                        assists: 0, 
-                        cs: 0, 
-                        avgRating: row[10], 
-                        matches: row[12], 
-                        recentRatings: [] 
+
+                    data.players[key] = {
+                        key,
+                        league,
+                        name,
+                        team,
+                        position: row[9],
+                        goals: 0,
+                        assists: 0,
+                        cs: 0,
+                        avgRating: row[10],
+                        matches: row[12],
+                        recentRatings: []
                     };
                 }
             });
-            
+
             console.log('Ratings:', data.ratings.length, 'Players:', Object.keys(data.players).length);
         }
-        
-        // Add goals/assists/cs to players
+
+        const teamIndex = _buildTeamPlayerIndex(data.players);
+
+        function ensurePlayerForEntry(entry) {
+            const resolvedKey = _resolvePlayerKeyForEntry(teamIndex, league, entry.team, entry.name);
+            if (resolvedKey) return resolvedKey;
+
+            const key = _makePlayerKey(league, entry.team, entry.name);
+            if (!data.players[key]) {
+                data.players[key] = {
+                    key,
+                    league,
+                    name: entry.name,
+                    team: entry.team,
+                    position: '',
+                    goals: 0,
+                    assists: 0,
+                    cs: 0,
+                    avgRating: 0,
+                    matches: 0,
+                    recentRatings: []
+                };
+                const tNorm = _normMatch(entry.team);
+                if (!teamIndex[tNorm]) teamIndex[tNorm] = { keys: [], byExactName: {}, keyToNameNorm: {} };
+                teamIndex[tNorm].keys.push(key);
+                const nNorm = _normMatch(entry.name);
+                if (!teamIndex[tNorm].byExactName[nNorm]) teamIndex[tNorm].byExactName[nNorm] = key;
+                teamIndex[tNorm].keyToNameNorm[key] = nNorm;
+            }
+            return key;
+        }
+
         data.goals.forEach(g => {
-            if (data.players[g.name]) data.players[g.name].goals = g.value;
+            const k = ensurePlayerForEntry(g);
+            g.key = k;
+            if (data.players[k]) data.players[k].goals = g.value;
         });
         data.assists.forEach(a => {
-            if (data.players[a.name]) data.players[a.name].assists = a.value;
+            const k = ensurePlayerForEntry(a);
+            a.key = k;
+            if (data.players[k]) data.players[k].assists = a.value;
         });
         data.cleanSheets.forEach(c => {
-            if (data.players[c.name]) data.players[c.name].cs = c.value;
+            const k = ensurePlayerForEntry(c);
+            c.key = k;
+            if (data.players[k]) data.players[k].cs = c.value;
         });
-        
+
         statsData[league] = { ...data, loaded: true };
         console.log('Stats loaded successfully for', league);
     } catch (e) {
@@ -651,12 +819,11 @@ async function loadStats(league) {
 async function renderStats(league) {
     document.querySelectorAll('[id^="stat-btn-"]').forEach(b => b.classList.remove('active-league'));
     document.getElementById(`stat-btn-${league}`).classList.add('active-league');
-    
+
     const content = document.getElementById('statsContent');
     content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading stats...</div>';
-    
+
     if (league === 'COMBINED') {
-        // Load all leagues and combine
         await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
         const combined = { goals: [], assists: [], cleanSheets: [], ratings: [] };
         ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
@@ -689,7 +856,7 @@ function displayStats(data) {
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">⚽ TOP SCORERS</h3>
                 ${data.goals.map((p, i) => `
-                    <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${p.name}')">
+                    <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
                         <div class="flex items-center gap-3">
                             <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
                             <div>
@@ -701,11 +868,11 @@ function displayStats(data) {
                     </div>
                 `).join('')}
             </div>
-            
+
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">🎯 TOP ASSISTS</h3>
                 ${data.assists.map((p, i) => `
-                    <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${p.name}')">
+                    <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
                         <div class="flex items-center gap-3">
                             <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
                             <div>
@@ -717,11 +884,11 @@ function displayStats(data) {
                     </div>
                 `).join('')}
             </div>
-            
+
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">🧤 CLEAN SHEETS</h3>
                 ${data.cleanSheets.map((p, i) => `
-                    <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${p.name}')">
+                    <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
                         <div class="flex items-center gap-3">
                             <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
                             <div>
@@ -733,11 +900,11 @@ function displayStats(data) {
                     </div>
                 `).join('')}
             </div>
-            
+
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">⭐ TOP RATED</h3>
                 ${data.ratings.map((p, i) => `
-                    <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${p.name}')">
+                    <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
                         <div class="flex items-center gap-3">
                             <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
                             <div>
@@ -783,7 +950,7 @@ function _findTeamLeague(teamName) {
     return _guessLeagueForTeam(teamName);
 }
 
-async function searchPlayer(e, inputId = 'playerSearch') {
+async function searchPlayer(e, inputId = 'globalSearch') {
     if (e.key !== 'Enter') return;
     const el = document.getElementById(inputId);
     if (!el) return;
@@ -794,12 +961,15 @@ async function searchPlayer(e, inputId = 'playerSearch') {
 
     const playerCandidates = [];
     ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
-        const players = statsData[lg].players ? Object.keys(statsData[lg].players) : [];
-        playerCandidates.push(...players);
+        const players = statsData[lg].players ? Object.values(statsData[lg].players) : [];
+        players.forEach(p => {
+            if (p && p.key && p.name) playerCandidates.push({ key: p.key, name: p.name, team: p.team || '' });
+        });
     });
-    const matchedPlayer = _bestMatch(query, playerCandidates);
+
+    const matchedPlayer = _bestFuzzyPlayerMatch(query, playerCandidates);
     if (matchedPlayer) {
-        viewPlayer(matchedPlayer);
+        viewPlayer(matchedPlayer.key);
         return;
     }
 
@@ -822,37 +992,38 @@ function getPlayerInitials(name) {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 }
 
-async function viewPlayer(playerName) {
+async function viewPlayer(playerKeyOrName) {
     document.getElementById('player-tab').classList.remove('hidden');
     document.getElementById('hub-tab').classList.add('hidden');
     document.getElementById('standings-tab').classList.add('hidden');
     document.getElementById('stats-tab').classList.add('hidden');
     document.getElementById('team-tab').classList.add('hidden');
-    
+
     const content = document.getElementById('playerContent');
     content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading player...</div>';
-    
-    // Search for player in all leagues
+
+    const parts = _splitPlayerKey(playerKeyOrName);
+    if (parts.league) await loadStats(parts.league);
     await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
-    
+
     let playerData = null;
-    let playerLeague = null;
-    
-    for (const lg of ['PREM', 'LALIGA', 'MLS']) {
-        if (statsData[lg].players && statsData[lg].players[playerName]) {
-            playerData = statsData[lg].players[playerName];
-            playerLeague = lg;
-            break;
+
+    if (parts.league && statsData[parts.league].players && statsData[parts.league].players[playerKeyOrName]) {
+        playerData = statsData[parts.league].players[playerKeyOrName];
+    } else {
+        for (const lg of ['PREM', 'LALIGA', 'MLS']) {
+            const pool = statsData[lg].players || {};
+            if (pool[playerKeyOrName]) { playerData = pool[playerKeyOrName]; break; }
         }
     }
-    
+
     if (!playerData) {
         content.innerHTML = '<div class="text-center text-zinc-500 py-8">Player not found</div>';
         return;
     }
-    
+
     const isGK = playerData.position && playerData.position.toLowerCase().includes('gk');
-    
+
     content.innerHTML = `
         <div class="space-y-6">
             <div class="flex flex-col items-center gap-4">
@@ -863,7 +1034,7 @@ async function viewPlayer(playerName) {
                     <p class="text-zinc-600 text-xs mt-1">${playerData.position || 'N/A'}</p>
                 </div>
             </div>
-            
+
             <div class="grid grid-cols-2 gap-4">
                 <div class="stat-card text-center">
                     <div class="text-3xl font-black text-[#00ff85]">${playerData.goals || 0}</div>
@@ -884,7 +1055,7 @@ async function viewPlayer(playerName) {
                     <div class="text-xs text-zinc-500 mt-1">AVG RATING</div>
                 </div>
             </div>
-            
+
             ${playerData.recentRatings && playerData.recentRatings.length > 0 ? `
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">LAST 5 RATINGS</h3>
@@ -907,29 +1078,31 @@ async function viewTeam(teamName, league) {
     document.getElementById('standings-tab').classList.add('hidden');
     document.getElementById('stats-tab').classList.add('hidden');
     document.getElementById('player-tab').classList.add('hidden');
-    
+
     const content = document.getElementById('teamContent');
     content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading team...</div>';
-    
+
     await loadStats(league);
-    
-    // Get players from this team
+
     const teamPlayers = Object.values(statsData[league].players || {}).filter(p => p.team === teamName);
-    
-    // Get matches for this team
-    const teamMatches = allMatches.filter(m => m.league === league && (m.home === teamName || m.away === teamName)).sort((a, b) => a.date - b.date);
+
+    const teamMatches = allMatches
+        .filter(m => m.league === league && (m.home === teamName || m.away === teamName))
+        .sort((a, b) => a.date - b.date);
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
     const past = teamMatches.filter(m => m.date < today && m.score !== 'v').slice(-5).reverse();
     const future = teamMatches.filter(m => m.date >= today || m.score === 'v').slice(0, 5);
-    
+
     content.innerHTML = `
         <div class="space-y-6">
             <div class="flex items-center gap-4 mb-6">
                 <img src="${getLogo(teamName)}" class="w-16 h-16 object-contain">
                 <h2 class="text-2xl font-black">${teamName}</h2>
             </div>
-            
+
             ${past.length > 0 ? `
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">LAST 5 RESULTS</h3>
@@ -947,7 +1120,7 @@ async function viewTeam(teamName, league) {
                 }).join('')}
             </div>
             ` : ''}
-            
+
             ${future.length > 0 ? `
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">NEXT 5 FIXTURES</h3>
@@ -967,12 +1140,12 @@ async function viewTeam(teamName, league) {
                 }).join('')}
             </div>
             ` : ''}
-            
+
             ${teamPlayers.length > 0 ? `
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">SQUAD</h3>
                 ${teamPlayers.sort((a, b) => (b.goals || 0) - (a.goals || 0)).map(p => `
-                    <div class="flex items-center justify-between py-3 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${p.name}')">
+                    <div class="flex items-center justify-between py-3 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
                         <div>
                             <div class="font-bold text-sm">${p.name}</div>
                             <div class="text-[10px] text-zinc-500">${p.position || 'N/A'}</div>
