@@ -413,6 +413,9 @@ function _isGoalie(player){
     const pos = (player && player.position ? player.position : '').toString().toLowerCase();
     return pos.includes('gk') || pos.includes('goalkeeper') || pos === 'keeper';
 }
+function _leagueForTeamFast(teamName){
+    return _findTeamLeague(teamName);
+}
 
 async function init() {
     const keys = ['PREM', 'LALIGA', 'MLS'];
@@ -661,7 +664,6 @@ function _editDistance(a, b, limit = 999) {
     return prev[bl];
 }
 
-/* FIX: players only match by player name (not team) */
 function _bestFuzzyPlayerMatch(query, candidates) {
     const q = _normMatch(query);
     if (!q) return null;
@@ -688,7 +690,6 @@ function _bestFuzzyPlayerMatch(query, candidates) {
     return best.c;
 }
 
-/* teams fuzzy match by team name only */
 function _bestFuzzyTeamMatch(query, candidates) {
     const q = _normMatch(query);
     if (!q) return null;
@@ -1003,12 +1004,10 @@ async function showSearchSuggestions(query, inputId, boxId) {
 
     const qn = _normMatch(q);
 
-    /* FIX: players suggestions by player name ONLY */
     const pMatches = __searchIndex.players
         .filter(p => _normMatch(p.name).includes(qn))
         .slice(0, 8);
 
-    /* teams suggestions by team name ONLY */
     const tMatches = __searchIndex.teams
         .filter(t => _normMatch(t.name).includes(qn))
         .slice(0, 6);
@@ -1146,7 +1145,7 @@ async function renderStats(lg) {
     const data = statsData[lg];
     const el = document.getElementById('statsContent');
 
-    const makeList = (title, arr, valueLabel, options={}) => {
+    const makeList = (title, arr, valueLabel) => {
         const top = (arr || []).slice(0, 25);
         return `
             <div class="stat-card mb-4">
@@ -1172,7 +1171,6 @@ async function renderStats(lg) {
             </div>`;
     };
 
-    /* FIX: clean sheets leaderboard should only show goalies */
     const goalieCleanSheets = (data.cleanSheets || []).filter(cs => {
         const pl = (data.players && data.players[cs.key]) ? data.players[cs.key] : null;
         return _isGoalie(pl);
@@ -1183,6 +1181,28 @@ async function renderStats(lg) {
         ${makeList('Assists', data.assists, 'ASSISTS')}
         ${makeList('Clean Sheets', goalieCleanSheets, 'CLEAN')}
         ${makeList('Average Rating', data.ratings, 'RATING')}
+    `;
+}
+
+/* UPDATED: clickable team names in last/next lists */
+function _matchRowClickable(m) {
+    const homeLg = _leagueForTeamFast(m.home);
+    const awayLg = _leagueForTeamFast(m.away);
+    return `
+        <div class="flex items-center justify-between py-2 border-b border-zinc-800/40 last:border-b-0">
+            <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-[10px] font-black text-zinc-500 w-12">${_formatShortDate(m.date)}</span>
+
+                <img src="${getLogo(m.home)}" class="w-4 h-4 object-contain">
+                <button class="text-[11px] font-bold hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(m.home)}','${homeLg}')">${m.home}</button>
+
+                <span class="text-zinc-500 text-[10px] font-black">vs</span>
+
+                <button class="text-[11px] font-bold hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(m.away)}','${awayLg}')">${m.away}</button>
+                <img src="${getLogo(m.away)}" class="w-4 h-4 object-contain">
+            </div>
+            <div class="font-mono text-[#00ff85] font-black">${m.score}</div>
+        </div>
     `;
 }
 
@@ -1215,26 +1235,11 @@ async function viewTeam(teamName, league) {
 
     const today = new Date(); today.setHours(0,0,0,0);
 
-    /* NEW: last 5 results (played) + next 5 matches (upcoming) */
     const played = teamMatchesAll.filter(m => (m.score || '').trim().toLowerCase() !== 'v');
     const upcoming = teamMatchesAll.filter(m => (m.score || '').trim().toLowerCase() === 'v' && m.date >= today);
 
     const last5 = played.slice().sort((a,b)=>b.date-a.date).slice(0,5).reverse();
     const next5 = upcoming.slice(0,5);
-
-    const matchRow = (m) => `
-        <div class="flex items-center justify-between py-2 border-b border-zinc-800/40 last:border-b-0">
-            <div class="flex items-center gap-2">
-                <span class="text-[10px] font-black text-zinc-500 w-12">${_formatShortDate(m.date)}</span>
-                <img src="${getLogo(m.home)}" class="w-4 h-4 object-contain">
-                <span class="text-[11px] font-bold">${m.home}</span>
-                <span class="text-zinc-500 text-[10px] font-black">vs</span>
-                <span class="text-[11px] font-bold">${m.away}</span>
-                <img src="${getLogo(m.away)}" class="w-4 h-4 object-contain">
-            </div>
-            <div class="font-mono text-[#00ff85] font-black">${m.score}</div>
-        </div>
-    `;
 
     content.innerHTML = `
         <div class="stat-card">
@@ -1295,14 +1300,14 @@ async function viewTeam(teamName, league) {
         <div class="mt-4 stat-card">
             <div class="text-[10px] font-black text-zinc-500 uppercase">Last 5 Results</div>
             <div class="mt-2">
-                ${last5.map(matchRow).join('') || '<div class="text-zinc-500 text-sm py-2">No results yet.</div>'}
+                ${last5.map(_matchRowClickable).join('') || '<div class="text-zinc-500 text-sm py-2">No results yet.</div>'}
             </div>
         </div>
 
         <div class="mt-4 stat-card">
             <div class="text-[10px] font-black text-zinc-500 uppercase">Next 5 Matches</div>
             <div class="mt-2">
-                ${next5.map(matchRow).join('') || '<div class="text-zinc-500 text-sm py-2">No upcoming matches found.</div>'}
+                ${next5.map(_matchRowClickable).join('') || '<div class="text-zinc-500 text-sm py-2">No upcoming matches found.</div>'}
             </div>
         </div>
     `;
@@ -1447,14 +1452,12 @@ async function searchPlayer(e) {
         });
     });
 
-    /* FIX: players only match by player name */
     const matchedPlayer = _bestFuzzyPlayerMatch(query, playerCandidates);
     if (matchedPlayer) {
         viewPlayer(matchedPlayer.key);
         return;
     }
 
-    /* FIX: teams only match by team name */
     const teamCandidates = (__searchIndex.teams || []).map(t => ({ name: t.name, league: t.league }));
     const matchedTeam = _bestFuzzyTeamMatch(query, teamCandidates);
 
@@ -1463,7 +1466,6 @@ async function searchPlayer(e) {
         return;
     }
 
-    /* fallback: try as team exact */
     viewTeam(query, _findTeamLeague(query));
 }
 
