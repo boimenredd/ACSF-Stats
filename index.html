@@ -71,14 +71,19 @@
             padding:12px;
             cursor:pointer;
         }
-        .leader-pill:hover{ border-color:#00ff85; }
+        .rating-badge{font-family:'Roboto Mono',monospace;font-weight:900;font-size:12px;min-width:42px;text-align:center;border-radius:10px;padding:6px 8px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #2a2a2a;}
+        .rating-elite{background:rgba(34,197,94,.18);color:#22c55e;border-color:rgba(34,197,94,.35);}
+        .rating-good{background:rgba(134,239,172,.16);color:#86efac;border-color:rgba(134,239,172,.35);}
+        .rating-ok{background:rgba(250,204,21,.16);color:#facc15;border-color:rgba(250,204,21,.35);}
+        .rating-bad{background:rgba(239,68,68,.16);color:#ef4444;border-color:rgba(239,68,68,.35);}
+.leader-pill:hover{ border-color:#00ff85; }
     </style>
 </head>
 <body class="max-w-md mx-auto pb-24">
 
     <header class="p-4">
         <div class="flex items-center justify-between gap-3 relative">
-            <h1 class="text-xl font-black italic uppercase">Score<span class="text-[#00ff85]">Hub</span></h1>
+            <h1 class="text-xl font-black italic uppercase cursor-pointer select-none" onclick="switchTab('hub'); jumpToToday();">Score<span class="text-[#00ff85]">Hub</span></h1>
             <input type="text" id="globalSearch" class="header-search-input" placeholder="Search teams or players..." onkeyup="searchPlayer(event)" oninput="queueSuggestions('globalSearch', 'globalSearchSuggestions')" onfocus="queueSuggestions('globalSearch', 'globalSearchSuggestions')">
             <div id="globalSearchSuggestions" class="search-suggestions hidden"></div>
         </div>
@@ -403,6 +408,14 @@ function _fmtRating(x){
     const v = Number(x);
     if (Number.isNaN(v)) return '-';
     return v.toFixed(2);
+}
+function _ratingClass(x){
+    const v = Number(x);
+    if (Number.isNaN(v)) return 'rating-badge rating-bad';
+    if (v >= 8.0) return 'rating-badge rating-elite';
+    if (v >= 7.0) return 'rating-badge rating-good';
+    if (v >= 6.0) return 'rating-badge rating-ok';
+    return 'rating-badge rating-bad';
 }
 function _formatShortDate(d){
     if (!d) return '';
@@ -1082,8 +1095,14 @@ function showTeamLeaderboard(type){
     if (type === 'goals') { title = 'Goals Leaderboard'; list = goalsSorted; }
     else if (type === 'assists') { title = 'Assists Leaderboard'; list = assistsSorted; }
     else { title = 'Match Rating Leaderboard'; list = ratingSorted; }
+    const filteredList = (list || []).filter(p => {
+        if (!p || !p.name) return false;
+        if (type === 'goals') return (p.goals || 0) > 0;
+        if (type === 'assists') return (p.assists || 0) > 0;
+        return Number(p.avgRating || 0) > 0;
+    });
 
-    const rows = (list || []).filter(p => p && p.name).map((p, idx) => {
+    const rows = filteredList.map((p, idx) => {
         const val = type === 'goals' ? (p.goals||0) : type === 'assists' ? (p.assists||0) : _fmtRating(p.avgRating);
         return `
             <div class="flex items-center justify-between py-2 border-b border-zinc-800/40 last:border-b-0">
@@ -1391,7 +1410,7 @@ async function viewPlayer(playerKeyOrName) {
             <div class="text-[10px] font-black text-zinc-500 uppercase mb-2">Last 5 Match Ratings</div>
             <div class="flex gap-2 flex-wrap">
                 ${(playerData.recentRatings && playerData.recentRatings.length ? playerData.recentRatings.slice(-5) : []).map(r => `
-                    <div class="px-3 py-1 rounded-full bg-zinc-800 border border-zinc-700 font-mono text-[11px]">
+                    <div class="${_ratingClass(r.rating)}">
                         ${(r.rating != null ? Number(r.rating).toFixed(1) : '-')}
                     </div>
                 `).join('') || '<div class="text-zinc-500 text-sm">No ratings yet</div>'}
