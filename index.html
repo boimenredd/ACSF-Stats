@@ -1338,7 +1338,7 @@ function queueSuggestions(inputId, boxId) {
     }, 90);
 }
 
-async async function showSearchSuggestions(query, inputId, boxId) {
+async function showSearchSuggestions(query, inputId, boxId) {
     const box = document.getElementById(boxId);
     const input = document.getElementById(inputId);
     if (!box || !input) return;
