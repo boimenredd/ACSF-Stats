@@ -1670,19 +1670,7 @@ init();
   }
 
   // ---------- Autocomplete (unchanged behavior; no emoji change here) ----------
-  function buildCandidates(){
-
-    const players = [];
-    try {
-      if (window.statsData) {
-        Object.keys(statsData).forEach(lg => {
-          const pool = statsData[lg] && statsData[lg].players ? statsData[lg].players : {};
-          Object.values(pool).forEach(p => {
-            if (p && p.name) players.push({ type: 'player', key: p.key || '', name: p.name, team: p.team || '', league: p.league || lg });
-          });
-        });
-      }
-    } catch(e){}
+      } catch(e){}
     const teams = {};
     const addTeam = (t) => { if(!t) return; try{ teams[(window.canonicalTeamName?canonicalTeamName(t):t)] = t; }catch(e){ teams[t]=t; } };
     try {
@@ -1709,21 +1697,7 @@ init();
   return { players, teams: teamList };
 }
   let searchCache = null;
-  async function showSuggestions(){
-
-    const input = document.getElementById('globalSearch');
-    const box = document.getElementById('globalSearchSuggestions');
-    if (!input || !box) return;
-    const q = (input.value||'').trim().toLowerCase();
-    if (!q){ box.classList.add('hidden'); box.innerHTML=''; return; 
-  // ensure data is loaded once for suggestions
-  try {
-    if (!window.__suggestionsLoaded && typeof loadStats === 'function') {
-      await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')].map(p=>p.catch?p.catch(()=>null):p));
-      window.__suggestionsLoaded = true;
-      searchCache = null; // rebuild after load
-    }
-  } catch(e){}
+    } catch(e){}
 }
     if (!searchCache) searchCache = buildCandidates();
     const norm = s => (s||'').toLowerCase();
@@ -1993,6 +1967,121 @@ init();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindHomeClick);
   else bindHomeClick();
   setTimeout(bindHomeClick, 1000);
+})();
+</script>
+
+
+<script>
+(function(){
+  // Build a flat "players" index from statsData (league-agnostic), once after data is loaded
+  async function ensureIndex(){
+    try {
+      if (!window.__suggestionsReady) {
+        if (typeof loadStats === 'function') {
+          await Promise.all(['PREM','LALIGA','MLS'].map(lg => loadStats(lg))).catch(()=>{});
+        }
+        const arr = [];
+        if (window.statsData) {
+          Object.keys(statsData).forEach(lg => {
+            const pool = (statsData[lg] && statsData[lg].players) ? statsData[lg].players : {};
+            Object.values(pool).forEach(p => {
+              if (!p || !p.name) return;
+              arr.push({ id: p.key || (p.name + '::' + (p.team||'')), name: p.name, team: p.team || '', league: p.league || lg });
+            });
+          });
+        }
+        // fallback from leaderboards if empty
+        if (!arr.length && window.statsData) {
+          Object.keys(statsData).forEach(lg => {
+            const d = statsData[lg] || {};
+            ['goals','assists','cleanSheets'].forEach(listName => {
+              (d[listName]||[]).forEach(it => {
+                if (!it || !it.name) return;
+                arr.push({ id: it.key || (it.name + '::' + (it.team||'')), name: it.name, team: it.team || '', league: lg });
+              });
+            });
+          });
+        }
+        window.__playersIndex = arr;
+        window.__suggestionsReady = true;
+      }
+    } catch(e){}
+  }
+
+  async function handleSearchScoreHub(){
+    const box = document.getElementById('globalSearchSuggestions');
+    const input = document.getElementById('globalSearch');
+    if (!box || !input) return;
+    const q = (input.value||'').trim().toLowerCase();
+    if (q.length < 2) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+    await ensureIndex();
+    const src = Array.isArray(window.__playersIndex) ? window.__playersIndex : [];
+    const hits = src.filter(p => (p.name && p.name.toLowerCase().includes(q)) || (p.team && p.team.toLowerCase().includes(q))).slice(0, 8);
+    box.innerHTML = hits.map(p => {
+      const teamLogo = (typeof getLogo === 'function') ? getLogo(p.team) : '';
+      const nameEsc = (p.id||'').replace(/'/g, "\'");
+      return '<div class="search-suggestion" onclick="try{viewPlayer(\'' + nameEsc + '\')}catch(e){}; document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">' +
+             '<span class="font-bold">' + p.name + '</span>' +
+             '<span class="text-[10px] text-zinc-500">(' + (p.team||'') + ')</span>' +
+             (teamLogo ? '<img src="' + teamLogo + '" class="w-4 h-4 ml-auto">' : '') +
+             '</div>';
+    }).join('');
+    box.classList.remove('hidden');
+  }
+
+  // Hook input/focus to new handler; keep original enter-to-search intact
+  (function hookSearch(){
+    const input = document.getElementById('globalSearch');
+    if (!input) return;
+    if (!input.__scorehubSuggestionsBound) {
+      input.addEventListener('input', handleSearchScoreHub);
+      input.addEventListener('focus', handleSearchScoreHub);
+      document.addEventListener('click', (e)=>{
+        const box = document.getElementById('globalSearchSuggestions');
+        if (!box || !input) return;
+        if (!box.contains(e.target) && e.target !== input) box.classList.add('hidden');
+      });
+      input.__scorehubSuggestionsBound = true;
+    }
+  })();
+})();
+</script>
+
+
+<script>
+(function(){
+  function stripExtraTeamLogos(){
+    try{
+      const container = document.getElementById('content') || document.body;
+      // Team line: find line that includes team name (heuristic: has an <img> + text of team)
+      const teamLine = Array.from(container.querySelectorAll('p, div')).find(el => {
+        const hasImg = !!el.querySelector('img');
+        const txt = (el.textContent||'').trim();
+        return hasImg && txt.length > 0 && /team|fc|sc|united|city|cf|club/i.test(txt);
+      });
+      const keepImg = teamLine ? teamLine.querySelector('img') : null;
+
+      // Remove or hide all other images that look like team logos inside the player page
+      const allImgs = container.querySelectorAll('img');
+      allImgs.forEach(img => {
+        if (keepImg && img === keepImg) return;
+        // if image is small logo-like or inside stat cards or watermark areas, hide it
+        if (img.width <= 64 || img.height <= 64 || img.closest('.stat-card') || img.style.opacity === '0.1' || img.style.opacity === '0.05') {
+          img.style.display = 'none';
+        }
+      });
+    }catch(e){}
+  }
+  // Attach after viewPlayer renders
+  (function waitPatch(){
+    if (typeof window.viewPlayer !== 'function') return setTimeout(waitPatch, 300);
+    const _orig = window.viewPlayer;
+    window.viewPlayer = function(){
+      const r = _orig.apply(this, arguments);
+      setTimeout(stripExtraTeamLogos, 0);
+      return r;
+    };
+  })();
 })();
 </script>
 
