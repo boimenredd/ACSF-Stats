@@ -12,10 +12,12 @@
         :root { --accent: #00ff85; --bg: #0b0e11; --card: #161b22; --border: #30363d; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; overflow-x: hidden; }
         header { background: rgba(11, 14, 17, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: fixed; top: 0; width: 100%; max-width: 448px; z-index: 100; }
+
         .date-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px; margin-top: 70px; }
         .date-display { font-weight: 900; font-size: 14px; text-transform: uppercase; text-align: center; flex: 1; }
         .nav-arrow { width: 36px; height: 36px; background: #222; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; font-weight: bold; }
         .today-btn { background: var(--accent); color: #000; font-size: 10px; font-weight: 900; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin-top: 4px; }
+
         .league-container { background: #121212; border-radius: 16px; margin: 12px; overflow: hidden; border: 1px solid #222; }
         .league-header { background: #1a1a1a; padding: 12px 16px; display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; color: #fff; border-bottom: 1px solid #222; }
         .league-logo { width: 20px; height: 20px; object-fit: contain; }
@@ -25,8 +27,10 @@
         .team-name { font-size: 13px; font-weight: 700; }
         .match-info { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
         .match-score { font-family: 'Roboto Mono', monospace; font-weight: 900; font-size: 16px; color: var(--accent); }
+
         .qualify-indicator { width: 4px; height: 24px; border-radius: 2px; margin-right: 10px; }
         .active-league { background: var(--accent) !important; color: #000 !important; }
+
         .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #111; border-top: 1px solid #222; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
         .nav-item { color: #555; font-size: 10px; font-weight: 800; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .nav-item.active { color: var(--accent); }
@@ -36,34 +40,35 @@
         .search-input:focus { outline: none; border-color: var(--accent); }
         .header-search-input { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 8px 10px; color: #fff; width: 165px; font-size: 12px; }
         .header-search-input:focus { outline: none; border-color: var(--accent); }
-   
-/* === Additions (safe) === */
-/* Hide duplicate logos on player page; keep only the one next to the team name line */
-.player-logo-dup, .player-stat-watermark { display: none; }
-/* Suggestions dropdown */
-.search-suggestions {
-  position: absolute; right: 1rem; top: 60px;
-  background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
-  width: 280px; max-height: 320px; overflow-y: auto; z-index: 200;
-}
-.search-suggestion { padding: 8px 12px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 8px; }
-.search-suggestion:hover { background: #222; }
-/* Responsive container for desktop screens without altering Tailwind setup */
-@media (min-width: 768px) {
-  body { max-width: 1100px !important; margin-left: auto; margin-right: auto; }
-  header, .nav-bottom { max-width: 1100px !important; left: 0; right: 0; margin-left: auto; margin-right: auto; }
-}
-/* === End additions === */
-</style>
+    
+        .hide-team-logo { display: none !important; }
+
+        .search-suggestions {
+            position: absolute; right: 1rem; top: 60px;
+            background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
+            width: 280px; max-height: 320px; overflow-y: auto; z-index: 200;
+        }
+        .search-suggestion { padding: 8px 12px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+        .search-suggestion:hover { background: #222; }
+
+        @media (min-width: 768px) {
+            body { max-width: 1100px !important; margin-left: auto; margin-right: auto; }
+            header, .nav-bottom { max-width: 1100px !important; left: 0; right: 0; margin-left: auto; margin-right: auto; }
+        }
+    </style>
 </head>
 <body class="max-w-md mx-auto pb-24">
+
     <header class="p-4">
         <div class="flex items-center justify-between gap-3">
-            <h1 class="text-xl font-black italic uppercase">Score<span class="text-[#00ff85]">Hub</span></h1>
-            <input type="text" id="globalSearch" class="header-search-input" placeholder="Search teams or players..." onkeyup="searchPlayer(event, 'globalSearch')" oninput="showSuggestions()">
-<div id="globalSearchSuggestions" class="search-suggestions hidden"></div>
+            <h1 class="text-xl font-black italic uppercase cursor-pointer" onclick="switchTab('hub'); window.scrollTo({top:0, behavior:'smooth'});">Score<span class="text-[#00ff85]">Hub</span></h1>
+            <div style="position: relative;">
+                <input type="text" id="globalSearch" class="header-search-input" placeholder="Search teams or players..." onkeyup="searchPlayer(event, 'globalSearch')">
+                <div id="globalSearchSuggestions" class="search-suggestions hidden"></div>
+            </div>
         </div>
     </header>
+
     <main id="hub-tab">
         <div class="date-nav">
             <div class="nav-arrow" onclick="changeDate(-1)">‹</div>
@@ -75,6 +80,7 @@
         </div>
         <div id="league-list"></div>
     </main>
+
     <div id="standings-tab" class="hidden pt-20">
         <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
             <button id="btn-PREM" onclick="renderStandings('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
@@ -91,6 +97,7 @@
         </div>
         <div id="legend" class="mt-6 px-4 flex flex-wrap gap-4"></div>
     </div>
+
     <div id="stats-tab" class="hidden pt-20 pb-6">
         <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
             <button id="stat-btn-PREM" onclick="renderStats('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
@@ -100,18 +107,21 @@
         </div>
         <div id="statsContent" class="px-4"></div>
     </div>
+
     <div id="team-tab" class="hidden pt-20 pb-6">
         <div class="px-4">
             <button onclick="backToView()" class="text-[10px] font-black text-[#00ff85] mb-4">← BACK</button>
             <div id="teamContent"></div>
         </div>
     </div>
+
     <div id="player-tab" class="hidden pt-20 pb-6">
         <div class="px-4">
             <button onclick="backToView()" class="text-[10px] font-black text-[#00ff85] mb-4">← BACK</button>
             <div id="playerContent"></div>
         </div>
     </div>
+
     <nav class="nav-bottom">
         <div class="nav-item active" onclick="switchTab('hub')">
             <span class="text-lg">⚽</span>
@@ -126,6 +136,7 @@
             <span>STATS</span>
         </div>
     </nav>
+
 <script>
 const LOGOS = {
     "Liverpool": "https://resources.premierleague.com/premierleague25/badges-alt/14.svg",
@@ -210,6 +221,7 @@ const LOGOS = {
     "DC United": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500504/assets/logos/mls-clubs/Club_Logo-D.C_t03ekm.png",
     "Cincinnati": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500252/assets/logos/mls-clubs/Club_Logo-Cincinatti_ohmgcp.png"
 };
+
 function _normMatch(s) {
     return (s || '')
         .toString()
@@ -218,6 +230,7 @@ function _normMatch(s) {
         .trim()
         .replace(/\s+/g, ' ');
 }
+
 const TEAM_EMOJIS = {
     "Man United": "🔴",
     "Man City": "🔵",
@@ -236,6 +249,7 @@ const TEAM_EMOJIS = {
     "NYCFC": "🗽",
     "NY Red Bulls": "🐂"
 };
+
 const TEAM_ALIASES = {
     "real oviedo": "Oviedo",
     "oviedo": "Oviedo",
@@ -407,67 +421,74 @@ const TEAM_ALIASES = {
     "fc cincinnati": "Cincinnati",
     "cincinnati": "Cincinnati"
 };
+
 function canonicalTeamName(name) {
     const raw = (name || '').toString().trim();
     const key = _normMatch(raw);
     if (!key) return raw;
     return TEAM_ALIASES[key] || raw;
 }
+
 function sameTeam(a, b) {
     return canonicalTeamName(a) === canonicalTeamName(b);
 }
+
 function getTeamEmoji(teamName) {
     const key = canonicalTeamName(teamName || '');
     return TEAM_EMOJIS[key] || "🛡️";
 }
+
 const SCHEDULE_URLS = {
     PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv',
     LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1516477023&single=true&output=csv',
     MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1689966801&single=true&output=csv'
 };
+
 const STANDINGS_URLS = {
     PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=935978435&single=true&output=csv',
     LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv',
     MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv'
 };
+
 const LEAGUE_META = {
     PREM: { name: 'England - Premier League', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/eng.png' },
     LALIGA: { name: 'Spain - La Liga', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/esp.png' },
     MLS: { name: 'USA - MLS', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/usa.png' }
 };
+
 const STATS_URLS = {
-    PREM: {
-        goals: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=0&single=true&output=csv',
-        assists: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=1828601090&single=true&output=csv',
+    PREM: { 
+        goals: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=0&single=true&output=csv', 
+        assists: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=1828601090&single=true&output=csv', 
         cleanSheets: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=1875623411&single=true&output=csv',
-        ratingsLog: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=812230696&single=true&output=csv',
-        avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=692292778&single=true&output=csv',
-        leaderboard: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=983480432&single=true&output=csv'
+        ratingsLog: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=812230696&single=true&output=csv', 
+        avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=692292778&single=true&output=csv'
     },
     LALIGA: {
         goals: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIqkW6tUlxDXdN1SXahdS7jNf_3TtBNFctLfwtL21hO4MAh5wHTtNPjTPwfaro0rqYekJVBRtszK6U/pub?gid=0&single=true&output=csv',
         assists: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIqkW6tUlxDXdN1SXahdS7jNf_3TtBNFctLfwtL21hO4MAh5wHTtNPjTPwfaro0rqYekJVBRtszK6U/pub?gid=1828601090&single=true&output=csv',
         cleanSheets: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIqkW6tUlxDXdN1SXahdS7jNf_3TtBNFctLfwtL21hO4MAh5wHTtNPjTPwfaro0rqYekJVBRtszK6U/pub?gid=1875623411&single=true&output=csv',
         ratingsLog: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIqkW6tUlxDXdN1SXahdS7jNf_3TtBNFctLfwtL21hO4MAh5wHTtNPjTPwfaro0rqYekJVBRtszK6U/pub?gid=1955113818&single=true&output=csv',
-        avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIqkW6tUlxDXdN1SXahdS7jNf_3TtBNFctLfwtL21hO4MAh5wHTtNPjTPwfaro0rqYekJVBRtszK6U/pub?gid=692292778&single=true&output=csv',
-        leaderboard: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIqkW6tUlxDXdN1SXahdS7jNf_3TtBNFctLfwtL21hO4MAh5wHTtNPjTPwfaro0rqYekJVBRtszK6U/pub?gid=983480432&single=true&output=csv'
+        avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTIqkW6tUlxDXdN1SXahdS7jNf_3TtBNFctLfwtL21hO4MAh5wHTtNPjTPwfaro0rqYekJVBRtszK6U/pub?gid=692292778&single=true&output=csv'
     },
     MLS: {
         goals: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuw34XoWFJCJm7vYxAmfNNOOuVnprbE2kuVb9OpEgUZQsA6KhbxCYtW81oe1BkaGJ01fFMBpV5he31/pub?gid=0&single=true&output=csv',
         assists: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuw34XoWFJCJm7vYxAmfNNOOuVnprbE2kuVb9OpEgUZQsA6KhbxCYtW81oe1BkaGJ01fFMBpV5he31/pub?gid=1828601090&single=true&output=csv',
         cleanSheets: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuw34XoWFJCJm7vYxAmfNNOOuVnprbE2kuVb9OpEgUZQsA6KhbxCYtW81oe1BkaGJ01fFMBpV5he31/pub?gid=1875623411&single=true&output=csv',
         ratingsLog: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuw34XoWFJCJm7vYxAmfNNOOuVnprbE2kuVb9OpEgUZQsA6KhbxCYtW81oe1BkaGJ01fFMBpV5he31/pub?gid=812230696&single=true&output=csv',
-        avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuw34XoWFJCJm7vYxAmfNNOOuVnprbE2kuVb9OpEgUZQsA6KhbxCYtW81oe1BkaGJ01fFMBpV5he31/pub?gid=692292778&single=true&output=csv',
-        leaderboard: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuw34XoWFJCJm7vYxAmfNNOOuVnprbE2kuVb9OpEgUZQsA6KhbxCYtW81oe1BkaGJ01fFMBpV5he31/pub?gid=983480432&single=true&output=csv'
+        avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuw34XoWFJCJm7vYxAmfNNOOuVnprbE2kuVb9OpEgUZQsA6KhbxCYtW81oe1BkaGJ01fFMBpV5he31/pub?gid=692292778&single=true&output=csv'
     }
 };
+
 let allMatches = [], uniqueDates = [], dateIdx = 0, currentView = 'hub', currentTeam = null, currentPlayer = null, statsData = { PREM: {}, LALIGA: {}, MLS: {}, COMBINED: {} };
 let standingsCache = { PREM: null, LALIGA: null, MLS: null };
 let currentStandingsLeague = 'PREM';
 let __autoRefreshStarted = false;
+
 const PHOTO_CACHE_DB = 'scorehub-photo-cache';
 const PHOTO_CACHE_STORE = 'photos';
 const PHOTO_FETCH_TIMEOUT_MS = 4500;
+
 function _openPhotoDb() {
     return new Promise((resolve) => {
         if (!('indexedDB' in window)) return resolve(null);
@@ -482,6 +503,7 @@ function _openPhotoDb() {
         req.onerror = () => resolve(null);
     });
 }
+
 async function _photoDbGet(url) {
     const db = await _openPhotoDb();
     if (!db) return null;
@@ -493,6 +515,7 @@ async function _photoDbGet(url) {
         req.onerror = () => resolve(null);
     });
 }
+
 async function _photoDbPut(url, blob) {
     const db = await _openPhotoDb();
     if (!db) return;
@@ -505,6 +528,7 @@ async function _photoDbPut(url, blob) {
         tx.onabort = () => resolve();
     });
 }
+
 async function _fetchBlobWithTimeout(url, timeoutMs) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -516,21 +540,27 @@ async function _fetchBlobWithTimeout(url, timeoutMs) {
         clearTimeout(t);
     }
 }
+
 async function getCachedPhotoSrc(url) {
     const u = (url || '').toString().trim();
     if (!u) return null;
+
     const cached = await _photoDbGet(u);
     if (cached && cached.blob) return URL.createObjectURL(cached.blob);
+
     const blob = await _fetchBlobWithTimeout(u, PHOTO_FETCH_TIMEOUT_MS);
     if (!blob || !blob.size) return null;
+
     await _photoDbPut(u, blob);
     return URL.createObjectURL(blob);
 }
+
 async function loadPlayerPhotoToElement(url, imgEl, fallbackEl) {
     if (!url || !imgEl) return;
     try {
         const src = await getCachedPhotoSrc(url);
         if (!src) return;
+
         imgEl.onload = () => {
             imgEl.style.display = 'block';
             if (fallbackEl) fallbackEl.style.display = 'none';
@@ -539,15 +569,18 @@ async function loadPlayerPhotoToElement(url, imgEl, fallbackEl) {
             imgEl.style.display = 'none';
             if (fallbackEl) fallbackEl.style.display = 'flex';
         };
+
         imgEl.src = src;
     } catch (e) {
         imgEl.style.display = 'none';
         if (fallbackEl) fallbackEl.style.display = 'flex';
     }
 }
+
 function _jsEscapeSingle(s) {
     return (s || '').toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
+
 function getLogo(team) {
     if (!team) return "";
     const t = canonicalTeamName(team).trim();
@@ -556,24 +589,31 @@ function getLogo(team) {
     }
     return `https://via.placeholder.com/24?text=${t.charAt(0)}`;
 }
+
 function parseSheetDate(raw) {
     if (!raw) return null;
+
     const str = raw.trim();
     const monthNameRegex = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|June|July|August|September|October|November|December)/i;
+
     if (/matchday/i.test(str) || (!monthNameRegex.test(str) && /^\s*\d+[A-Z]?\b/i.test(str))) {
         return 'MATCHDAY_MARKER';
     }
+
     const monthMap = {
         "January": 0, "February": 1, "March": 2, "April": 3, "May": 4, "June": 5,
         "July": 6, "August": 7, "September": 8, "October": 9, "November": 10, "December": 11,
         "Jan": 0, "Feb": 1, "Mar": 2, "Apr": 3, "Jun": 5,
         "Jul": 6, "Aug": 7, "Sep": 8, "Oct": 9, "Nov": 10, "Dec": 11
     };
+
     const has2025 = str.includes('2025');
+
     let match = str.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\.?\s*(\d+)/i);
     if (match) {
         const monthStr = match[1];
         const day = parseInt(match[2], 10);
+
         let month = -1;
         for (let key in monthMap) {
             if (key.toLowerCase() === monthStr.toLowerCase()) {
@@ -582,28 +622,37 @@ function parseSheetDate(raw) {
             }
         }
         if (month === -1) return null;
+
         const year = has2025 ? 2025 : 2026;
         const d = new Date(year, month, day);
         d.setHours(0, 0, 0, 0);
         return d;
     }
+
     return null;
 }
+
 function _stripLeadingPosFromTeam(pos, team) {
     const t = (team || '').toString().trim();
     const p = (pos || '').toString().trim();
+
     const m = t.match(/^\s*(\d{1,2})\s*[\.\)\-:]?\s+(.+)\s*$/);
     if (!m) return { pos: p, team: t };
+
     const lead = m[1];
     const rest = m[2].trim();
+
     if (!p) return { pos: lead, team: rest };
     const pn = parseInt(p, 10);
     const ln = parseInt(lead, 10);
     if (!Number.isNaN(pn) && !Number.isNaN(ln) && pn === ln) return { pos: p, team: rest };
+
     return { pos: p, team: t };
 }
+
 async function loadStandingsCache(league) {
     if (standingsCache[league]) return standingsCache[league];
+
     standingsCache[league] = await new Promise((resolve) => {
         Papa.parse(STANDINGS_URLS[league], {
             download: true,
@@ -616,8 +665,10 @@ async function loadStandingsCache(league) {
                     const fixed = _stripLeadingPosFromTeam(pos, team);
                     pos = fixed.pos;
                     team = fixed.team;
+
                     const teamKey = canonicalTeamName(team);
                     if (!teamKey) return;
+
                     map[teamKey] = {
                         pos: pos,
                         team: team,
@@ -631,19 +682,24 @@ async function loadStandingsCache(league) {
             error: () => resolve({})
         });
     });
+
     return standingsCache[league];
 }
+
 function _editDistance(a, b, limit = 999) {
     a = _normMatch(a);
     b = _normMatch(b);
     if (a === b) return 0;
     if (!a) return b.length;
     if (!b) return a.length;
+
     const al = a.length, bl = b.length;
     if (Math.abs(al - bl) > limit) return limit + 1;
+
     const prev = new Array(bl + 1);
     const curr = new Array(bl + 1);
     for (let j = 0; j <= bl; j++) prev[j] = j;
+
     for (let i = 1; i <= al; i++) {
         curr[0] = i;
         let minRow = curr[0];
@@ -659,26 +715,33 @@ function _editDistance(a, b, limit = 999) {
     }
     return prev[bl];
 }
+
 function _makePlayerKey(league, team, name) {
     return `${league}:::${(team || '').trim()}:::${(name || '').trim()}`;
 }
+
 function _splitPlayerKey(key) {
     const parts = (key || '').split(':::');
     if (parts.length < 3) return { league: null, team: null, name: key };
     return { league: parts[0], team: parts[1], name: parts.slice(2).join(':::') };
 }
+
 function _bestFuzzyPlayerMatch(query, candidates) {
     const q = _normMatch(query);
     if (!q) return null;
+
     let best = null;
     let best2 = null;
+
     for (const c of candidates) {
         const n1 = _normMatch(c.name);
         const n2 = _normMatch(`${c.name} ${c.team || ''}`);
         const lim = Math.max(2, Math.floor(Math.max(q.length, n1.length) * 0.25));
+
         const d1 = _editDistance(q, n1, lim);
         const d2 = _editDistance(q, n2, lim);
         const d = Math.min(d1, d2);
+
         if (best === null || d < best.d) {
             best2 = best;
             best = { c, d };
@@ -686,13 +749,18 @@ function _bestFuzzyPlayerMatch(query, candidates) {
             best2 = { c, d };
         }
     }
+
     if (!best) return null;
+
     const nameLen = Math.max(_normMatch(best.c.name).length, q.length);
     const threshold = Math.max(2, Math.floor(nameLen * 0.25));
+
     if (best.d > threshold) return null;
     if (best2 && best2.d === best.d) return null;
+
     return best.c;
 }
+
 function _extractPhotoUrlFromRow(row) {
     const cells = row || [];
     for (let i = 0; i < cells.length; i++) {
@@ -703,10 +771,12 @@ function _extractPhotoUrlFromRow(row) {
     }
     return '';
 }
+
 async function init() {
     const keys = ['PREM', 'LALIGA', 'MLS'];
     allMatches = [];
     const dateMap = {};
+
     const pushMatch = (league, date, row) => {
         if (!date || !row[1] || !row[2]) return;
         const home = (row[1] || '').trim();
@@ -722,6 +792,7 @@ async function init() {
         });
         dateMap[date.getTime()] = true;
     };
+
     for (let k of keys) {
         await new Promise(res => {
             Papa.parse(SCHEDULE_URLS[k], {
@@ -730,10 +801,13 @@ async function init() {
                     let currentDate = null;
                     let awaitingDate = false;
                     let pendingMatchRows = [];
+
                     results.data.forEach((row, i) => {
                         if (i === 0) return;
+
                         const cellA = row[0];
                         const parsedA = cellA ? parseSheetDate(cellA) : null;
+
                         if (parsedA === 'MATCHDAY_MARKER') {
                             currentDate = null;
                             awaitingDate = true;
@@ -741,471 +815,638 @@ async function init() {
                             if (row[1] && row[2]) pendingMatchRows.push(row);
                             return;
                         }
+
                         if (awaitingDate) {
                             if (parsedA && parsedA !== 'MATCHDAY_MARKER') {
                                 currentDate = parsedA;
                                 awaitingDate = false;
+
                                 pendingMatchRows.forEach(r => pushMatch(k, currentDate, r));
                                 pendingMatchRows = [];
+
                                 pushMatch(k, currentDate, row);
                             }
                             return;
                         }
+
                         if (parsedA && parsedA !== 'MATCHDAY_MARKER') {
                             currentDate = parsedA;
                         }
+
                         pushMatch(k, currentDate, row);
                     });
+
                     res();
                 }
             });
         });
     }
+
     uniqueDates = Object.keys(dateMap).map(Number).sort((a,b) => a - b);
+
     if (uniqueDates.length > 0) {
         jumpToToday();
     } else {
         document.getElementById('dateText').textContent = "NO DATA FOUND";
     }
+
     if (!__autoRefreshStarted) {
         __autoRefreshStarted = true;
+
         setInterval(() => {
             const currentDateIdx = dateIdx;
             const tempMatches = allMatches;
-            allMatches = [];
-            init().then(() => {
-                dateIdx = currentDateIdx;
-                renderMatches();
-            }).catch(() => {
-                allMatches = tempMatches;
-            });
-        }, 60000);
-        setInterval(async () => {
-            standingsCache = { PREM: null, LALIGA: null, MLS: null };
-            if (!document.getElementById('standings-tab').classList.contains('hidden')) {
-                renderStandings(currentStandingsLeague || 'PREM');
-            }
-            if (!document.getElementById('team-tab').classList.contains('hidden') && currentTeam && currentTeam.name && currentTeam.league) {
-                viewTeam(currentTeam.name, currentTeam.league);
-            }
-        }, 60000);
-    }
+            allMatches<function_calls>
+<invoke name="artifacts">
+<parameter name="command">update</parameter>
+<parameter name="id">scorehub_app</parameter>
+<parameter name="new_str">            allMatches = [];
+init().then(() => {
+dateIdx = currentDateIdx;
+renderMatches();
+}).catch(() => {
+allMatches = tempMatches;
+});
+}, 60000);
+    setInterval(async () => {
+        standingsCache = { PREM: null, LALIGA: null, MLS: null };
+
+        if (!document.getElementById('standings-tab').classList.contains('hidden')) {
+            renderStandings(currentStandingsLeague || 'PREM');
+        }
+
+        if (!document.getElementById('team-tab').classList.contains('hidden') && currentTeam && currentTeam.name && currentTeam.league) {
+            viewTeam(currentTeam.name, currentTeam.league);
+        }
+    }, 60000);
+}
 }
 function jumpToToday() {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const nowTime = now.getTime();
-    let foundIdx = -1;
-    for (let i = 0; i < uniqueDates.length; i++) {
-        if (uniqueDates[i] >= nowTime) {
-            foundIdx = i;
-            break;
-        }
+const now = new Date();
+now.setHours(0, 0, 0, 0);
+const nowTime = now.getTime();
+let foundIdx = -1;
+for (let i = 0; i < uniqueDates.length; i++) {
+    if (uniqueDates[i] >= nowTime) {
+        foundIdx = i;
+        break;
     }
-    if (foundIdx === -1) foundIdx = uniqueDates.length - 1;
-    dateIdx = foundIdx;
-    renderMatches();
+}
+if (foundIdx === -1) foundIdx = uniqueDates.length - 1;
+
+dateIdx = foundIdx;
+renderMatches();
 }
 function renderMatches() {
-    const container = document.getElementById('league-list');
-    const target = uniqueDates[dateIdx];
-    if (!target) {
-        document.getElementById('dateText').textContent = "NO DATA";
-        container.innerHTML = "";
-        return;
-    }
-    const dObj = new Date(target);
-    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-    document.getElementById('dateText').textContent = `${days[dObj.getDay()]}, ${months[dObj.getMonth()]} ${dObj.getDate()}`;
-    const filtered = allMatches.filter(m => m.date.getTime() === target);
-    container.innerHTML = ['PREM', 'LALIGA', 'MLS'].map(lg => {
-        const matches = filtered.filter(m => m.league === lg);
-        if (matches.length === 0) return '';
-        return `
-            <div class="league-container">
-                <div class="league-header"><img src="${LEAGUE_META[lg].logo}" class="league-logo"><span>${LEAGUE_META[lg].name}</span></div>
-                ${matches.map(m => {
-                    return `
-                    <div class="match-row">
-                        <div class="team-box justify-end cursor-pointer hover:opacity-70" onclick="viewTeam('${_jsEscapeSingle(m.home)}', '${lg}')"><span class="team-name text-right">${m.home}</span><img src="${getLogo(m.home)}" class="team-logo"></div>
-                        <div class="match-info">
-                            <div class="match-score">${m.score === 'v' ? 'v' : m.score}</div>
-                        </div>
-                        <div class="team-box justify-start cursor-pointer hover:opacity-70" onclick="viewTeam('${_jsEscapeSingle(m.away)}', '${lg}')"><img src="${getLogo(m.away)}" class="team-logo"><span class="team-name">${m.away}</span></div>
-                    </div>`;
-                }).join('')}
-            </div>`;
-    }).join('');
+const container = document.getElementById('league-list');
+const target = uniqueDates[dateIdx];
+if (!target) {
+document.getElementById('dateText').textContent = "NO DATA";
+container.innerHTML = "";
+return;
+}
+const dObj = new Date(target);
+const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+document.getElementById('dateText').textContent = ${days[dObj.getDay()]}, ${months[dObj.getMonth()]} ${dObj.getDate()};
+const filtered = allMatches.filter(m => m.date.getTime() === target);
+container.innerHTML = ['PREM', 'LALIGA', 'MLS'].map(lg => {
+    const matches = filtered.filter(m => m.league === lg);
+    if (matches.length === 0) return '';
+    return `
+        <div class="league-container">
+            <div class="league-header"><img src="${LEAGUE_META[lg].logo}" class="league-logo"><span>${LEAGUE_META[lg].name}</span></div>
+            ${matches.map(m => {
+                return `
+                <div class="match-row">
+                    <div class="team-box justify-end cursor-pointer hover:opacity-70" onclick="viewTeam('${_jsEscapeSingle(m.home)}', '${lg}')"><span class="team-name text-right">${m.home}</span><img src="${getLogo(m.home)}" class="team-logo"></div>
+                    <div class="match-info">
+                        <div class="match-score">${m.score === 'v' ? 'v' : m.score}</div>
+                    </div>
+                    <div class="team-box justify-start cursor-pointer hover:opacity-70" onclick="viewTeam('${_jsEscapeSingle(m.away)}', '${lg}')"><img src="${getLogo(m.away)}" class="team-logo"><span class="team-name">${m.away}</span></div>
+                </div>`;
+            }).join('')}
+        </div>`;
+}).join('');
 }
 function renderStandings(lg) {
-    currentStandingsLeague = lg;
-    document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active-league'));
-    document.getElementById(`btn-${lg}`).classList.add('active-league');
-    const head = document.getElementById('standingsHead');
-    const body = document.getElementById('standingsBody');
-    const legend = document.getElementById('legend');
-    head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="pr-4 text-right">PTS</th>`;
-    Papa.parse(STANDINGS_URLS[lg], {
-        download: true, header: true,
-        complete: (res) => {
-            body.innerHTML = res.data.map(r => {
-                let pos = r.Position || r.position || r['#'] || '';
-                let team = r.Team || r.team || '';
-                const fixed = _stripLeadingPosFromTeam(pos, team);
-                pos = fixed.pos;
-                team = fixed.team;
-                const gf = r.GF || 0; const ga = r.GA || 0;
-                const color = getQualifyColor(lg, pos);
-                return `<tr class="border-b border-zinc-800/30">
-                    <td class="pl-4 py-5 flex items-center"><div class="qualify-indicator" style="background:${color}"></div><span class="text-zinc-500">${pos}</span></td>
-                    <td><div class="flex items-center gap-3 cursor-pointer hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(team)}', '${lg}')"><img src="${getLogo(team)}" class="w-6 h-6 object-contain"><span class="font-bold">${team}</span></div></td>
-                    <td class="text-center text-zinc-400 font-mono">${r.MP || r.mp || 0}</td>
-                    <td class="text-center font-mono text-[10px]">${r['W-D-L'] || '0-0-0'}</td>
-                    <td class="text-center text-zinc-400 font-mono">${gf}</td>
-                    <td class="text-center text-zinc-400 font-mono">${ga}</td>
-                    <td class="text-center text-zinc-400 font-mono">${r.GD || (gf - ga)}</td>
-                    <td class="pr-4 text-right text-[#00ff85] font-black">${r.Points || r.Pts || 0}</td>
-                </tr>`;
-            }).join('');
-        }
-    });
-    const rules = lg === 'MLS'
-        ? [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#facc15', l:'Rel PO'}, {c:'#ef4444', l:'Rel'}]
-        : [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#166534', l:'UECL'}, {c:'#ef4444', l:'Rel'}];
-    legend.innerHTML = rules.map(rule => `<div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${rule.c}"></div><span class="text-[9px] font-black text-zinc-500 uppercase">${rule.l}</span></div>`).join('');
+currentStandingsLeague = lg;
+document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active-league'));
+document.getElementById(btn-${lg}).classList.add('active-league');
+const head = document.getElementById('standingsHead');
+const body = document.getElementById('standingsBody');
+const legend = document.getElementById('legend');
+head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="pr-4 text-right">PTS</th>`;
+
+Papa.parse(STANDINGS_URLS[lg], {
+    download: true, header: true,
+    complete: (res) => {
+        body.innerHTML = res.data.map(r => {
+            let pos = r.Position || r.position || r['#'] || '';
+            let team = r.Team || r.team || '';
+            const fixed = _stripLeadingPosFromTeam(pos, team);
+            pos = fixed.pos;
+            team = fixed.team;
+
+            const gf = r.GF || 0; const ga = r.GA || 0;
+            const color = getQualifyColor(lg, pos);
+            return `<tr class="border-b border-zinc-800/30">
+                <td class="pl-4 py-5 flex items-center"><div class="qualify-indicator" style="background:${color}"></div><span class="text-zinc-500">${pos}</span></td>
+                <td><div class="flex items-center gap-3 cursor-pointer hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(team)}', '${lg}')"><img src="${getLogo(team)}" class="w-6 h-6 object-contain"><span class="font-bold">${team}</span></div></td>
+                <td class="text-center text-zinc-400 font-mono">${r.MP || r.mp || 0}</td>
+                <td class="text-center font-mono text-[10px]">${r['W-D-L'] || '0-0-0'}</td>
+                <td class="text-center text-zinc-400 font-mono">${gf}</td>
+                <td class="text-center text-zinc-400 font-mono">${ga}</td>
+                <td class="text-center text-zinc-400 font-mono">${r.GD || (gf - ga)}</td>
+                <td class="pr-4 text-right text-[#00ff85] font-black">${r.Points || r.Pts || 0}</td>
+            </tr>`;
+        }).join('');
+    }
+});
+
+const rules = lg === 'MLS'
+    ? [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#facc15', l:'Rel PO'}, {c:'#ef4444', l:'Rel'}]
+    : [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#166534', l:'UECL'}, {c:'#ef4444', l:'Rel'}];
+legend.innerHTML = rules.map(rule => `<div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${rule.c}"></div><span class="text-[9px] font-black text-zinc-500 uppercase">${rule.l}</span></div>`).join('');
 }
 function getQualifyColor(lg, pos) {
-    pos = parseInt(pos);
-    if (lg === 'MLS') {
-        if (pos === 1) return '#fbbf24';
-        if (pos <= 8) return '#22c55e';
-        if (pos === 18) return '#facc15';
-        if (pos >= 19) return '#ef4444';
-    } else {
-        if (pos === 1) return '#00ff85';
-        if (pos <= 4) return '#3b82f6';
-        if (pos === 5) return '#fbbf24';
-        if (pos === 6) return '#166534';
-        if (pos >= 18) return '#ef4444';
-    }
-    return 'transparent';
+pos = parseInt(pos);
+if (lg === 'MLS') {
+if (pos === 1) return '#fbbf24';
+if (pos <= 8) return '#22c55e';
+if (pos === 18) return '#facc15';
+if (pos >= 19) return '#ef4444';
+} else {
+if (pos === 1) return '#00ff85';
+if (pos <= 4) return '#3b82f6';
+if (pos === 5) return '#fbbf24';
+if (pos === 6) return '#166534';
+if (pos >= 18) return '#ef4444';
+}
+return 'transparent';
 }
 function changeDate(step) {
-    dateIdx = Math.max(0, Math.min(uniqueDates.length - 1, dateIdx + step));
-    renderMatches();
+dateIdx = Math.max(0, Math.min(uniqueDates.length - 1, dateIdx + step));
+renderMatches();
 }
 function switchTab(t) {
-    currentView = t;
-    document.getElementById('hub-tab').classList.toggle('hidden', t !== 'hub');
-    document.getElementById('standings-tab').classList.toggle('hidden', t !== 'standings');
-    document.getElementById('stats-tab').classList.toggle('hidden', t !== 'stats');
-    document.getElementById('team-tab').classList.add('hidden');
-    document.getElementById('player-tab').classList.add('hidden');
-    document.querySelectorAll('.nav-item').forEach(el => {
-        const spanText = el.querySelector('span:last-child').textContent;
-        if (t === 'hub' && spanText === 'MAIN HUB') el.classList.add('active');
-        else if (t === 'standings' && spanText === 'STANDINGS') el.classList.add('active');
-        else if (t === 'stats' && spanText === 'STATS') el.classList.add('active');
-        else el.classList.remove('active');
-    });
-    if (t === 'standings') renderStandings('PREM');
-    if (t === 'stats') renderStats('PREM');
+currentView = t;
+document.getElementById('hub-tab').classList.toggle('hidden', t !== 'hub');
+document.getElementById('standings-tab').classList.toggle('hidden', t !== 'standings');
+document.getElementById('stats-tab').classList.toggle('hidden', t !== 'stats');
+document.getElementById('team-tab').classList.add('hidden');
+document.getElementById('player-tab').classList.add('hidden');
+document.querySelectorAll('.nav-item').forEach(el => {
+    const spanText = el.querySelector('span:last-child').textContent;
+    if (t === 'hub' && spanText === 'MAIN HUB') el.classList.add('active');
+    else if (t === 'standings' && spanText === 'STANDINGS') el.classList.add('active');
+    else if (t === 'stats' && spanText === 'STATS') el.classList.add('active');
+    else el.classList.remove('active');
+});
+
+if (t === 'standings') renderStandings('PREM');
+if (t === 'stats') renderStats('PREM');
 }
 function backToView() {
-    if (currentView === 'hub') switchTab('hub');
-    else if (currentView === 'standings') switchTab('standings');
-    else if (currentView === 'stats') switchTab('stats');
-}
-function _buildTeamPlayerIndex(playersObj) {
-    const idx = {};
-    Object.keys(playersObj || {}).forEach(k => {
-        const p = playersObj[k];
-        const teamKey = (p.teamKey || canonicalTeamName(p.team) || '').toString();
-        const teamNorm = _normMatch(teamKey);
-        if (!idx[teamNorm]) idx[teamNorm] = { keys: [], byExactName: {}, keyToNameNorm: {} };
-        const nameNorm = _normMatch(p.name);
-        idx[teamNorm].keys.push(k);
-        if (!idx[teamNorm].byExactName[nameNorm]) idx[teamNorm].byExactName[nameNorm] = k;
-        idx[teamNorm].keyToNameNorm[k] = nameNorm;
-    });
-    return idx;
-}
-function _resolvePlayerKeyForEntry(teamIndex, league, team, name) {
-    const teamKey = canonicalTeamName(team);
-    const teamNorm = _normMatch(teamKey);
-    const nameNorm = _normMatch(name);
-    const bucket = teamIndex[teamNorm];
-    if (!bucket) return null;
-    if (bucket.byExactName[nameNorm]) return bucket.byExactName[nameNorm];
-    let bestKey = null;
-    let bestD = null;
-    let secondBestD = null;
-    for (const k of bucket.keys) {
-        const candidateNorm = bucket.keyToNameNorm[k];
-        const lim = Math.max(2, Math.floor(Math.max(nameNorm.length, candidateNorm.length) * 0.25));
-        const d = _editDistance(nameNorm, candidateNorm, lim);
-        if (bestD === null || d < bestD) {
-            secondBestD = bestD;
-            bestD = d;
-            bestKey = k;
-        } else if (secondBestD === null || d < secondBestD) {
-            secondBestD = d;
-        }
-    }
-    const threshold = Math.max(2, Math.floor(Math.max(nameNorm.length, 1) * 0.25));
-    if (bestD === null || bestD > threshold) return null;
-    if (secondBestD !== null && secondBestD === bestD) return null;
-    return bestKey;
+if (currentView === 'hub') switchTab('hub');
+else if (currentView === 'standings') switchTab('standings');
+else if (currentView === 'stats') switchTab('stats');
 }
 async function loadStats(league) {
-    if (statsData[league].loaded) return;
-    const data = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {} };
-    const src = STATS_URLS[league];
-    if (!src) {
-        statsData[league] = { ...data, loaded: true };
-        return;
-    }
-    async function loadList(url, field) {
-        if (!url) return;
-        const rows = await new Promise((res) => Papa.parse(url, { download: true, complete: (r) => res(r.data || []), error: () => res([]) }));
-        rows.forEach((row, i) => {
-            if (i === 0 || !row[0] || !row[1]) return;
-            const name = row[0].trim();
-            const value = parseInt(row[1], 10) || 0;
-            const team = row[2] ? row[2].trim() : '';
+if (!STATS_URLS[league]) {
+statsData[league] = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {}, loaded: true };
+return;
+}
+if (statsData[league].loaded) return;
+
+const data = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {} };
+
+try {
+    if (STATS_URLS[league].goals) {
+        const goalsData = await new Promise((resolve) => {
+            Papa.parse(STATS_URLS[league].goals, {
+                download: true,
+                complete: (r) => resolve(r.data),
+                error: () => resolve([])
+            });
+        });
+
+        goalsData.forEach((row, i) => {
+            if (i === 0) return;
+            const name = (row[0] || '').trim();
+            const value = (row[1] || '').trim();
+            const team = (row[2] || '').trim();
+            if (!name || !value) return;
+            
             const teamKey = canonicalTeamName(team);
             const key = _makePlayerKey(league, teamKey, name);
+            
+            data.goals.push({ rank: i, name, value, team, league, key });
+            
             if (!data.players[key]) {
                 data.players[key] = {
-                    key,
-                    league,
-                    name,
-                    team,
-                    teamKey,
-                    position: '',
-                    goals: 0,
-                    assists: 0,
-                    cs: 0,
-                    avgRating: 0,
-                    matches: 0,
-                    recentRatings: [],
-                    photoUrl: ''
+                    key, league, name, team, teamKey,
+                    position: '', goals: 0, assists: 0, cs: 0,
+                    avgRating: 0, matches: 0, recentRatings: [], photoUrl: ''
                 };
             }
-            data.players[key][field] = value;
-            data[field + 's'].push({ name, value, team, league, key });
+            data.players[key].goals = parseInt(value) || 0;
         });
-        data[field + 's'].sort((a, b) => b.value - a.value);
     }
-    await Promise.all([
-        loadList(src.goals, 'goal'),
-        loadList(src.assists, 'assist'),
-        loadList(src.cleanSheets, 'cs')
-    ]);
-    if (src.avgRatings) {
-        const rows = await new Promise((res) => Papa.parse(src.avgRatings, { download: true, complete: (r) => res(r.data || []), error: () => res([]) });
-    rows.forEach((row, i) => {
-            if (i === 0 || !row[8] || !row[10]) return;
-            const name = row[8].trim();
-            const position = row[9] || '';
-            const avgRating = parseFloat(row[10]) || 0;
-            const team = row[11] ? row[11].trim() : '';
-            const matches = parseInt(row[12], 10) || 0;
+
+    if (STATS_URLS[league].assists) {
+        const assistsData = await new Promise((resolve) => {
+            Papa.parse(STATS_URLS[league].assists, {
+                download: true,
+                complete: (r) => resolve(r.data),
+                error: () => resolve([])
+            });
+        });
+
+        assistsData.forEach((row, i) => {
+            if (i === 0) return;
+            const name = (row[0] || '').trim();
+            const value = (row[1] || '').trim();
+            const team = (row[2] || '').trim();
+            if (!name || !value) return;
+            
             const teamKey = canonicalTeamName(team);
             const key = _makePlayerKey(league, teamKey, name);
-            const photoUrl = _extractPhotoUrlFromRow(row);
+            
+            data.assists.push({ rank: i, name, value, team, league, key });
+            
             if (!data.players[key]) {
                 data.players[key] = {
-                    key,
-                    league,
-                    name,
-                    team,
-                    teamKey,
-                    position,
-                    goals: 0,
-                    assists: 0,
-                    cs: 0,
-                    avgRating,
-                    matches,
-                    recentRatings: [],
-                    photoUrl
+                    key, league, name, team, teamKey,
+                    position: '', goals: 0, assists: 0, cs: 0,
+                    avgRating: 0, matches: 0, recentRatings: [], photoUrl: ''
                 };
-            } else {
-                data.players[key].position = position;
-                data.players[key].avgRating = avgRating;
-                data.players[key].matches = matches;
-                data.players[key].photoUrl = photoUrl || data.players[key].photoUrl;
             }
-            data.ratings.push({ rank: row[7], name, position, value: avgRating.toFixed(2), team, matches, league, key });
+            data.players[key].assists = parseInt(value) || 0;
         });
-        data.ratings.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
     }
-    if (src.ratingsLog) {
-        const rows = await new Promise((res) => Papa.parse(src.ratingsLog, { download: true, header: true, complete: (r) => res(r.data || []), error: () => res([]) });
-        rows.forEach(row => {
-            const name = row.Player ? row.Player.trim() : '';
+
+    if (STATS_URLS[league].cleanSheets) {
+        const csData = await new Promise((resolve) => {
+            Papa.parse(STATS_URLS[league].cleanSheets, {
+                download: true,
+                complete: (r) => resolve(r.data),
+                error: () => resolve([])
+            });
+        });
+
+        csData.forEach((row, i) => {
+            if (i === 0) return;
+            const name = (row[0] || '').trim();
+            const value = (row[1] || '').trim();
+            const team = (row[2] || '').trim();
+            if (!name || !value) return;
+            
+            const teamKey = canonicalTeamName(team);
+            const key = _makePlayerKey(league, teamKey, name);
+            
+            data.cleanSheets.push({ rank: i, name, value, team, league, key });
+            
+            if (!data.players[key]) {
+                data.players[key] = {
+                    key, league, name, team, teamKey,
+                    position: '', goals: 0, assists: 0, cs: 0,
+                    avgRating: 0, matches: 0, recentRatings: [], photoUrl: ''
+                };
+            }
+            data.players[key].cs = parseInt(value) || 0;
+        });
+    }
+
+    if (STATS_URLS[league].avgRatings) {
+        const ratingsData = await new Promise((resolve) => {
+            Papa.parse(STATS_URLS[league].avgRatings, {
+                download: true,
+                complete: (r) => resolve(r.data),
+                error: () => resolve([])
+            });
+        });
+
+        ratingsData.forEach((row, i) => {
+            if (i === 0) return;
+            const name = (row[8] || '').trim();
+            const position = (row[9] || '').trim();
+            const avgRating = (row[10] || '').trim();
+            const team = (row[11] || '').trim();
+            const matches = (row[5] || '').trim();
+            
             if (!name) return;
-            const rating = parseFloat(row.Rating) || 0;
-            const fixture = row.Fixture || '';
-            const opponent = row.Opponent || '';
-            const team = row.Team ? row.Team.trim() : '';
+            
             const teamKey = canonicalTeamName(team);
             const key = _makePlayerKey(league, teamKey, name);
-            if (data.players[key]) {
-                data.players[key].recentRatings.push({ fixture, opponent, rating });
+
+            const photoUrl = _extractPhotoUrlFromRow(row);
+
+            data.ratings.push({
+                rank: i,
+                name,
+                position,
+                value: avgRating,
+                team,
+                matches,
+                league,
+                key
+            });
+
+            if (!data.players[key]) {
+                data.players[key] = {
+                    key, league, name, team, teamKey,
+                    position: '', goals: 0, assists: 0, cs: 0,
+                    avgRating: 0, matches: 0, recentRatings: [], photoUrl: ''
+                };
             }
+            
+            data.players[key].position = position;
+            data.players[key].avgRating = parseFloat(avgRating) || 0;
+            data.players[key].matches = parseInt(matches) || 0;
+            data.players[key].photoUrl = photoUrl;
         });
     }
+
+    if (STATS_URLS[league].ratingsLog) {
+        const ratingsLogData = await new Promise((resolve) => {
+            Papa.parse(STATS_URLS[league].ratingsLog, {
+                download: true,
+                header: true,
+                complete: (r) => resolve(r.data),
+                error: () => resolve([])
+            });
+        });
+
+        const playerRatingsMap = {};
+        
+        ratingsLogData.forEach(row => {
+            const name = (row.Player || row.Name || row['Player Name'] || '').trim();
+            const team = (row.Team || row['Team Name'] || '').trim();
+            const rating = parseFloat(row.Rating || row.Score || row['Match Rating'] || '');
+            const date = (row.Date || row.MatchDate || row.Round || '').trim();
+            const opponent = (row.Opponent || row.Opp || '').trim();
+            
+            if (!name || isNaN(rating)) return;
+            
+            if (!playerRatingsMap[name]) {
+                playerRatingsMap[name] = [];
+            }
+            
+            playerRatingsMap[name].push({ date, opponent, rating });
+        });
+
+        Object.keys(playerRatingsMap).forEach(name => {
+            const ratings = playerRatingsMap[name].slice(-5);
+            
+            Object.values(data.players).forEach(p => {
+                if (p.name.toLowerCase() === name.toLowerCase()) {
+                    p.recentRatings = ratings;
+                }
+            });
+        });
+    }
+
+    data.goals.sort((a, b) => parseInt(b.value) - parseInt(a.value));
+    data.assists.sort((a, b) => parseInt(b.value) - parseInt(a.value));
+    data.cleanSheets.sort((a, b) => parseInt(b.value) - parseInt(a.value));
+    data.ratings.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
+
     statsData[league] = { ...data, loaded: true };
+} catch (e) {
+    console.error('Error loading stats for', league, e);
+    statsData[league] = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {}, loaded: true };
+}
 }
 async function renderStats(league) {
-    document.querySelectorAll('[id^="stat-btn-"]').forEach(b => b.classList.remove('active-league'));
-    document.getElementById(`stat-btn-${league}`).classList.add('active-league');
-    const content = document.getElementById('statsContent');
-    content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading stats...</div>';
-    if (league === 'COMBINED') {
-        await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
-        const combined = { goals: [], assists: [], cleanSheets: [], ratings: [] };
-        ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
-            if (statsData[lg].loaded) {
-                combined.goals.push(...statsData[lg].goals);
-                combined.assists.push(...statsData[lg].assists);
-                combined.cleanSheets.push(...statsData[lg].cleanSheets);
-                combined.ratings.push(...statsData[lg].ratings);
-            }
-        });
-        combined.goals.sort((a, b) => b.value - a.value);
-        combined.assists.sort((a, b) => b.value - a.value);
-        combined.cleanSheets.sort((a, b) => b.value - a.value);
-        combined.ratings.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
-        displayStats(combined);
-    } else {
-        await loadStats(league);
-        displayStats(statsData[league]);
+document.querySelectorAll('[id^="stat-btn-"]').forEach(b => b.classList.remove('active-league'));
+document.getElementById(stat-btn-${league}).classList.add('active-league');
+const content = document.getElementById('statsContent');
+content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading stats...</div>';
+
+if (league === 'COMBINED') {
+    await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
+    const combined = { goals: [], assists: [], cleanSheets: [], ratings: [] };
+    ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
+        if (statsData[lg].loaded) {
+            combined.goals.push(...statsData[lg].goals);
+            combined.assists.push(...statsData[lg].assists);
+            combined.cleanSheets.push(...statsData[lg].cleanSheets);
+            combined.ratings.push(...statsData[lg].ratings);
+        }
+    });
+    combined.goals.sort((a, b) => parseInt(b.value) - parseInt(a.value));
+    combined.assists.sort((a, b) => parseInt(b.value) - parseInt(a.value));
+    combined.cleanSheets.sort((a, b) => parseInt(b.value) - parseInt(a.value));
+    combined.ratings.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
+    displayStats({ goals: combined.goals.slice(0, 10), assists: combined.assists.slice(0, 10), cleanSheets: combined.cleanSheets.slice(0, 10), ratings: combined.ratings.slice(0, 10) });
+} else {
+    await loadStats(league);
+    if (!statsData[league].loaded) {
+        content.innerHTML = '<div class="text-center text-zinc-500 py-8">No stats available</div>';
+        return;
     }
+    displayStats({ goals: statsData[league].goals.slice(0, 10), assists: statsData[league].assists.slice(0, 10), cleanSheets: statsData[league].cleanSheets.slice(0, 10), ratings: statsData[league].ratings.slice(0, 10) });
+}
 }
 function displayStats(data) {
-    const content = document.getElementById('statsContent');
-    content.innerHTML = `
-        <div class="space-y-6">
-            <div class="stat-card">
-                <h3 class="text-sm font-black text-[#00ff85] mb-4">⚽ TOP SCORERS</h3>
-                ${data.goals.slice(0, 10).map((p, i) => `
-                    <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
-                        <div class="flex items-center gap-3">
-                            <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
-                            <div>
-                                <div class="font-bold text-sm">${p.name}</div>
-                                <div class="text-[10px] text-zinc-500">
-                                    <img src="${getLogo(p.team)}" class="w-3 h-3 inline-block align-[-2px] mr-1 object-contain">${p.team}
-                                </div>
+const content = document.getElementById('statsContent');
+content.innerHTML =         <div class="space-y-6">             <div class="stat-card">                 <h3 class="text-sm font-black text-[#00ff85] mb-4">⚽ TOP SCORERS</h3>                 ${data.goals.map((p, i) =>
+<div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
+<div class="flex items-center gap-3">
+<span class="text-zinc-600 font-mono w-6">${i + 1}</span>
+<div>
+<div class="font-bold text-sm">${p.name}</div>
+<div class="text-[10px] text-zinc-500">
+<img src="${getLogo(p.team)}" class="w-3 h-3 inline-block align-[-2px] mr-1 object-contain">${p.team}
+</div>
+</div>
+</div>
+<span class="text-[#00ff85] font-black">${p.value}</span>
+</div>
+`).join('')}
+</div>
+        <div class="stat-card">
+            <h3 class="text-sm font-black text-[#00ff85] mb-4">🎯 TOP ASSISTS</h3>
+            ${data.assists.map((p, i) => `
+                <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
+                    <div class="flex items-center gap-3">
+                        <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
+                        <div>
+                            <div class="font-bold text-sm">${p.name}</div>
+                            <div class="text-[10px] text-zinc-500">
+                                <img src="${getLogo(p.team)}" class="w-3 h-3 inline-block align-[-2px] mr-1 object-contain">${p.team}
                             </div>
                         </div>
-                        <span class="text-[#00ff85] font-black">${p.value}</span>
                     </div>
-                `).join('')}
-            </div>
-            <div class="stat-card">
-                <h3 class="text-sm font-black text-[#00ff85] mb-4">🎯 TOP ASSISTS</h3>
-                ${data.assists.slice(0, 10).map((p, i) => `
-                    <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
-                        <div class="flex items-center gap-3">
-                            <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
-                            <div>
-                                <div class="font-bold text-sm">${p.name}</div>
-                                <div class="text-[10px] text-zinc-500">
-                                    <img src="${getLogo(p.team)}" class="w-3 h-3 inline-block align-[-2px] mr-1 object-contain">${p.team}
-                                </div>
-                            </div>
-                        </div>
-                        <span class="text-[#00ff85] font-black">${p.value}</span>
-                    </div>
-                `).join('')}
-            </div>
-            <div class="stat-card">
-                <h3 class="text-sm font-black text-[#00ff85] mb-4">🧤 CLEAN SHEETS</h3>
-                ${data.cleanSheets.slice(0, 10).map((p, i) => `
-                    <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
-                        <div class="flex items-center gap-3">
-                            <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
-                            <div>
-                                <div class="font-bold text-sm">${p.name}</div>
-                                <div class="text-[10px] text-zinc-500">
-                                    <img src="${getLogo(p.team)}" class="w-3 h-3 inline-block align-[-2px] mr-1 object-contain">${p.team}
-                                </div>
-                            </div>
-                        </div>
-                        <span class="text-[#00ff85] font-black">${p.value}</span>
-                    </div>
-                `).join('')}
-            </div>
-            <div class="stat-card">
-                <h3 class="text-sm font-black text-[#00ff85] mb-4">⭐ TOP RATED</h3>
-                ${data.ratings.slice(0, 10).map((p, i) => `
-                    <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
-                        <div class="flex items-center gap-3">
-                            <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
-                            <div>
-                                <div class="font-bold text-sm">${p.name}</div>
-                                <div class="text-[10px] text-zinc-500">
-                                    <img src="${getLogo(p.team)}" class="w-3 h-3 inline-block align-[-2px] mr-1 object-contain">${p.team} • ${p.matches || 0} apps
-                                </div>
-                            </div>
-                        </div>
-                        <span class="text-[#00ff85] font-black">${p.value}</span>
-                    </div>
-                `).join('')}
-            </div>
+                    <span class="text-[#00ff85] font-black">${p.value}</span>
+                </div>
+            `).join('')}
         </div>
-    `;
+
+        <div class="stat-card">
+            <h3 class="text-sm font-black text-[#00ff85] mb-4">🧤 CLEAN SHEETS</h3>
+            ${data.cleanSheets.map((p, i) => `
+                <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
+                    <div class="flex items-center gap-3">
+                        <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
+                        <div>
+                            <div class="font-bold text-sm">${p.name}</div>
+                            <div class="text-[10px] text-zinc-500">
+                                <img src="${getLogo(p.team)}" class="w-3 h-3 inline-block align-[-2px] mr-1 object-contain">${p.team}
+                            </div>
+                        </div>
+                    </div>
+                    <span class="text-[#00ff85] font-black">${p.value}</span>
+                </div>
+            `).join('')}
+        </div>
+
+        <div class="stat-card">
+            <h3 class="text-sm font-black text-[#00ff85] mb-4">⭐ TOP RATED</h3>
+            ${data.ratings.map((p, i) => `
+                <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
+                    <div class="flex items-center gap-3">
+                        <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
+                        <div>
+                            <div class="font-bold text-sm">${p.name}</div>
+                            <div class="text-[10px] text-zinc-500">
+                                <img src="${getLogo(p.team)}" class="w-3 h-3 inline-block align-[-2px] mr-1 object-contain">${p.team} • ${p.matches || 0} apps
+                            </div>
+                        </div>
+                    </div>
+                    <span class="text-[#00ff85] font-black">${parseFloat(p.value).toFixed(2)}</span>
+                </div>
+            `).join('')}
+        </div>
+    </div>
+`;
 }
 function _norm(s) { return (s || '').toString().trim().toLowerCase(); }
 function _bestMatch(query, candidates) {
-    const q = _norm(query);
-    if (!q) return null;
-    const exact = candidates.find(c => _norm(c) === q);
-    if (exact) return exact;
-    const starts = candidates.find(c => _norm(c).startsWith(q));
-    if (starts) return starts;
-    const incl = candidates.find(c => _norm(c).includes(q));
-    if (incl) return incl;
-    return null;
+const q = _norm(query);
+if (!q) return null;
+const exact = candidates.find(c => _norm(c) === q);
+if (exact) return exact;
+const starts = candidates.find(c => _norm(c).startsWith(q));
+if (starts) return starts;
+const incl = candidates.find(c => _norm(c).includes(q));
+if (incl) return incl;
+return null;
 }
 function _guessLeagueForTeam(teamName) {
-    const logo = getLogo(teamName) || '';
-    if (logo.includes('mlssoccer')) return 'MLS';
-    if (logo.includes('premierleague')) return 'PREM';
-    return 'LALIGA';
+const logo = getLogo(teamName) || '';
+if (logo.includes('mlssoccer')) return 'MLS';
+if (logo.includes('premierleague')) return 'PREM';
+return 'LALIGA';
 }
 function _findTeamLeague(teamName) {
-    const tk = canonicalTeamName(teamName);
-    const m = allMatches.find(x => x.homeKey === tk || x.awayKey === tk);
-    if (m) return m.league;
-    return _guessLeagueForTeam(teamName);
+const tk = canonicalTeamName(teamName);
+const m = allMatches.find(x => x.homeKey === tk || x.awayKey === tk);
+if (m) return m.league;
+return _guessLeagueForTeam(teamName);
 }
 function _resolveTeamFromQuery(query) {
-    const rep = {};
-    const add = (t) => {
-        if (!t) return;
-        const k = canonicalTeamName(t);
-        if (!rep[k]) rep[k] = t;
-    };
-    allMatches.forEach(m => { add(m.home); add(m.away); });
-    Object.keys(LOGOS).forEach(add);
-    Object.keys(TEAM_ALIASES).forEach(aliasNorm => add(TEAM_ALIASES[aliasNorm]));
-    const qKey = canonicalTeamName(query);
-    if (rep[qKey]) return rep[qKey];
-    const candidates = Object.values(rep);
-    return _bestMatch(query, candidates);
+const rep = {};
+const add = (t) => {
+if (!t) return;
+const k = canonicalTeamName(t);
+if (!rep[k]) rep[k] = t;
+};
+allMatches.forEach(m => { add(m.home); add(m.away); });
+Object.keys(LOGOS).forEach(add);
+Object.keys(TEAM_ALIASES).forEach(aliasNorm => add(TEAM_ALIASES[aliasNorm]));
+
+const qKey = canonicalTeamName(query);
+if (rep[qKey]) return rep[qKey];
+
+const candidates = Object.values(rep);
+return _bestMatch(query, candidates);
+}
+let searchSuggestionsCache = null;
+async function buildSearchSuggestionsCache() {
+if (searchSuggestionsCache) return searchSuggestionsCache;
+await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
+
+const players = [];
+['PREM', 'LALIGA', 'MLS'].forEach(lg => {
+    const pool = statsData[lg].players ? Object.values(statsData[lg].players) : [];
+    pool.forEach(p => {
+        if (p && p.key && p.name) {
+            players.push({ key: p.key, name: p.name, team: p.team || '', league: lg });
+        }
+    });
+});
+
+const teams = {};
+allMatches.forEach(m => {
+    if (m.home) teams[canonicalTeamName(m.home)] = m.home;
+    if (m.away) teams[canonicalTeamName(m.away)] = m.away;
+});
+
+searchSuggestionsCache = { players, teams: Object.values(teams) };
+return searchSuggestionsCache;
+}
+function showSearchSuggestions() {
+const input = document.getElementById('globalSearch');
+const box = document.getElementById('globalSearchSuggestions');
+if (!input || !box) return;
+const query = input.value.trim().toLowerCase();
+if (query.length < 2) {
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return;
+}
+
+if (!searchSuggestionsCache) {
+    buildSearchSuggestionsCache().then(() => showSearchSuggestions());
+    return;
+}
+
+const playerHits = searchSuggestionsCache.players.filter(p => 
+    p.name.toLowerCase().includes(query) || (p.team && p.team.toLowerCase().includes(query))
+).slice(0, 8);
+
+const teamHits = searchSuggestionsCache.teams.filter(t =>
+    t.toLowerCase().includes(query)
+).slice(0, 6);
+
+const hits = [...playerHits.map(p => ({ type: 'player', ...p })), ...teamHits.map(t => ({ type: 'team', name: t }))];
+
+if (hits.length === 0) {
+    box.innerHTML = '<div class="search-suggestion text-zinc-500">No matches found</div>';
+    box.classList.remove('hidden');
+    return;
+}
+
+box.innerHTML = hits.map(h => {
+    if (h.type === 'player') {
+        return `<div class="search-suggestion" onclick="viewPlayer('${_jsEscapeSingle(h.key)}'); document.getElementById('globalSearchSuggestions').classList.add('hidden');">
+            <span>👤</span>
+            <span class="flex-1 font-bold">${h.name}</span>
+            <span class="text-zinc-500 text-[10px]">${h.team}</span>
+        </div>`;
+    } else {
+        const league = _findTeamLeague(h.name);
+        return `<div class="search-suggestion" onclick="viewTeam('${_jsEscapeSingle(h.name)}', '${league}'); document.getElementById('globalSearchSuggestions').classList.add('hidden');">
+            <img src="${getLogo(h.name)}" class="w-4 h-4 object-contain">
+            <span class="flex-1 font-bold">${h.name}</span>
+        </div>`;
+    }
+}).join('');
+
+box.classList.remove('hidden');
 }
 async function searchPlayer(e, inputId = 'globalSearch') {
-    if (e.key !== 'Enter') return;
-    const el = document.getElementById(inputId);
-    if (!el) return;
-    const query = el.value.trim();
-    if (!query) return;
+if (e.key === 'Enter') {
+const el = document.getElementById(inputId);
+if (!el) return;
+const query = el.value.trim();
+if (!query)return;
+    document.getElementById('globalSearchSuggestions').classList.add('hidden');
+
     await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
+
     const playerCandidates = [];
     ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
         const players = statsData[lg].players ? Object.values(statsData[lg].players) : [];
@@ -1213,249 +1454,254 @@ async function searchPlayer(e, inputId = 'globalSearch') {
             if (p && p.key && p.name) playerCandidates.push({ key: p.key, name: p.name, team: p.team || '' });
         });
     });
+
     const matchedPlayer = _bestFuzzyPlayerMatch(query, playerCandidates);
     if (matchedPlayer) {
         viewPlayer(matchedPlayer.key);
         return;
     }
+
     const matchedTeam = _resolveTeamFromQuery(query);
     if (matchedTeam) {
         viewTeam(matchedTeam, _findTeamLeague(matchedTeam));
         return;
     }
+
     viewPlayer(query);
+} else {
+    showSearchSuggestions();
 }
+}
+document.addEventListener('click', (e) => {
+const box = document.getElementById('globalSearchSuggestions');
+const input = document.getElementById('globalSearch');
+if (box && input && !box.contains(e.target) && e.target !== input) {
+box.classList.add('hidden');
+}
+});
 function getPlayerInitials(name) {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 }
 async function viewPlayer(playerKeyOrName) {
-    document.getElementById('player-tab').classList.remove('hidden');
-    document.getElementById('hub-tab').classList.add('hidden');
-    document.getElementById('standings-tab').classList.add('hidden');
-    document.getElementById('stats-tab').classList.add('hidden');
-    document.getElementById('team-tab').classList.add('hidden');
-    const content = document.getElementById('playerContent');
-    content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading player...</div>';
-    const parts = _splitPlayerKey(playerKeyOrName);
-    if (parts.league) await loadStats(parts.league);
-    await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
-    let playerData = null;
-    if (parts.league && statsData[parts.league].players && statsData[parts.league].players[playerKeyOrName]) {
-        playerData = statsData[parts.league].players[playerKeyOrName];
-    } else {
-        for (const lg of ['PREM', 'LALIGA', 'MLS']) {
-            const pool = statsData[lg].players || {};
-            if (pool[playerKeyOrName]) { playerData = pool[playerKeyOrName]; break; }
-        }
+document.getElementById('player-tab').classList.remove('hidden');
+document.getElementById('hub-tab').classList.add('hidden');
+document.getElementById('standings-tab').classList.add('hidden');
+document.getElementById('stats-tab').classList.add('hidden');
+document.getElementById('team-tab').classList.add('hidden');
+const content = document.getElementById('playerContent');
+content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading player...</div>';
+
+const parts = _splitPlayerKey(playerKeyOrName);
+if (parts.league) await loadStats(parts.league);
+await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
+
+let playerData = null;
+
+if (parts.league && statsData[parts.league].players && statsData[parts.league].players[playerKeyOrName]) {
+    playerData = statsData[parts.league].players[playerKeyOrName];
+} else {
+    for (const lg of ['PREM', 'LALIGA', 'MLS']) {
+        const pool = statsData[lg].players || {};
+        if (pool[playerKeyOrName]) { playerData = pool[playerKeyOrName]; break; }
     }
-    if (!playerData) {
-        content.innerHTML = '<div class="text-center text-zinc-500 py-8">Player not found</div>';
-        return;
-    }
-    const isGK = playerData.position && playerData.position.toLowerCase().includes('gk');
-    const photoUrl = (playerData.photoUrl || '').toString().trim();
-    const teamEmoji = getTeamEmoji(playerData.team);
-    content.innerHTML = `
-        <div class="space-y-6">
-            <div class="flex flex-col items-center gap-4">
-                <div class="flex flex-col items-center">
-                    <img id="playerPhoto" class="w-20 h-20 rounded-full object-cover bg-zinc-800 border border-zinc-800" style="display:none;">
-                    <div id="playerAvatarFallback" class="player-avatar">${getPlayerInitials(playerData.name)}</div>
-                </div>
-                <div class="text-center">
-                    <div class="flex items-center justify-center gap-2">
-                        <img src="${getLogo(playerData.team)}" class="w-5 h-5 object-contain">
-                        <h2 class="text-2xl font-black">${playerData.name}</h2>
-                    </div>
-                    <p class="text-zinc-500 text-sm flex items-center justify-center gap-2">
-                        <img src="${getLogo(playerData.team)}" class="w-4 h-4 object-contain">
-                        <span class="cursor-pointer hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(playerData.team)}', '${playerData.league}')">${playerData.team}</span>
-                    </p>
-                    <p class="text-zinc-600 text-xs mt-1">${playerData.position || 'N/A'}</p>
-                </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="stat-card text-center relative overflow-hidden">
-                    <div class="text-3xl font-black text-[#00ff85]">${playerData.goals || 0}</div>
-                    <div class="text-xs text-zinc-500 mt-1">GOALS</div>
-                </div>
-                <div class="stat-card text-center relative overflow-hidden">
-                    <div class="text-3xl font-black text-[#00ff85]">${playerData.assists || 0}</div>
-                    <div class="text-xs text-zinc-500 mt-1">ASSISTS</div>
-                </div>
-                ${isGK ? `
-                <div class="stat-card text-center relative overflow-hidden">
-                    <div class="text-3xl font-black text-[#00ff85]">${playerData.cs || 0}</div>
-                    <div class="text-xs text-zinc-500 mt-1">CLEAN SHEETS</div>
-                </div>
-                ` : ''}
-                <div class="stat-card text-center relative overflow-hidden">
-                    <div class="text-3xl font-black text-[#00ff85]">${playerData.matches || 0}</div>
-                    <div class="text-xs text-zinc-500 mt-1"># of Games</div>
-                </div>
-                <div class="stat-card text-center relative overflow-hidden">
-                    <div class="text-3xl font-black text-[#00ff85]">${parseFloat(playerData.avgRating || 0).toFixed(2)}</div>
-                    <div class="text-xs text-zinc-500 mt-1">AVG RATING</div>
-                </div>
-            </div>
-            ${playerData.recentRatings && playerData.recentRatings.length > 0 ? `
-            <div class="stat-card">
-                <h3 class="text-sm font-black text-[#00ff85] mb-4">LAST 5 RATINGS</h3>
-                <div class="flex gap-2">
-                    ${playerData.recentRatings.slice(-5).map(r => `
-                        <div class="flex-1 bg-zinc-900 rounded-lg py-3 text-center">
-                            <div class="font-black text-[#00ff85]">${parseFloat(r.rating).toFixed(1)}</div>
-                            <div class="text-xs text-zinc-500">${r.fixture}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-            ` : ''}
-        </div>
-    `;
-    if (photoUrl) {
-        const imgEl = document.getElementById('playerPhoto');
-        const fbEl = document.getElementById('playerAvatarFallback');
-        loadPlayerPhotoToElement(photoUrl, imgEl, fbEl);
-    }
-    // Hide extra team logos
-    const statCards = content.querySelectorAll('.stat-card');
-    statCards.forEach(card => {
-        const imgs = card.querySelectorAll('img');
-        imgs.forEach(img => img.style.display = 'none');
-    });
 }
-async function viewTeam(teamName, league) {
-    currentTeam = { name: teamName, league: league };
-    document.getElementById('team-tab').classList.remove('hidden');
-    document.getElementById('hub-tab').classList.add('hidden');
-    document.getElementById('standings-tab').classList.add('hidden');
-    document.getElementById('stats-tab').classList.add('hidden');
-    document.getElementById('player-tab').classList.add('hidden');
-    const content = document.getElementById('teamContent');
-    content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading team...</div>';
-    await loadStats(league);
-    const teamKey = canonicalTeamName(teamName);
-    const standings = await loadStandingsCache(league);
-    const standing = standings ? standings[teamKey] : null;
-    const teamPlayers = Object.values(statsData[league].players || {}).filter(p => (p.teamKey || canonicalTeamName(p.team)) === teamKey);
-    const teamMatches = allMatches
-        .filter(m => m.league === league && (m.homeKey === teamKey || m.awayKey === teamKey))
-        .sort((a, b) => a.date - b.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const past = teamMatches.filter(m => m.date < today && m.score !== 'v').slice(-5).reverse();
-    const future = teamMatches.filter(m => m.date >= today || m.score === 'v').slice(0, 5);
-    content.innerHTML = `
-        <div class="space-y-6">
-            <div class="flex items-center gap-4 mb-6">
-                <img src="${getLogo(teamName)}" class="w-16 h-16 object-contain">
-                <div>
-                    <h2 class="text-2xl font-black">${teamName}</h2>
-                    ${standing && standing.pos ? `
-                        <div class="text-zinc-600 text-xs mt-1">
-                            Standing: ${standing.pos}${standing.pts !== '' ? ` • ${standing.pts} pts` : ''}${standing.mp !== '' ? ` • ${standing.mp} MP` : ''}${standing.wdl ? ` • ${standing.wdl}` : ''}
-                        </div>
-                    ` : ``}
-                </div>
+
+if (!playerData) {
+    content.innerHTML = '<div class="text-center text-zinc-500 py-8">Player not found</div>';
+    return;
+}
+
+const isGK = playerData.position && playerData.position.toLowerCase().includes('gk');
+const photoUrl = (playerData.photoUrl || '').toString().trim();
+
+content.innerHTML = `
+    <div class="space-y-6">
+        <div class="flex flex-col items-center gap-4">
+            <div class="flex flex-col items-center">
+                <img id="playerPhoto" class="w-20 h-20 rounded-full object-cover bg-zinc-800 border border-zinc-800" style="display:none;">
+                <div id="playerAvatarFallback" class="player-avatar">${getPlayerInitials(playerData.name)}</div>
             </div>
-            ${past.length > 0 ? `
-            <div class="stat-card">
-                <h3 class="text-sm font-black text-[#00ff85] mb-4">LAST 5 RESULTS</h3>
-                ${past.map(m => {
-                    const isHome = m.homeKey === teamKey;
-                    const opponent = isHome ? m.away : m.home;
-                    return `
-                    <div class="flex items-center justify-between py-3 border-b border-zinc-800">
-                        <div class="flex items-center gap-2">
-                            <img src="${getLogo(opponent)}" class="w-5 h-5 object-contain">
-                            <span class="text-sm">${isHome ? 'vs' : '@'} ${opponent}</span>
-                        </div>
-                        <span class="font-black text-sm">${m.score}</span>
-                    </div>`;
-                }).join('')}
+            <div class="text-center">
+                <h2 class="text-2xl font-black">${playerData.name}</h2>
+                <p class="text-zinc-500 text-sm flex items-center justify-center gap-2">
+                    <img src="${getLogo(playerData.team)}" class="w-4 h-4 object-contain">
+                    <span class="cursor-pointer hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(playerData.team)}', '${playerData.league}')">${playerData.team}</span>
+                </p>
+                <p class="text-zinc-600 text-xs mt-1">${playerData.position || 'N/A'}</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div class="stat-card text-center relative overflow-hidden">
+                <div class="text-3xl font-black text-[#00ff85]">${playerData.goals || 0}</div>
+                <div class="text-xs text-zinc-500 mt-1">GOALS</div>
+            </div>
+            <div class="stat-card text-center relative overflow-hidden">
+                <div class="text-3xl font-black text-[#00ff85]">${playerData.assists || 0}</div>
+                <div class="text-xs text-zinc-500 mt-1">ASSISTS</div>
+            </div>
+            ${isGK ? `
+            <div class="stat-card text-center relative overflow-hidden">
+                <div class="text-3xl font-black text-[#00ff85]">${playerData.cs || 0}</div>
+                <div class="text-xs text-zinc-500 mt-1">CLEAN SHEETS</div>
             </div>
             ` : ''}
-            ${future.length > 0 ? `
-            <div class="stat-card">
-                <h3 class="text-sm font-black text-[#00ff85] mb-4">NEXT 5 FIXTURES</h3>
-                ${future.map(m => {
-                    const isHome = m.homeKey === teamKey;
-                    const opponent = isHome ? m.away : m.home;
-                    const dObj = m.date;
-                    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                    return `
-                    <div class="flex items-center justify-between py-3 border-b border-zinc-800">
-                        <div class="flex items-center gap-2">
-                            <img src="${getLogo(opponent)}" class="w-5 h-5 object-contain">
-                            <span class="text-sm">${isHome ? 'vs' : '@'} ${opponent}</span>
-                        </div>
-                        <span class="text-xs text-zinc-500">${months[dObj.getMonth()]} ${dObj.getDate()}</span>
-                    </div>`;
-                }).join('')}
+            <div class="stat-card text-center relative overflow-hidden">
+                <div class="text-3xl font-black text-[#00ff85]">${playerData.matches || 0}</div>
+                <div class="text-xs text-zinc-500 mt-1"># OF GAMES</div>
             </div>
-            ` : ''}
-            ${teamPlayers.length > 0 ? `
-            <div class="stat-card">
-                <h3 class="text-sm font-black text-[#00ff85] mb-4">SQUAD</h3>
-                ${teamPlayers.sort((a, b) => (b.goals || 0) - (a.goals || 0)).map(p => `
-                    <div class="flex items-center justify-between py-3 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
-                        <div>
-                            <div class="font-bold text-sm">${p.name}</div>
-                            <div class="text-[10px] text-zinc-500">${p.position || 'N/A'}</div>
-                        </div>
-                        <div class="text-right text-xs">
-                            <div class="text-[#00ff85]">${p.goals || 0}G ${p.assists || 0}A</div>
-                            <div class="text-zinc-600">${parseFloat(p.avgRating || 0).toFixed(2)} ⭐</div>
-                        </div>
+            <div class="stat-card text-center relative overflow-hidden">
+                <div class="text-3xl font-black text-[#00ff85]">${parseFloat(playerData.avgRating || 0).toFixed(2)}</div>
+                <div class="text-xs text-zinc-500 mt-1">AVG RATING</div>
+            </div>
+        </div>
+
+        ${playerData.recentRatings && playerData.recentRatings.length > 0 ? `
+        <div class="stat-card">
+            <h3 class="text-sm font-black text-[#00ff85] mb-4">LAST 5 MATCH RATINGS</h3>
+            <div class="space-y-2">
+                ${playerData.recentRatings.map(r => `
+                    <div class="flex items-center justify-between border-b border-zinc-800/40 pb-2">
+                        <span class="text-zinc-400 text-sm">${r.date}${r.opponent ? ' vs ' + r.opponent : ''}</span>
+                        <span class="font-mono font-bold">${r.rating.toFixed(2)}</span>
                     </div>
                 `).join('')}
             </div>
-            ` : ''}
         </div>
-    `;
+        ` : ''}
+    </div>
+`;
+
+if (photoUrl) {
+    const imgEl = document.getElementById('playerPhoto');
+    const fbEl = document.getElementById('playerAvatarFallback');
+    loadPlayerPhotoToElement(photoUrl, imgEl, fbEl);
 }
-async function showSuggestions() {
-    const input = document.getElementById('globalSearch');
-    const suggestions = document.getElementById('globalSearchSuggestions');
-    const query = input.value.trim().toLowerCase();
-    if (query.length < 2) {
-        suggestions.classList.add('hidden');
-        return;
-    }
-    await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
-    const candidates = [];
-    ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
-        const players = Object.values(statsData[lg].players || {});
-        players.forEach(p => candidates.push({ type: 'player', name: p.name, team: p.team, league: lg, key: p.key }));
-        const teams = new Set(allMatches.filter(m => m.league === lg).flatMap(m => [m.home, m.away]));
-        teams.forEach(t => candidates.push({ type: 'team', name: t, league: lg }));
-    });
-    const filtered = candidates.filter(c => {
-        const nameLower = c.name.toLowerCase();
-        const teamLower = c.type === 'player' ? c.team.toLowerCase() : '';
-        return nameLower.includes(query) || teamLower.includes(query);
-    }).slice(0, 10);
-    suggestions.innerHTML = filtered.map(c => {
-        if (c.type === 'player') {
-            return `
-                <div class="search-suggestion" onclick="viewPlayer('${_jsEscapeSingle(c.key)}'); suggestions.classList.add('hidden');">
-                    <img src="${getLogo(c.team)}" class="w-4 h-4 object-contain">
-                    <span>${c.name} (${c.team})</span>
-                </div>
-            `;
-        } else {
-            return `
-                <div class="search-suggestion" onclick="viewTeam('${_jsEscapeSingle(c.name)}', '${c.league}'); suggestions.classList.add('hidden');">
-                    <img src="${getLogo(c.name)}" class="w-4 h-4 object-contain">
-                    <span>${c.name}</span>
-                </div>
-            `;
+
+setTimeout(() => {
+    const container = document.getElementById('playerContent');
+    const allImages = container.querySelectorAll('img');
+    const teamLine = Array.from(container.querySelectorAll('p, div, span')).find(el => 
+        el.querySelector('img') && /team|fc|sc|united|city|cf|club/i.test(el.textContent || '')
+    );
+    const keepLogo = teamLine ? teamLine.querySelector('img') : null;
+    
+    allImages.forEach(img => {
+        if (img === keepLogo) return;
+        if (img.id === 'playerPhoto') return;
+        if (img.closest('.stat-card') || (img.width && img.width <= 64) || (img.height && img.height <= 64)) {
+            img.classList.add('hide-team-logo');
         }
-    }).join('');
-    suggestions.classList.remove('hidden');
+        const opacity = parseFloat(getComputedStyle(img).opacity || '1');
+        if (opacity < 0.5) {
+            img.classList.add('hide-team-logo');
+        }
+    });
+}, 100);
+}
+async function viewTeam(teamName, league) {
+currentTeam = { name: teamName, league: league };
+document.getElementById('team-tab').classList.remove('hidden');
+document.getElementById('hub-tab').classList.add('hidden');
+document.getElementById('standings-tab').classList.add('hidden');
+document.getElementById('stats-tab').classList.add('hidden');
+document.getElementById('player-tab').classList.add('hidden');
+
+const content = document.getElementById('teamContent');
+content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading team...</div>';
+
+await loadStats(league);
+
+const teamKey = canonicalTeamName(teamName);
+const standings = await loadStandingsCache(league);
+const standing = standings ? standings[teamKey] : null;
+
+const teamPlayers = Object.values(statsData[league].players || {}).filter(p => (p.teamKey || canonicalTeamName(p.team)) === teamKey);
+
+const teamMatches = allMatches
+    .filter(m => m.league === league && (m.homeKey === teamKey || m.awayKey === teamKey))
+    .sort((a, b) => a.date - b.date);
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+const past = teamMatches.filter(m => m.date < today && m.score !== 'v').slice(-5).reverse();
+const future = teamMatches.filter(m => m.date >= today || m.score === 'v').slice(0, 5);
+
+content.innerHTML = `
+    <div class="space-y-6">
+        <div class="flex items-center gap-4 mb-6">
+            <img src="${getLogo(teamName)}" class="w-16 h-16 object-contain">
+            <div>
+                <h2 class="text-2xl font-black">${teamName}</h2>
+                ${standing && standing.pos ? `
+                    <div class="text-zinc-600 text-xs mt-1">
+                        Standing: ${standing.pos}${standing.pts !== '' ? ` • ${standing.pts} pts` : ''}${standing.mp !== '' ? ` • ${standing.mp} MP` : ''}${standing.wdl ? ` • ${standing.wdl}` : ''}
+                    </div>
+                ` : ``}
+            </div>
+        </div>
+
+        ${past.length > 0 ? `
+        <div class="stat-card">
+            <h3 class="text-sm font-black text-[#00ff85] mb-4">LAST 5 RESULTS</h3>
+            ${past.map(m => {
+                const isHome = m.homeKey === teamKey;
+                const opponent = isHome ? m.away : m.home;
+                return `
+                <div class="flex items-center justify-between py-3 border-b border-zinc-800">
+                    <div class="flex items-center gap-2">
+                        <img src="${getLogo(opponent)}" class="w-5 h-5 object-contain">
+                        <span class="text-sm">${isHome ? 'vs' : '@'} ${opponent}</span>
+                    </div>
+                    <span class="font-black text-sm">${m.score}</span>
+                </div>`;
+            }).join('')}
+        </div>
+        ` : ''}
+
+        ${future.length > 0 ? `
+        <div class="stat-card">
+            <h3 class="text-sm font-black text-[#00ff85] mb-4">NEXT 5 FIXTURES</h3>
+            ${future.map(m => {
+                const isHome = m.homeKey === teamKey;
+                const opponent = isHome ? m.away : m.home;
+                const dObj = m.date;
+                const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                return `
+                <div class="flex items-center justify-between py-3 border-b border-zinc-800">
+                    <div class="flex items-center gap-2">
+                        <img src="${getLogo(opponent)}" class="w-5 h-5 object-contain">
+                        <span class="text-sm">${isHome ? 'vs' : '@'} ${opponent}</span>
+                    </div>
+                    <span class="text-xs text-zinc-500">${months[dObj.getMonth()]} ${dObj.getDate()}</span>
+                </div>`;
+            }).join('')}
+        </div>
+        ` : ''}
+
+        ${teamPlayers.length > 0 ? `
+        <div class="stat-card">
+            <h3 class="text-sm font-black text-[#00ff85] mb-4">SQUAD</h3>
+            ${teamPlayers.sort((a, b) => (b.goals || 0) - (a.goals || 0)).map(p => `
+                <div class="flex items-center justify-between py-3 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
+                    <div>
+                        <div class="font-bold text-sm">${p.name}</div>
+                        <div class="text-[10px] text-zinc-500">${p.position || 'N/A'}</div>
+                    </div>
+                    <div class="text-right text-xs">
+                        <div class="text-[#00ff85]">${p.goals || 0}G ${p.assists || 0}A</div>
+                        <div class="text-zinc-600">${parseFloat(p.avgRating || 0).toFixed(2)} ⭐</div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        ` : ''}
+    </div>
+`;
 }
 init();
 </script>
 </body>
-</html>
+</html></parameter>
+<parameter name="old_str">            allMatches = [];</parameter>
