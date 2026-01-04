@@ -1660,17 +1660,18 @@ async function viewTeam(teamName, league) {
 init();
 </script>
 
-<!-- === Safe Add-ons: non-destructive enhancements === -->
+
+<!-- === Safe Add-ons (updated) === -->
 <script>
 (function(){
-  // Utility: wait until a condition is true, then run once
   function waitUntil(cond, cb, tries=200, interval=50){
     if (cond()) { try { cb(); } catch(e){} return; }
     let t=0; const id=setInterval(()=>{ if (cond() || ++t>tries){ clearInterval(id); if(cond()) try{cb();}catch(e){} } }, interval);
   }
 
-  // 1) Autocomplete suggestions for players/teams (does not replace existing search)
+  // ---------- Autocomplete (unchanged behavior; no emoji change here) ----------
   function buildCandidates(){
+
     const players = [];
     try {
       if (window.statsData) {
@@ -1690,15 +1691,40 @@ init();
       if (window.TEAM_ALIASES) Object.values(TEAM_ALIASES).forEach(addTeam);
     } catch(e){}
     const teamList = Object.values(teams).map(t => ({ type: 'team', name: t, league: (window._findTeamLeague?_findTeamLeague(t):'') }));
-    return { players, teams: teamList };
-  }
+    
+  // fallback: derive players from leaderboards if players map missing
+  try {
+    if ((!players || !players.length) && window.statsData) {
+      Object.keys(statsData).forEach(lg => {
+        const d = statsData[lg] || {};
+        ['goals','assists','cleanSheets'].forEach(listName => {
+          (d[listName]||[]).forEach(it => {
+            if (!it || !it.name) return;
+            players.push({ type:'player', key: it.key || '', name: it.name, team: it.team || '', league: lg });
+          });
+        });
+      });
+    }
+  } catch(e){}
+  return { players, teams: teamList };
+}
   let searchCache = null;
   async function showSuggestions(){
+
     const input = document.getElementById('globalSearch');
     const box = document.getElementById('globalSearchSuggestions');
     if (!input || !box) return;
     const q = (input.value||'').trim().toLowerCase();
-    if (!q){ box.classList.add('hidden'); box.innerHTML=''; return; }
+    if (!q){ box.classList.add('hidden'); box.innerHTML=''; return; 
+  // ensure data is loaded once for suggestions
+  try {
+    if (!window.__suggestionsLoaded && typeof loadStats === 'function') {
+      await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')].map(p=>p.catch?p.catch(()=>null):p));
+      window.__suggestionsLoaded = true;
+      searchCache = null; // rebuild after load
+    }
+  } catch(e){}
+}
     if (!searchCache) searchCache = buildCandidates();
     const norm = s => (s||'').toLowerCase();
     const startsWith = (s) => norm(s).startsWith(q);
@@ -1709,19 +1735,18 @@ init();
 
     const item = (h) => {
       if (h.type==='player') {
-        return `<div class="search-suggestion" onclick="try{viewPlayer('${(h.key||'').replace(/'/g, '\\\'')}')}catch(e){}; document.getElementById('globalSearchSuggestions').classList.add('hidden')">
-                  <span>👤</span><span class="flex-1">${h.name}</span><span class="text-zinc-500">${h.team||''}</span>
-                </div>`;
+        return '<div class="search-suggestion" onclick="try{viewPlayer(\'' + (h.key||'').replace(/'/g, '\\'') + '\')}catch(e){}; document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">'
+                + '<span>👤</span><span class="flex-1">' + h.name + '</span><span class="text-zinc-500">' + (h.team||'') + '</span>'
+                + '</div>';
       }
       const l = h.league || '';
-      return `<div class="search-suggestion" onclick="try{viewTeam('${(h.name||'').replace(/'/g, '\\\'')}', '${l}')}catch(e){}; document.getElementById('globalSearchSuggestions').classList.add('hidden')">
-                <img src="${(window.getLogo?getLogo(h.name):'')}" class="w-4 h-4 object-contain"><span class="flex-1">${h.name}</span>
-              </div>`;
+      return '<div class="search-suggestion" onclick="try{viewTeam(\'' + (h.name||'').replace(/'/g, '\\'') + '\', \' + l + '\')}catch(e){}; document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">'
+              + '<img src="' + (window.getLogo?getLogo(h.name):'') + '" class="w-4 h-4 object-contain"><span class="flex-1">' + h.name + '</span>'
+              + '</div>';
     };
     box.innerHTML = [...playerHits, ...teamHits].map(item).join('') || '<div class="search-suggestion text-zinc-500">No matches</div>';
     box.classList.remove('hidden');
   }
-  // Hook input and keep original onkeyup/search behavior intact
   waitUntil(()=>document.getElementById('globalSearch'), function(){
     const input = document.getElementById('globalSearch');
     if (!input) return;
@@ -1739,62 +1764,95 @@ init();
     });
   });
 
-  // 2) Non-destructive player view enrichment: # of Games + Last 5 Ratings + hide duplicate logos
+  // ---------- Individual Player Page Enhancements ----------
+  function stripEmoji(s){
+    try {
+      return (s||'').replace(/[\u{1F300}-\u{1FAFF}\u{1F1E6}-\u{1F1FF}\u2600-\u27BF]/gu, '');
+    } catch(e) {
+      return (s||'').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');
+    }
+  }
+  function findCurrentPlayerFromDOM(){
+    const container = document.getElementById('content') || document.body;
+    const nameEl = container.querySelector('h2, h1');
+    const teamEl = Array.from(container.querySelectorAll('p, span, a')).find(x => x.textContent && x.textContent.trim().length && /team|fc|sc|united|city|cf|ac|club/i.test(x.textContent));
+    const name = nameEl ? stripEmoji(nameEl.textContent).trim() : '';
+    const team = teamEl ? teamEl.textContent.trim() : '';
+    return { name, team };
+  }
+  function getPlayerDataByNameTeam(name, team){
+    if (!window.statsData) return null;
+    let best = null;
+    Object.keys(statsData).forEach(lg => {
+      const pool = statsData[lg] && statsData[lg].players ? statsData[lg].players : {};
+      Object.values(pool).forEach(p => {
+        if (!p || !p.name) return;
+        const sameName = p.name.trim().toLowerCase() === (name||'').trim().toLowerCase();
+        const sameTeam = team && p.team ? p.team.trim().toLowerCase() === team.trim().toLowerCase() : true;
+        if (sameName && sameTeam) best = p;
+      });
+    });
+    return best;
+  }
   (function patchViewPlayer(){
     if (window.__patchedViewPlayer || typeof window.viewPlayer !== 'function') { 
-      // Try again later if not yet defined
       return waitUntil(()=> typeof window.viewPlayer === 'function' && !window.__patchedViewPlayer, patchViewPlayer);
     }
     const _orig = window.viewPlayer;
     window.viewPlayer = function(){
       const args = Array.from(arguments);
       _orig.apply(this, args);
-      // Post-process after a tick to allow DOM to render
       setTimeout(()=>{
         try {
           const container = document.getElementById('content') || document.body;
-          // Hide duplicate logos: keep the one inside the team line (heuristic)
-          const teamLine = Array.from(container.querySelectorAll('p')).find(p => /team/i.test((p.textContent||'')));
-          const keepLogo = teamLine ? teamLine.querySelector('img') : null;
-          const allImgs = container.querySelectorAll('img');
-          allImgs.forEach(img => {
-            if (keepLogo && img === keepLogo) return;
-            if (img && img.closest('.stat-card')) img.classList.add('player-stat-watermark');
-          });
 
-          // Add # of Games (Apps) and Last 5 Ratings if not present
-          const hasLast5 = container.querySelector('#last5Ratings');
-          if (!hasLast5) {
-            const ratingsWrap = document.createElement('div');
-            ratingsWrap.className = 'stat-card';
-            ratingsWrap.innerHTML = `<h3 class="text-sm font-black text-[#00ff85] mb-3">Last 5 Match Ratings</h3><div id="last5Ratings" class="space-y-2 text-sm"></div>`;
-            container.appendChild(ratingsWrap);
-          }
-          const hasGames = Array.from(container.querySelectorAll('.stat-card .text-xs')).some(el => /Games|Apps/i.test(el.textContent||''));
-          if (!hasGames) {
-            const grid = container.querySelector('.grid') || container;
-            const gamesCard = document.createElement('div');
-            gamesCard.className = 'stat-card text-center relative overflow-hidden';
-            let apps = 0;
-            try {
-              // Try to pull from any globally accessible last-rendered player
-              if (window.__lastPlayerData && window.__lastPlayerData.matches != null) apps = parseInt(window.__lastPlayerData.matches,10)||0;
-            } catch(e){}
-            gamesCard.innerHTML = `<div class="text-3xl font-black text-[#00ff85]">${apps}</div><div class="text-xs text-zinc-500 mt-1"># of Games (Apps)</div>`;
-            grid.appendChild(gamesCard);
+          // Remove emoji next to player's NAME only
+          const nameEl = container.querySelector('h2, h1');
+          if (nameEl) nameEl.textContent = stripEmoji(nameEl.textContent);
+
+          // Ensure Last 5 Match Ratings exists (individual page only)
+          let ratingsBox = container.querySelector('#last5Ratings');
+          if (!ratingsBox) {
+            const wrap = document.createElement('div');
+            wrap.className = 'stat-card';
+            wrap.innerHTML = '<h3 class="text-sm font-black text-[#00ff85] mb-3">Last 5 Match Ratings</h3>' +
+                              '<div id="last5Ratings" class="space-y-2 text-sm"></div>';
+            container.appendChild(wrap);
+            ratingsBox = wrap.querySelector('#last5Ratings');
           }
 
-          // Fill last 5 ratings if data available
-          const box = container.querySelector('#last5Ratings');
-          if (box && window.__lastPlayerData && Array.isArray(window.__lastPlayerData.recentRatings)) {
-            const list = window.__lastPlayerData.recentRatings.slice(-5);
-            if (!list.length) box.innerHTML = '<div class="text-zinc-500">No recent ratings</div>';
-            else box.innerHTML = list.map(r => {
+          // Appearances card: insert after the Assists section
+          let assistsCard = Array.from(container.querySelectorAll('.stat-card .text-xs')).find(el => /assists/i.test(el.textContent||''));
+          let targetGrid = container.querySelector('.grid') || container;
+          if (assistsCard && !container.querySelector('#appsValue')) {
+            const appsCard = document.createElement('div');
+            appsCard.className = 'stat-card text-center relative overflow-hidden';
+            appsCard.setAttribute('data-added', 'apps');
+            appsCard.innerHTML = '<div class="text-3xl font-black text-[#00ff85]" id="appsValue">0</div>' +
+                                  '<div class="text-xs text-zinc-500 mt-1"># of Games (Appearances)</div>';
+            const insertPoint = assistsCard.closest('.stat-card');
+            if (insertPoint && insertPoint.parentNode) insertPoint.parentNode.insertBefore(appsCard, insertPoint.nextSibling);
+            else targetGrid.appendChild(appsCard);
+          }
+
+          // Fill ratings (from ratingsLog, latest at bottom)
+          const cur = findCurrentPlayerFromDOM();
+          const pdata = getPlayerDataByNameTeam(cur.name, cur.team);
+          if (ratingsBox) {
+            const list = pdata && Array.isArray(pdata.recentRatings) ? pdata.recentRatings.slice(-5) : [];
+            if (!list.length) ratingsBox.innerHTML = '<div class="text-zinc-500">No recent ratings</div>';
+            else ratingsBox.innerHTML = list.map(r => {
               const when = r.date || r.fixture || '';
-              const opp = r.opponent ? ` vs ${r.opponent}` : '';
+              const opp = r.opponent ? ' vs ' + r.opponent : '';
               const val = (r.rating != null) ? Number(r.rating).toFixed(2) : '—';
-              return `<div class="flex items-center justify-between border-b border-zinc-800/40 pb-2"><span class="text-zinc-400">${when}${opp}</span><span class="font-mono font-bold">${val}</span></div>`;
+              return '<div class="flex items-center justify-between border-b border-zinc-800/40 pb-2"><span class="text-zinc-400">' + when + opp + '</span><span class="font-mono font-bold">' + val + '</span></div>';
             }).join('');
+          }
+
+          // Fill # of appearances from avg rating sheet Column F (by matching Column B name).
+          const appsEl = container.querySelector('#appsValue');
+          if (appsEl && pdata && typeof pdata.matches === 'number') {
+            appsEl.textContent = pdata.matches;
           }
         } catch(e){}
       }, 0);
@@ -1802,79 +1860,141 @@ init();
     window.__patchedViewPlayer = true;
   })();
 
-  // 3) Capture last rendered playerData if the app exposes it
-  (function patchPlayerData(){
-    // If their code assigns to a known variable, we can proxy it; otherwise this is a no-op.
-    try {
-      Object.defineProperty(window, '__lastPlayerData', { value: {}, writable: true });
-      // Monkey patch a common setter if present later
-      const __set = function(pd){ try{ window.__lastPlayerData = pd; }catch(e){} };
-      window.__setLastPlayerData = __set;
-    } catch(e){}
-  })();
-
-  // 4) Optional: augment stats coverage without overriding existing functions
+  // ---------- Coverage Augmentation (column-based parsing per your spec) ----------
   (function augmentCoverage(){
     if (!window.STATS_URLS || !window.Papa) return;
-    async function parseCsv(url){ return await new Promise(res=>Papa.parse(url,{download:true,header:true,complete:r=>res(r.data||[]),error:()=>res([])})); }
+
+    function parseCsv(url, header=false){
+      return new Promise(res=> Papa.parse(url,{ download:true, header:header, complete:r=>res(r.data||[]), error:()=>res([])}));
+    }
+    function ensurePlayer(data, league, name, team){
+      const teamKey = (window.canonicalTeamName?canonicalTeamName(team||''):(team||''));
+      const key = (window._makePlayerKey?_makePlayerKey(league,teamKey,name||''):(league+':'+teamKey+':'+name));
+      if (!data.players[key]) data.players[key] = { key, league, name:name||'Unknown', team:team||'', teamKey, goals:0, assists:0, cs:0, matches:0, recentRatings:[] };
+      return key;
+    }
     async function run(league){
       try{
-        const src = STATS_URLS[league]; if (!src) return;
         const data = (window.statsData && statsData[league]) ? statsData[league] : null;
-        if (!data) return;
+        const src = STATS_URLS[league]; if (!data || !src) return;
         if (!data.players) data.players = {};
-        const ensure = (name, team) => {
-          const teamKey = (window.canonicalTeamName?canonicalTeamName(team||''):(team||''));
-          const key = (window._makePlayerKey?_makePlayerKey(league,teamKey,name||''):`${league}:${teamKey}:${name}`);
-          if (!data.players[key]) data.players[key] = { key, league, name: name||'Unknown', team: team||'', teamKey, goals:0,assists:0,cs:0,matches:0,recentRatings:[] };
-          return key;
-        };
-        const pushList = async (rows, fieldNames, destArrName, destField) => {
-          const rowsArr = rows||[];
-          const destArr = Array.isArray(data[destArrName]) ? data[destArrName] : (data[destArrName]=[]);
-          rowsArr.forEach(row=>{
-            const name = row.Player || row.Name || '';
-            const team = row.Team || '';
-            const val = parseInt(row[fieldNames[0]] || row[fieldNames[1]] || 0,10)||0;
-            if (!name) return;
-            const key = ensure(name, team);
-            data.players[key][destField] = Math.max(data.players[key][destField]||0, val);
-            destArr.push({ key, name, value: val, team, league });
-          });
-        };
-        if (src.goals)  await pushList(await parseCsv(src.goals), ['Goals','G'], 'goals', 'goals');
-        if (src.assists)await pushList(await parseCsv(src.assists), ['Assists','A'], 'assists', 'assists');
-        if (src.cleanSheets) await pushList(await parseCsv(src.cleanSheets), ['CleanSheets','CS'], 'cleanSheets', 'cs');
-        if (src.ratingsLog){
-          const rows = await parseCsv(src.ratingsLog); const seen={};
-          rows.forEach(row=>{
-            const name = row.Player || row.Name || ''; if (!name) return;
-            const team = row.Team || '';
-            const rating = parseFloat(row.Rating || row.Score || '');
-            const date = row.Date || row.MatchDate || row.Round || '';
-            const opponent = row.Opponent || row.Opp || '';
-            const key = ensure(name, team);
-            if (!Number.isNaN(rating)) data.players[key].recentRatings.push({ date, opponent, rating });
-            const mk = key+'::'+date+'::'+opponent;
-            if (!seen[mk]) { seen[mk]=true; data.players[key].matches = (data.players[key].matches||0)+1; }
+
+        // Goals: Column A = Player (0), B = Goals (1), C = Team (2)
+        if (src.goals){
+          const rows = await parseCsv(src.goals, false);
+          rows.forEach((row,i)=>{
+            if (!Array.isArray(row)) return;
+            const name = (row[0]||'').trim(); const val = parseInt(row[1],10)||0; const team = (row[2]||'').trim();
+            if (!name || (i===0 && name.toLowerCase()==='player')) return;
+            const key = ensurePlayer(data, league, name, team);
+            data.players[key].goals = Math.max(data.players[key].goals||0, val);
+            if (!Array.isArray(data.goals)) data.goals = [];
+            data.goals.push({ key, name, value: val, team, league });
           });
         }
-        // sort lists if present
+
+        // Assists: same indexing
+        if (src.assists){
+          const rows = await parseCsv(src.assists, false);
+          rows.forEach((row,i)=>{
+            if (!Array.isArray(row)) return;
+            const name = (row[0]||'').trim(); const val = parseInt(row[1],10)||0; const team = (row[2]||'').trim();
+            if (!name || (i===0 && name.toLowerCase()==='player')) return;
+            const key = ensurePlayer(data, league, name, team);
+            data.players[key].assists = Math.max(data.players[key].assists||0, val);
+            if (!Array.isArray(data.assists)) data.assists = [];
+            data.assists.push({ key, name, value: val, team, league });
+          });
+        }
+
+        // Clean Sheets (GK): same indexing
+        if (src.cleanSheets){
+          const rows = await parseCsv(src.cleanSheets, false);
+          rows.forEach((row,i)=>{
+            if (!Array.isArray(row)) return;
+            const name = (row[0]||'').trim(); const val = parseInt(row[1],10)||0; const team = (row[2]||'').trim();
+            if (!name || (i===0 && name.toLowerCase()==='player')) return;
+            const key = ensurePlayer(data, league, name, team);
+            data.players[key].cs = Math.max(data.players[key].cs||0, val);
+            if (!Array.isArray(data.cleanSheets)) data.cleanSheets = [];
+            data.cleanSheets.push({ key, name, value: val, team, league });
+          });
+        }
+
+        // Avg Ratings: Column B = Player (1), Column F = Appearances (5)
+        if (src.avgRatings){
+          const rows = await parseCsv(src.avgRatings, false);
+          rows.forEach((row,i)=>{
+            if (!Array.isArray(row)) return;
+            const name = (row[1]||'').trim();
+            const apps = parseInt(row[5], 10);
+            if (!name || Number.isNaN(apps)) return;
+            Object.values(data.players).forEach(p => {
+              if (p.name && p.name.trim().toLowerCase() === name.toLowerCase()) {
+                p.matches = apps;
+              }
+            });
+          });
+        }
+
+        // Ratings log: use header row to map fields; used only for last-5 ratings display
+        if (src.ratingsLog){
+          const rows = await parseCsv(src.ratingsLog, true);
+          rows.forEach(row=>{
+            if (!row) return;
+            const name = row.Player || row.Name || row['Player Name'] || '';
+            const team = row.Team || row['Team Name'] || '';
+            const rating = parseFloat(row.Rating || row.Score || row['Match Rating'] || '');
+            const date = row.Date || row.MatchDate || row.Round || row['Date'] || '';
+            const opponent = row.Opponent || row.Opp || row['Opponent'] || '';
+            if (!name) return;
+            const key = ensurePlayer(data, league, name, team);
+            if (!Number.isNaN(rating)) data.players[key].recentRatings.push({ date, opponent, rating });
+          });
+        }
+
+        // Sort lists if present
         if (Array.isArray(data.goals)) data.goals.sort((a,b)=> (parseInt(b.value)||0)-(parseInt(a.value)||0));
         if (Array.isArray(data.assists)) data.assists.sort((a,b)=> (parseInt(b.value)||0)-(parseInt(a.value)||0));
         if (Array.isArray(data.cleanSheets)) data.cleanSheets.sort((a,b)=> (parseInt(b.value)||0)-(parseInt(a.value)||0));
       }catch(e){}
     }
-    // Run after the app's init likely loaded some data
+
     setTimeout(()=>{
       try {
-        if (window.statsData) Object.keys(statsData).forEach(run);
+        if (window.statsData && typeof statsData === 'object') Object.keys(statsData).forEach(run);
       } catch(e){}
     }, 1500);
   })();
 })();
 </script>
-<!-- === End Add-ons === -->
+<!-- === End Add-ons (updated) === -->
+
+
+<script>
+(function(){
+  function bindHomeClick(){
+    try {
+      const header = document.querySelector('header');
+      if (!header) return;
+      // find an element that likely contains the app title "ScoreHub"
+      const cand = Array.from(header.querySelectorAll('a, h1, h2, div, span')).find(el => (el.textContent||'').toLowerCase().includes('scorehub'));
+      if (!cand) return;
+      if (cand.__boundHome) return;
+      cand.style.cursor = 'pointer';
+      cand.addEventListener('click', function(){
+        try { switchTab('hub'); } catch(e) {}
+        window.scrollTo({top:0, behavior:'smooth'});
+      });
+      cand.__boundHome = true;
+    } catch(e){}
+  }
+  // bind on load and after slight delay to catch dynamic header
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindHomeClick);
+  else bindHomeClick();
+  setTimeout(bindHomeClick, 1000);
+})();
+</script>
 
 </body>
 </html>
