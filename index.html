@@ -307,19 +307,146 @@ function normalizeName(str) {
         .replace(/\s+/g, " ");
 }
 
+function _editDistance(a, b, limit = 999) {
+    if (a === b) return 0;
+    if (!a) return (b || "").length;
+    if (!b) return (a || "").length;
+
+    const al = a.length, bl = b.length;
+    if (Math.abs(al - bl) > limit) return limit + 1;
+
+    const prev = new Array(bl + 1);
+    const curr = new Array(bl + 1);
+    for (let j = 0; j <= bl; j++) prev[j] = j;
+
+    for (let i = 1; i <= al; i++) {
+        curr[0] = i;
+        let minRow = curr[0];
+        const ca = a.charCodeAt(i - 1);
+        for (let j = 1; j <= bl; j++) {
+            const cost = ca === b.charCodeAt(j - 1) ? 0 : 1;
+            const v = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+            curr[j] = v;
+            if (v < minRow) minRow = v;
+        }
+        if (minRow > limit) return limit + 1;
+        for (let j = 0; j <= bl; j++) prev[j] = curr[j];
+    }
+    return prev[bl];
+}
+
+let __PHOTO_INDEX_READY = false;
+let __PHOTO_BUCKET_FIRST = {};
+let __PHOTO_BUCKET_SURNAME = {};
+let __PHOTO_ALL_KEYS = [];
+
+function _ensurePhotoIndex() {
+    if (__PHOTO_INDEX_READY) return;
+
+    __PHOTO_ALL_KEYS = Object.keys(PHOTO_BY_NAME || {});
+    __PHOTO_BUCKET_FIRST = {};
+    __PHOTO_BUCKET_SURNAME = {};
+
+    for (const k of __PHOTO_ALL_KEYS) {
+        if (!k) continue;
+        const fc = k[0];
+        if (!__PHOTO_BUCKET_FIRST[fc]) __PHOTO_BUCKET_FIRST[fc] = [];
+        __PHOTO_BUCKET_FIRST[fc].push(k);
+
+        const parts = k.split(" ").filter(Boolean);
+        if (parts.length) {
+            const surname = parts[parts.length - 1];
+            if (surname.length >= 3) {
+                if (!__PHOTO_BUCKET_SURNAME[surname]) __PHOTO_BUCKET_SURNAME[surname] = [];
+                // Keep surname buckets from getting absurdly large
+                if (__PHOTO_BUCKET_SURNAME[surname].length < 120) __PHOTO_BUCKET_SURNAME[surname].push(k);
+            }
+        }
+    }
+
+    __PHOTO_INDEX_READY = true;
+}
+
+function _pickBestPhotoKey(normalizedName) {
+    _ensurePhotoIndex();
+    const n = normalizedName;
+    if (!n) return null;
+
+    const tokens = n.split(" ").filter(Boolean);
+    const surname = tokens.length ? tokens[tokens.length - 1] : "";
+    const fc = n[0] || "";
+
+    // Candidate pool: prefer same-surname matches, else fall back to same-first-letter pool.
+    let candidates = [];
+    if (surname && __PHOTO_BUCKET_SURNAME[surname]) candidates = __PHOTO_BUCKET_SURNAME[surname].slice();
+    else if (fc && __PHOTO_BUCKET_FIRST[fc]) candidates = __PHOTO_BUCKET_FIRST[fc].slice();
+    else candidates = __PHOTO_ALL_KEYS.slice(0, 600);
+
+    // Further narrow candidates: if we have a surname, keep only those containing it.
+    if (surname && surname.length >= 3) {
+        const narrowed = candidates.filter(k => k.includes(surname));
+        if (narrowed.length) candidates = narrowed;
+    }
+
+    // Hard cap to keep it fast.
+    if (candidates.length > 600) candidates = candidates.slice(0, 600);
+
+    let bestKey = null;
+    let bestDist = 1e9;
+
+    // Dynamic threshold based on name length.
+    const lim = Math.max(2, Math.floor(Math.max(n.length, 12) * 0.28));
+
+    for (const k of candidates) {
+        if (!k) continue;
+
+        // quick cheap win
+        if (k === n) return k;
+        if (k.includes(n) || n.includes(k)) {
+            // near-exact containment
+            return k;
+        }
+
+        const d = _editDistance(n, k, lim);
+        if (d < bestDist) {
+            bestDist = d;
+            bestKey = k;
+            if (bestDist === 0) break;
+        }
+    }
+
+    if (bestKey && bestDist <= lim) return bestKey;
+    return null;
+}
+
 function getPlayerPhotoUrl(playerName, teamName) {
     const n = normalizeName(playerName);
     if (!n) return null;
 
-    const t1 = normalizeName(teamName);
-    const t2 = normalizeName(canonicalTeamName(teamName));
+    // 1) Exact match against our precomputed keys (which include many aliases)
+    let url = PHOTO_BY_NAME[n] || null;
+    if (url) return url;
 
-    let url = null;
-    if (t1) url = PHOTO_BY_NAME_TEAM[`${n}|${t1}`] || null;
-    if (!url && t2) url = PHOTO_BY_NAME_TEAM[`${n}|${t2}`] || null;
-    if (!url) url = PHOTO_BY_NAME[n] || null;
+    // 2) Try common simplified forms (first+last, first-initial+last)
+    const parts = n.split(" ").filter(Boolean);
+    if (parts.length >= 2) {
+        const first = parts[0];
+        const last = parts[parts.length - 1];
 
-    return url;
+        const firstLast = `${first} ${last}`;
+        url = PHOTO_BY_NAME[firstLast] || null;
+        if (url) return url;
+
+        const initialLast = `${first[0]} ${last}`;
+        url = PHOTO_BY_NAME[initialLast] || null;
+        if (url) return url;
+    }
+
+    // 3) Fuzzy match (NO team usage — players may be on different clubs)
+    const bestKey = _pickBestPhotoKey(n);
+    if (bestKey) return PHOTO_BY_NAME[bestKey] || null;
+
+    return null;
 }
 
 function getInitials(name) {
