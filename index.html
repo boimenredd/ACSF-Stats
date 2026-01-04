@@ -12,12 +12,10 @@
         :root { --accent: #00ff85; --bg: #0b0e11; --card: #161b22; --border: #30363d; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; overflow-x: hidden; }
         header { background: rgba(11, 14, 17, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: fixed; top: 0; width: 100%; max-width: 448px; z-index: 100; }
-
         .date-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px; margin-top: 70px; }
         .date-display { font-weight: 900; font-size: 14px; text-transform: uppercase; text-align: center; flex: 1; }
         .nav-arrow { width: 36px; height: 36px; background: #222; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; font-weight: bold; }
         .today-btn { background: var(--accent); color: #000; font-size: 10px; font-weight: 900; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin-top: 4px; }
-
         .league-container { background: #121212; border-radius: 16px; margin: 12px; overflow: hidden; border: 1px solid #222; }
         .league-header { background: #1a1a1a; padding: 12px 16px; display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; color: #fff; border-bottom: 1px solid #222; }
         .league-logo { width: 20px; height: 20px; object-fit: contain; }
@@ -27,10 +25,8 @@
         .team-name { font-size: 13px; font-weight: 700; }
         .match-info { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
         .match-score { font-family: 'Roboto Mono', monospace; font-weight: 900; font-size: 16px; color: var(--accent); }
-
         .qualify-indicator { width: 4px; height: 24px; border-radius: 2px; margin-right: 10px; }
         .active-league { background: var(--accent) !important; color: #000 !important; }
-
         .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #111; border-top: 1px solid #222; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
         .nav-item { color: #555; font-size: 10px; font-weight: 800; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
         .nav-item.active { color: var(--accent); }
@@ -40,11 +36,10 @@
         .search-input:focus { outline: none; border-color: var(--accent); }
         .header-search-input { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 8px 10px; color: #fff; width: 165px; font-size: 12px; }
         .header-search-input:focus { outline: none; border-color: var(--accent); }
-    
+   
 /* === Additions (safe) === */
 /* Hide duplicate logos on player page; keep only the one next to the team name line */
 .player-logo-dup, .player-stat-watermark { display: none; }
-
 /* Suggestions dropdown */
 .search-suggestions {
   position: absolute; right: 1rem; top: 60px;
@@ -53,26 +48,22 @@
 }
 .search-suggestion { padding: 8px 12px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 8px; }
 .search-suggestion:hover { background: #222; }
-
 /* Responsive container for desktop screens without altering Tailwind setup */
 @media (min-width: 768px) {
   body { max-width: 1100px !important; margin-left: auto; margin-right: auto; }
   header, .nav-bottom { max-width: 1100px !important; left: 0; right: 0; margin-left: auto; margin-right: auto; }
 }
 /* === End additions === */
-
 </style>
 </head>
 <body class="max-w-md mx-auto pb-24">
-
     <header class="p-4">
         <div class="flex items-center justify-between gap-3">
             <h1 class="text-xl font-black italic uppercase">Score<span class="text-[#00ff85]">Hub</span></h1>
-            <input type="text" id="globalSearch" class="header-search-input" placeholder="Search teams or players..." onkeyup="searchPlayer(event, 'globalSearch')">
+            <input type="text" id="globalSearch" class="header-search-input" placeholder="Search teams or players..." onkeyup="searchPlayer(event, 'globalSearch')" oninput="showSuggestions()">
 <div id="globalSearchSuggestions" class="search-suggestions hidden"></div>
         </div>
     </header>
-
     <main id="hub-tab">
         <div class="date-nav">
             <div class="nav-arrow" onclick="changeDate(-1)">‹</div>
@@ -84,7 +75,6 @@
         </div>
         <div id="league-list"></div>
     </main>
-
     <div id="standings-tab" class="hidden pt-20">
         <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
             <button id="btn-PREM" onclick="renderStandings('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
@@ -101,7 +91,6 @@
         </div>
         <div id="legend" class="mt-6 px-4 flex flex-wrap gap-4"></div>
     </div>
-
     <div id="stats-tab" class="hidden pt-20 pb-6">
         <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
             <button id="stat-btn-PREM" onclick="renderStats('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
@@ -111,21 +100,18 @@
         </div>
         <div id="statsContent" class="px-4"></div>
     </div>
-
     <div id="team-tab" class="hidden pt-20 pb-6">
         <div class="px-4">
             <button onclick="backToView()" class="text-[10px] font-black text-[#00ff85] mb-4">← BACK</button>
             <div id="teamContent"></div>
         </div>
     </div>
-
     <div id="player-tab" class="hidden pt-20 pb-6">
         <div class="px-4">
             <button onclick="backToView()" class="text-[10px] font-black text-[#00ff85] mb-4">← BACK</button>
             <div id="playerContent"></div>
         </div>
     </div>
-
     <nav class="nav-bottom">
         <div class="nav-item active" onclick="switchTab('hub')">
             <span class="text-lg">⚽</span>
@@ -140,7 +126,6 @@
             <span>STATS</span>
         </div>
     </nav>
-
 <script>
 const LOGOS = {
     "Liverpool": "https://resources.premierleague.com/premierleague25/badges-alt/14.svg",
@@ -225,7 +210,6 @@ const LOGOS = {
     "DC United": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500504/assets/logos/mls-clubs/Club_Logo-D.C_t03ekm.png",
     "Cincinnati": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500252/assets/logos/mls-clubs/Club_Logo-Cincinatti_ohmgcp.png"
 };
-
 function _normMatch(s) {
     return (s || '')
         .toString()
@@ -234,7 +218,6 @@ function _normMatch(s) {
         .trim()
         .replace(/\s+/g, ' ');
 }
-
 const TEAM_EMOJIS = {
     "Man United": "🔴",
     "Man City": "🔵",
@@ -253,278 +236,212 @@ const TEAM_EMOJIS = {
     "NYCFC": "🗽",
     "NY Red Bulls": "🐂"
 };
-
 const TEAM_ALIASES = {
     "real oviedo": "Oviedo",
     "oviedo": "Oviedo",
-
     "nott m forest": "Nott'm Forest",
     "nottingham forest": "Nott'm Forest",
     "nottingham": "Nott'm Forest",
-
     "leeds": "Leeds",
     "leeds united": "Leeds",
-
     "man united": "Man United",
     "manchester united": "Man United",
     "man utd": "Man United",
-
     "man city": "Man City",
     "manchester city": "Man City",
-
     "newcastle": "Newcastle",
     "newcastle united": "Newcastle",
-
     "tottenham": "Tottenham",
     "spurs": "Tottenham",
     "tottenham hotspur": "Tottenham",
-
     "athletic": "Athletic Bilbao",
     "athletic bilbao": "Athletic Bilbao",
     "athletic club": "Athletic Bilbao",
-
     "betis": "Real Betis",
     "real betis": "Real Betis",
-
     "celta": "Celta Vigo",
     "celta vigo": "Celta Vigo",
     "celta de vigo": "Celta Vigo",
-
     "dallas": "FC Dallas",
     "fc dallas": "FC Dallas",
-
     "real madrid cf": "Real Madrid",
     "real madrid": "Real Madrid",
     "madrid": "Real Madrid",
     "r madrid": "Real Madrid",
-
     "fc barcelona": "Barcelona",
     "barcelona": "Barcelona",
     "barca": "Barcelona",
     "bar a": "Barcelona",
     "fcb": "Barcelona",
-
     "atletico madrid": "Atletico Madrid",
     "atletico": "Atletico Madrid",
     "atleti": "Atletico Madrid",
     "atl madrid": "Atletico Madrid",
     "atleti madrid": "Atletico Madrid",
-
     "real sociedad": "Real Sociedad",
     "sociedad": "Real Sociedad",
     "la real": "Real Sociedad",
-
     "sevilla fc": "Sevilla",
     "sevilla": "Sevilla",
-
     "valencia cf": "Valencia",
     "valencia": "Valencia",
-
     "villarreal cf": "Villarreal",
     "villarreal": "Villarreal",
-
     "girona fc": "Girona",
     "girona": "Girona",
-
     "osasuna": "Osasuna",
     "ca osasuna": "Osasuna",
     "atletico osasuna": "Osasuna",
-
     "rayo": "Rayo Vallecano",
     "rayo vallecano": "Rayo Vallecano",
-
     "getafe cf": "Getafe",
     "getafe": "Getafe",
-
     "deportivo alaves": "Alaves",
     "alaves": "Alaves",
     "alav s": "Alaves",
-
     "ud las palmas": "Las Palmas",
     "las palmas": "Las Palmas",
-
     "rcd mallorca": "Mallorca",
     "mallorca": "Mallorca",
-
     "rcd espanyol": "Espanyol",
     "espanyol": "Espanyol",
-
     "real valladolid": "Valladolid",
     "valladolid": "Valladolid",
-
     "cd leganes": "Leganes",
     "leganes": "Leganes",
-
     "levante ud": "Levante",
     "levante": "Levante",
-
     "elche cf": "Elche",
     "elche": "Elche",
-
     "inter miami": "Miami",
     "inter miami cf": "Miami",
     "inter miami c f": "Miami",
     "miami": "Miami",
-
     "los angeles fc": "LAFC",
     "los angeles f c": "LAFC",
     "lafc": "LAFC",
-
     "la galaxy": "LA Galaxy",
     "l a galaxy": "LA Galaxy",
     "los angeles galaxy": "LA Galaxy",
     "galaxy": "LA Galaxy",
-
     "new york city": "NYCFC",
     "new york city fc": "NYCFC",
     "new york city f c": "NYCFC",
     "nycfc": "NYCFC",
-
     "new york red bulls": "NY Red Bulls",
     "new york redbulls": "NY Red Bulls",
     "red bulls": "NY Red Bulls",
     "ny red bulls": "NY Red Bulls",
     "rbny": "NY Red Bulls",
-
     "sporting kansas city": "Sporting KC",
     "sporting kansas": "Sporting KC",
     "sporting kc": "Sporting KC",
     "skc": "Sporting KC",
     "kansas city": "Sporting KC",
-
     "d c united": "DC United",
     "dc united": "DC United",
     "d c": "DC United",
-
     "st louis city": "St Louis",
     "st louis city sc": "St Louis",
     "st louis city s c": "St Louis",
     "st louis": "St Louis",
     "st louis sc": "St Louis",
-
     "real salt lake": "Salt Lake",
     "salt lake": "Salt Lake",
     "rsl": "Salt Lake",
-
     "seattle sounders": "Seattle",
     "seattle sounders fc": "Seattle",
     "seattle": "Seattle",
     "sounders": "Seattle",
-
     "portland timbers": "Portland",
     "portland": "Portland",
     "timbers": "Portland",
-
     "orlando city": "Orlando",
     "orlando city sc": "Orlando",
     "orlando": "Orlando",
-
     "atlanta united": "Atlanta",
     "atlanta united fc": "Atlanta",
     "atlanta": "Atlanta",
-
     "toronto fc": "Toronto",
     "toronto": "Toronto",
-
     "san diego fc": "San Diego",
     "san diego": "San Diego",
-
     "houston dynamo": "Houston",
     "houston dynamo fc": "Houston",
     "houston": "Houston",
-
     "charlotte fc": "Charlotte",
     "charlotte": "Charlotte",
-
     "vancouver whitecaps": "Vancouver",
     "vancouver whitecaps fc": "Vancouver",
     "vancouver": "Vancouver",
     "whitecaps": "Vancouver",
-
     "columbus crew": "Columbus",
     "columbus crew sc": "Columbus",
     "columbus": "Columbus",
-
     "cf montreal": "Montreal",
     "c f montreal": "Montreal",
     "club de foot montreal": "Montreal",
     "montreal": "Montreal",
-
     "san jose earthquakes": "San Jose",
     "san jose": "San Jose",
     "earthquakes": "San Jose",
-
     "colorado rapids": "Colorado",
     "colorado": "Colorado",
     "rapids": "Colorado",
-
     "new england revolution": "New England",
     "new england": "New England",
     "revolution": "New England",
-
     "minnesota united": "Minnesota",
     "minnesota united fc": "Minnesota",
     "minnesota": "Minnesota",
     "loons": "Minnesota",
-
     "chicago fire": "Chicago",
     "chicago fire fc": "Chicago",
     "chicago": "Chicago",
-
     "nashville sc": "Nashville",
     "nashville": "Nashville",
-
     "austin fc": "Austin",
     "austin": "Austin",
-
     "philadelphia union": "Philadelphia",
     "philadelphia": "Philadelphia",
-
     "fc cincinnati": "Cincinnati",
     "cincinnati": "Cincinnati"
 };
-
 function canonicalTeamName(name) {
     const raw = (name || '').toString().trim();
     const key = _normMatch(raw);
     if (!key) return raw;
     return TEAM_ALIASES[key] || raw;
 }
-
 function sameTeam(a, b) {
     return canonicalTeamName(a) === canonicalTeamName(b);
 }
-
 function getTeamEmoji(teamName) {
     const key = canonicalTeamName(teamName || '');
     return TEAM_EMOJIS[key] || "🛡️";
 }
-
 const SCHEDULE_URLS = {
     PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv',
     LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1516477023&single=true&output=csv',
     MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1689966801&single=true&output=csv'
 };
-
 const STANDINGS_URLS = {
     PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=935978435&single=true&output=csv',
     LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv',
     MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv'
 };
-
 const LEAGUE_META = {
     PREM: { name: 'England - Premier League', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/eng.png' },
     LALIGA: { name: 'Spain - La Liga', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/esp.png' },
     MLS: { name: 'USA - MLS', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/usa.png' }
 };
-
 const STATS_URLS = {
-    PREM: { 
-        goals: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=0&single=true&output=csv', 
-        assists: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=1828601090&single=true&output=csv', 
+    PREM: {
+        goals: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=0&single=true&output=csv',
+        assists: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=1828601090&single=true&output=csv',
         cleanSheets: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=1875623411&single=true&output=csv',
-        ratingsLog: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=812230696&single=true&output=csv', 
-        avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=692292778&single=true&output=csv', 
+        ratingsLog: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=812230696&single=true&output=csv',
+        avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=692292778&single=true&output=csv',
         leaderboard: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=983480432&single=true&output=csv'
     },
     LALIGA: {
@@ -544,16 +461,13 @@ const STATS_URLS = {
         leaderboard: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuw34XoWFJCJm7vYxAmfNNOOuVnprbE2kuVb9OpEgUZQsA6KhbxCYtW81oe1BkaGJ01fFMBpV5he31/pub?gid=983480432&single=true&output=csv'
     }
 };
-
 let allMatches = [], uniqueDates = [], dateIdx = 0, currentView = 'hub', currentTeam = null, currentPlayer = null, statsData = { PREM: {}, LALIGA: {}, MLS: {}, COMBINED: {} };
 let standingsCache = { PREM: null, LALIGA: null, MLS: null };
 let currentStandingsLeague = 'PREM';
 let __autoRefreshStarted = false;
-
 const PHOTO_CACHE_DB = 'scorehub-photo-cache';
 const PHOTO_CACHE_STORE = 'photos';
 const PHOTO_FETCH_TIMEOUT_MS = 4500;
-
 function _openPhotoDb() {
     return new Promise((resolve) => {
         if (!('indexedDB' in window)) return resolve(null);
@@ -568,7 +482,6 @@ function _openPhotoDb() {
         req.onerror = () => resolve(null);
     });
 }
-
 async function _photoDbGet(url) {
     const db = await _openPhotoDb();
     if (!db) return null;
@@ -580,7 +493,6 @@ async function _photoDbGet(url) {
         req.onerror = () => resolve(null);
     });
 }
-
 async function _photoDbPut(url, blob) {
     const db = await _openPhotoDb();
     if (!db) return;
@@ -593,7 +505,6 @@ async function _photoDbPut(url, blob) {
         tx.onabort = () => resolve();
     });
 }
-
 async function _fetchBlobWithTimeout(url, timeoutMs) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -605,27 +516,21 @@ async function _fetchBlobWithTimeout(url, timeoutMs) {
         clearTimeout(t);
     }
 }
-
 async function getCachedPhotoSrc(url) {
     const u = (url || '').toString().trim();
     if (!u) return null;
-
     const cached = await _photoDbGet(u);
     if (cached && cached.blob) return URL.createObjectURL(cached.blob);
-
     const blob = await _fetchBlobWithTimeout(u, PHOTO_FETCH_TIMEOUT_MS);
     if (!blob || !blob.size) return null;
-
     await _photoDbPut(u, blob);
     return URL.createObjectURL(blob);
 }
-
 async function loadPlayerPhotoToElement(url, imgEl, fallbackEl) {
     if (!url || !imgEl) return;
     try {
         const src = await getCachedPhotoSrc(url);
         if (!src) return;
-
         imgEl.onload = () => {
             imgEl.style.display = 'block';
             if (fallbackEl) fallbackEl.style.display = 'none';
@@ -634,18 +539,15 @@ async function loadPlayerPhotoToElement(url, imgEl, fallbackEl) {
             imgEl.style.display = 'none';
             if (fallbackEl) fallbackEl.style.display = 'flex';
         };
-
         imgEl.src = src;
     } catch (e) {
         imgEl.style.display = 'none';
         if (fallbackEl) fallbackEl.style.display = 'flex';
     }
 }
-
 function _jsEscapeSingle(s) {
     return (s || '').toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
-
 function getLogo(team) {
     if (!team) return "";
     const t = canonicalTeamName(team).trim();
@@ -654,31 +556,24 @@ function getLogo(team) {
     }
     return `https://via.placeholder.com/24?text=${t.charAt(0)}`;
 }
-
 function parseSheetDate(raw) {
     if (!raw) return null;
-
     const str = raw.trim();
     const monthNameRegex = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|June|July|August|September|October|November|December)/i;
-
     if (/matchday/i.test(str) || (!monthNameRegex.test(str) && /^\s*\d+[A-Z]?\b/i.test(str))) {
         return 'MATCHDAY_MARKER';
     }
-
     const monthMap = {
         "January": 0, "February": 1, "March": 2, "April": 3, "May": 4, "June": 5,
         "July": 6, "August": 7, "September": 8, "October": 9, "November": 10, "December": 11,
         "Jan": 0, "Feb": 1, "Mar": 2, "Apr": 3, "Jun": 5,
         "Jul": 6, "Aug": 7, "Sep": 8, "Oct": 9, "Nov": 10, "Dec": 11
     };
-
     const has2025 = str.includes('2025');
-
     let match = str.match(/(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|January|February|March|April|May|June|July|August|September|October|November|December)\.?\s*(\d+)/i);
     if (match) {
         const monthStr = match[1];
         const day = parseInt(match[2], 10);
-
         let month = -1;
         for (let key in monthMap) {
             if (key.toLowerCase() === monthStr.toLowerCase()) {
@@ -687,37 +582,28 @@ function parseSheetDate(raw) {
             }
         }
         if (month === -1) return null;
-
         const year = has2025 ? 2025 : 2026;
         const d = new Date(year, month, day);
         d.setHours(0, 0, 0, 0);
         return d;
     }
-
     return null;
 }
-
 function _stripLeadingPosFromTeam(pos, team) {
     const t = (team || '').toString().trim();
     const p = (pos || '').toString().trim();
-
     const m = t.match(/^\s*(\d{1,2})\s*[\.\)\-:]?\s+(.+)\s*$/);
     if (!m) return { pos: p, team: t };
-
     const lead = m[1];
     const rest = m[2].trim();
-
     if (!p) return { pos: lead, team: rest };
     const pn = parseInt(p, 10);
     const ln = parseInt(lead, 10);
     if (!Number.isNaN(pn) && !Number.isNaN(ln) && pn === ln) return { pos: p, team: rest };
-
     return { pos: p, team: t };
 }
-
 async function loadStandingsCache(league) {
     if (standingsCache[league]) return standingsCache[league];
-
     standingsCache[league] = await new Promise((resolve) => {
         Papa.parse(STANDINGS_URLS[league], {
             download: true,
@@ -730,10 +616,8 @@ async function loadStandingsCache(league) {
                     const fixed = _stripLeadingPosFromTeam(pos, team);
                     pos = fixed.pos;
                     team = fixed.team;
-
                     const teamKey = canonicalTeamName(team);
                     if (!teamKey) return;
-
                     map[teamKey] = {
                         pos: pos,
                         team: team,
@@ -747,24 +631,19 @@ async function loadStandingsCache(league) {
             error: () => resolve({})
         });
     });
-
     return standingsCache[league];
 }
-
 function _editDistance(a, b, limit = 999) {
     a = _normMatch(a);
     b = _normMatch(b);
     if (a === b) return 0;
     if (!a) return b.length;
     if (!b) return a.length;
-
     const al = a.length, bl = b.length;
     if (Math.abs(al - bl) > limit) return limit + 1;
-
     const prev = new Array(bl + 1);
     const curr = new Array(bl + 1);
     for (let j = 0; j <= bl; j++) prev[j] = j;
-
     for (let i = 1; i <= al; i++) {
         curr[0] = i;
         let minRow = curr[0];
@@ -780,33 +659,26 @@ function _editDistance(a, b, limit = 999) {
     }
     return prev[bl];
 }
-
 function _makePlayerKey(league, team, name) {
     return `${league}:::${(team || '').trim()}:::${(name || '').trim()}`;
 }
-
 function _splitPlayerKey(key) {
     const parts = (key || '').split(':::');
     if (parts.length < 3) return { league: null, team: null, name: key };
     return { league: parts[0], team: parts[1], name: parts.slice(2).join(':::') };
 }
-
 function _bestFuzzyPlayerMatch(query, candidates) {
     const q = _normMatch(query);
     if (!q) return null;
-
     let best = null;
     let best2 = null;
-
     for (const c of candidates) {
         const n1 = _normMatch(c.name);
         const n2 = _normMatch(`${c.name} ${c.team || ''}`);
         const lim = Math.max(2, Math.floor(Math.max(q.length, n1.length) * 0.25));
-
         const d1 = _editDistance(q, n1, lim);
         const d2 = _editDistance(q, n2, lim);
         const d = Math.min(d1, d2);
-
         if (best === null || d < best.d) {
             best2 = best;
             best = { c, d };
@@ -814,18 +686,13 @@ function _bestFuzzyPlayerMatch(query, candidates) {
             best2 = { c, d };
         }
     }
-
     if (!best) return null;
-
     const nameLen = Math.max(_normMatch(best.c.name).length, q.length);
     const threshold = Math.max(2, Math.floor(nameLen * 0.25));
-
     if (best.d > threshold) return null;
     if (best2 && best2.d === best.d) return null;
-
     return best.c;
 }
-
 function _extractPhotoUrlFromRow(row) {
     const cells = row || [];
     for (let i = 0; i < cells.length; i++) {
@@ -836,12 +703,10 @@ function _extractPhotoUrlFromRow(row) {
     }
     return '';
 }
-
 async function init() {
     const keys = ['PREM', 'LALIGA', 'MLS'];
     allMatches = [];
     const dateMap = {};
-
     const pushMatch = (league, date, row) => {
         if (!date || !row[1] || !row[2]) return;
         const home = (row[1] || '').trim();
@@ -857,7 +722,6 @@ async function init() {
         });
         dateMap[date.getTime()] = true;
     };
-
     for (let k of keys) {
         await new Promise(res => {
             Papa.parse(SCHEDULE_URLS[k], {
@@ -866,13 +730,10 @@ async function init() {
                     let currentDate = null;
                     let awaitingDate = false;
                     let pendingMatchRows = [];
-
                     results.data.forEach((row, i) => {
                         if (i === 0) return;
-
                         const cellA = row[0];
                         const parsedA = cellA ? parseSheetDate(cellA) : null;
-
                         if (parsedA === 'MATCHDAY_MARKER') {
                             currentDate = null;
                             awaitingDate = true;
@@ -880,44 +741,34 @@ async function init() {
                             if (row[1] && row[2]) pendingMatchRows.push(row);
                             return;
                         }
-
                         if (awaitingDate) {
                             if (parsedA && parsedA !== 'MATCHDAY_MARKER') {
                                 currentDate = parsedA;
                                 awaitingDate = false;
-
                                 pendingMatchRows.forEach(r => pushMatch(k, currentDate, r));
                                 pendingMatchRows = [];
-
                                 pushMatch(k, currentDate, row);
                             }
                             return;
                         }
-
                         if (parsedA && parsedA !== 'MATCHDAY_MARKER') {
                             currentDate = parsedA;
                         }
-
                         pushMatch(k, currentDate, row);
                     });
-
                     res();
                 }
             });
         });
     }
-
     uniqueDates = Object.keys(dateMap).map(Number).sort((a,b) => a - b);
-
     if (uniqueDates.length > 0) {
         jumpToToday();
     } else {
         document.getElementById('dateText').textContent = "NO DATA FOUND";
     }
-
     if (!__autoRefreshStarted) {
         __autoRefreshStarted = true;
-
         setInterval(() => {
             const currentDateIdx = dateIdx;
             const tempMatches = allMatches;
@@ -929,26 +780,21 @@ async function init() {
                 allMatches = tempMatches;
             });
         }, 60000);
-
         setInterval(async () => {
             standingsCache = { PREM: null, LALIGA: null, MLS: null };
-
             if (!document.getElementById('standings-tab').classList.contains('hidden')) {
                 renderStandings(currentStandingsLeague || 'PREM');
             }
-
             if (!document.getElementById('team-tab').classList.contains('hidden') && currentTeam && currentTeam.name && currentTeam.league) {
                 viewTeam(currentTeam.name, currentTeam.league);
             }
         }, 60000);
     }
 }
-
 function jumpToToday() {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const nowTime = now.getTime();
-
     let foundIdx = -1;
     for (let i = 0; i < uniqueDates.length; i++) {
         if (uniqueDates[i] >= nowTime) {
@@ -957,11 +803,9 @@ function jumpToToday() {
         }
     }
     if (foundIdx === -1) foundIdx = uniqueDates.length - 1;
-
     dateIdx = foundIdx;
     renderMatches();
 }
-
 function renderMatches() {
     const container = document.getElementById('league-list');
     const target = uniqueDates[dateIdx];
@@ -974,7 +818,6 @@ function renderMatches() {
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     document.getElementById('dateText').textContent = `${days[dObj.getDay()]}, ${months[dObj.getMonth()]} ${dObj.getDate()}`;
-
     const filtered = allMatches.filter(m => m.date.getTime() === target);
     container.innerHTML = ['PREM', 'LALIGA', 'MLS'].map(lg => {
         const matches = filtered.filter(m => m.league === lg);
@@ -995,7 +838,6 @@ function renderMatches() {
             </div>`;
     }).join('');
 }
-
 function renderStandings(lg) {
     currentStandingsLeague = lg;
     document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active-league'));
@@ -1003,9 +845,7 @@ function renderStandings(lg) {
     const head = document.getElementById('standingsHead');
     const body = document.getElementById('standingsBody');
     const legend = document.getElementById('legend');
-
     head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="pr-4 text-right">PTS</th>`;
-
     Papa.parse(STANDINGS_URLS[lg], {
         download: true, header: true,
         complete: (res) => {
@@ -1015,7 +855,6 @@ function renderStandings(lg) {
                 const fixed = _stripLeadingPosFromTeam(pos, team);
                 pos = fixed.pos;
                 team = fixed.team;
-
                 const gf = r.GF || 0; const ga = r.GA || 0;
                 const color = getQualifyColor(lg, pos);
                 return `<tr class="border-b border-zinc-800/30">
@@ -1031,13 +870,11 @@ function renderStandings(lg) {
             }).join('');
         }
     });
-
     const rules = lg === 'MLS'
         ? [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#facc15', l:'Rel PO'}, {c:'#ef4444', l:'Rel'}]
         : [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#166534', l:'UECL'}, {c:'#ef4444', l:'Rel'}];
     legend.innerHTML = rules.map(rule => `<div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${rule.c}"></div><span class="text-[9px] font-black text-zinc-500 uppercase">${rule.l}</span></div>`).join('');
 }
-
 function getQualifyColor(lg, pos) {
     pos = parseInt(pos);
     if (lg === 'MLS') {
@@ -1054,12 +891,10 @@ function getQualifyColor(lg, pos) {
     }
     return 'transparent';
 }
-
 function changeDate(step) {
     dateIdx = Math.max(0, Math.min(uniqueDates.length - 1, dateIdx + step));
     renderMatches();
 }
-
 function switchTab(t) {
     currentView = t;
     document.getElementById('hub-tab').classList.toggle('hidden', t !== 'hub');
@@ -1067,7 +902,6 @@ function switchTab(t) {
     document.getElementById('stats-tab').classList.toggle('hidden', t !== 'stats');
     document.getElementById('team-tab').classList.add('hidden');
     document.getElementById('player-tab').classList.add('hidden');
-
     document.querySelectorAll('.nav-item').forEach(el => {
         const spanText = el.querySelector('span:last-child').textContent;
         if (t === 'hub' && spanText === 'MAIN HUB') el.classList.add('active');
@@ -1075,17 +909,14 @@ function switchTab(t) {
         else if (t === 'stats' && spanText === 'STATS') el.classList.add('active');
         else el.classList.remove('active');
     });
-
     if (t === 'standings') renderStandings('PREM');
     if (t === 'stats') renderStats('PREM');
 }
-
 function backToView() {
     if (currentView === 'hub') switchTab('hub');
     else if (currentView === 'standings') switchTab('standings');
     else if (currentView === 'stats') switchTab('stats');
 }
-
 function _buildTeamPlayerIndex(playersObj) {
     const idx = {};
     Object.keys(playersObj || {}).forEach(k => {
@@ -1100,26 +931,20 @@ function _buildTeamPlayerIndex(playersObj) {
     });
     return idx;
 }
-
 function _resolvePlayerKeyForEntry(teamIndex, league, team, name) {
     const teamKey = canonicalTeamName(team);
     const teamNorm = _normMatch(teamKey);
     const nameNorm = _normMatch(name);
-
     const bucket = teamIndex[teamNorm];
     if (!bucket) return null;
-
     if (bucket.byExactName[nameNorm]) return bucket.byExactName[nameNorm];
-
     let bestKey = null;
     let bestD = null;
     let secondBestD = null;
-
     for (const k of bucket.keys) {
         const candidateNorm = bucket.keyToNameNorm[k];
         const lim = Math.max(2, Math.floor(Math.max(nameNorm.length, candidateNorm.length) * 0.25));
         const d = _editDistance(nameNorm, candidateNorm, lim);
-
         if (bestD === null || d < bestD) {
             secondBestD = bestD;
             bestD = d;
@@ -1128,167 +953,117 @@ function _resolvePlayerKeyForEntry(teamIndex, league, team, name) {
             secondBestD = d;
         }
     }
-
     const threshold = Math.max(2, Math.floor(Math.max(nameNorm.length, 1) * 0.25));
     if (bestD === null || bestD > threshold) return null;
     if (secondBestD !== null && secondBestD === bestD) return null;
-
     return bestKey;
 }
-
 async function loadStats(league) {
-    if (league === 'COMBINED') return;
-
-    if (statsData[league] && statsData[league].loaded) return;
-
-    const urls = STATS_URLS[league] || {};
-    const data = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {}, loaded: false };
-
-    const fetchCsv = (url) => new Promise((resolve) => {
-        if (!url) return resolve([]);
-        Papa.parse(url, {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            complete: (res) => resolve(res.data || []),
-            error: () => resolve([])
-        });
-    });
-
-    const rowToTriplet = (row) => {
-        if (!row) return { name: '', value: '', team: '' };
-
-        // Papa header:true returns objects. If the sheet has no headers, keys may still be created; we rely on value order.
-        if (Array.isArray(row)) {
-            return {
-                name: (row[0] || '').toString().trim(),
-                value: (row[1] || '').toString().trim(),
-                team: (row[2] || '').toString().trim()
-            };
-        }
-
-        if (typeof row === 'object') {
-            const vals = Object.values(row).map(v => (v == null ? '' : v).toString().trim());
-            return { name: (vals[0] || ''), value: (vals[1] || ''), team: (vals[2] || '') };
-        }
-
-        return { name: '', value: '', team: '' };
-    };
-
-    const ensurePlayer = (name, team) => {
-        const nm = (name || '').toString().trim();
-        const tm = canonicalTeamName(team || '');
-        if (!nm) return null;
-
-        const key = _makePlayerKey(league, tm, nm);
-        if (!data.players[key]) {
-            data.players[key] = {
-                key,
-                league,
-                name: nm,
-                team: tm,
-                goals: 0,
-                assists: 0,
-                cs: 0,
-                value: 0,          // avg rating
-                matches: 0,        // appearances (# of ratings in ratings log)
-                last5Ratings: [],
-                ratingsAll: []
-            };
-        }
-        return key;
-    };
-
-    try {
-        const [goalsRows, assistsRows, csRows, ratingsLogRows, avgRatingsRows] = await Promise.all([
-            fetchCsv(urls.goals),
-            fetchCsv(urls.assists),
-            fetchCsv(urls.cleanSheets),
-            fetchCsv(urls.ratingsLog),
-            fetchCsv(urls.avgRatings)
-        ]);
-
-        // Goals / Assists / Clean Sheets: Player (A), Stat (B), Team (C)
-        const ingestStat = (rows, kind) => {
-            (rows || []).forEach(r => {
-                const t = rowToTriplet(r);
-                const nm = t.name;
-                const tm = t.team;
-                const val = parseInt((t.value || '0').toString().replace(/[^0-9-]/g, ''), 10);
-                if (!nm || !tm || isNaN(val)) return;
-
-                const k = ensurePlayer(nm, tm);
-                if (!k) return;
-
-                if (kind === 'goals') data.players[k].goals = val;
-                if (kind === 'assists') data.players[k].assists = val;
-                if (kind === 'cs') data.players[k].cs = val;
-
-                const arr = kind === 'goals' ? data.goals : (kind === 'assists' ? data.assists : data.cleanSheets);
-                arr.push({ key: k, name: data.players[k].name, team: data.players[k].team, value: val, league });
-            });
-        };
-
-        ingestStat(goalsRows, 'goals');
-        ingestStat(assistsRows, 'assists');
-        ingestStat(csRows, 'cs');
-
-        // Ratings log: Player (A), Rating (B), Team (C)
-        // Sheet order is earliest at top, latest at bottom.
-        (ratingsLogRows || []).forEach(r => {
-            const t = rowToTriplet(r);
-            const nm = t.name;
-            const tm = t.team;
-            const rating = parseFloat((t.value || '').toString().replace(/[^0-9.\-]/g, ''));
-            if (!nm || !tm || isNaN(rating)) return;
-
-            const k = ensurePlayer(nm, tm);
-            if (!k) return;
-
-            data.players[k].ratingsAll.push(rating);
-        });
-
-        // Avg ratings: Player (A), Avg (B), Team (C)
-        (avgRatingsRows || []).forEach(r => {
-            const t = rowToTriplet(r);
-            const nm = t.name;
-            const tm = t.team;
-            const avg = parseFloat((t.value || '').toString().replace(/[^0-9.\-]/g, ''));
-            if (!nm || !tm || isNaN(avg)) return;
-
-            const k = ensurePlayer(nm, tm);
-            if (!k) return;
-
-            data.players[k].value = avg;
-            data.ratings.push({ key: k, name: data.players[k].name, team: data.players[k].team, value: avg, league });
-        });
-
-        // Finalize appearances + last 5 ratings
-        Object.values(data.players).forEach(p => {
-            const all = Array.isArray(p.ratingsAll) ? p.ratingsAll : [];
-            p.matches = all.length;
-            p.last5Ratings = all.slice(Math.max(0, all.length - 5));
-        });
-
-        // Sort leaderboards
-        data.goals.sort((a, b) => (b.value || 0) - (a.value || 0));
-        data.assists.sort((a, b) => (b.value || 0) - (a.value || 0));
-        data.cleanSheets.sort((a, b) => (b.value || 0) - (a.value || 0));
-        data.ratings.sort((a, b) => parseFloat(b.value || 0) - parseFloat(a.value || 0));
-
+    if (statsData[league].loaded) return;
+    const data = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {} };
+    const src = STATS_URLS[league];
+    if (!src) {
         statsData[league] = { ...data, loaded: true };
-    } catch (e) {
-        statsData[league] = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {}, loaded: true };
+        return;
     }
+    async function loadList(url, field) {
+        if (!url) return;
+        const rows = await new Promise((res) => Papa.parse(url, { download: true, complete: (r) => res(r.data || []), error: () => res([]) }));
+        rows.forEach((row, i) => {
+            if (i === 0 || !row[0] || !row[1]) return;
+            const name = row[0].trim();
+            const value = parseInt(row[1], 10) || 0;
+            const team = row[2] ? row[2].trim() : '';
+            const teamKey = canonicalTeamName(team);
+            const key = _makePlayerKey(league, teamKey, name);
+            if (!data.players[key]) {
+                data.players[key] = {
+                    key,
+                    league,
+                    name,
+                    team,
+                    teamKey,
+                    position: '',
+                    goals: 0,
+                    assists: 0,
+                    cs: 0,
+                    avgRating: 0,
+                    matches: 0,
+                    recentRatings: [],
+                    photoUrl: ''
+                };
+            }
+            data.players[key][field] = value;
+            data[field + 's'].push({ name, value, team, league, key });
+        });
+        data[field + 's'].sort((a, b) => b.value - a.value);
+    }
+    await Promise.all([
+        loadList(src.goals, 'goal'),
+        loadList(src.assists, 'assist'),
+        loadList(src.cleanSheets, 'cs')
+    ]);
+    if (src.avgRatings) {
+        const rows = await new Promise((res) => Papa.parse(src.avgRatings, { download: true, complete: (r) => res(r.data || []), error: () => res([]) });
+    rows.forEach((row, i) => {
+            if (i === 0 || !row[8] || !row[10]) return;
+            const name = row[8].trim();
+            const position = row[9] || '';
+            const avgRating = parseFloat(row[10]) || 0;
+            const team = row[11] ? row[11].trim() : '';
+            const matches = parseInt(row[12], 10) || 0;
+            const teamKey = canonicalTeamName(team);
+            const key = _makePlayerKey(league, teamKey, name);
+            const photoUrl = _extractPhotoUrlFromRow(row);
+            if (!data.players[key]) {
+                data.players[key] = {
+                    key,
+                    league,
+                    name,
+                    team,
+                    teamKey,
+                    position,
+                    goals: 0,
+                    assists: 0,
+                    cs: 0,
+                    avgRating,
+                    matches,
+                    recentRatings: [],
+                    photoUrl
+                };
+            } else {
+                data.players[key].position = position;
+                data.players[key].avgRating = avgRating;
+                data.players[key].matches = matches;
+                data.players[key].photoUrl = photoUrl || data.players[key].photoUrl;
+            }
+            data.ratings.push({ rank: row[7], name, position, value: avgRating.toFixed(2), team, matches, league, key });
+        });
+        data.ratings.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
+    }
+    if (src.ratingsLog) {
+        const rows = await new Promise((res) => Papa.parse(src.ratingsLog, { download: true, header: true, complete: (r) => res(r.data || []), error: () => res([]) });
+        rows.forEach(row => {
+            const name = row.Player ? row.Player.trim() : '';
+            if (!name) return;
+            const rating = parseFloat(row.Rating) || 0;
+            const fixture = row.Fixture || '';
+            const opponent = row.Opponent || '';
+            const team = row.Team ? row.Team.trim() : '';
+            const teamKey = canonicalTeamName(team);
+            const key = _makePlayerKey(league, teamKey, name);
+            if (data.players[key]) {
+                data.players[key].recentRatings.push({ fixture, opponent, rating });
+            }
+        });
+    }
+    statsData[league] = { ...data, loaded: true };
 }
-
 async function renderStats(league) {
     document.querySelectorAll('[id^="stat-btn-"]').forEach(b => b.classList.remove('active-league'));
     document.getElementById(`stat-btn-${league}`).classList.add('active-league');
-
     const content = document.getElementById('statsContent');
     content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading stats...</div>';
-
     if (league === 'COMBINED') {
         await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
         const combined = { goals: [], assists: [], cleanSheets: [], ratings: [] };
@@ -1300,28 +1075,23 @@ async function renderStats(league) {
                 combined.ratings.push(...statsData[lg].ratings);
             }
         });
-        combined.goals.sort((a, b) => parseInt(b.value) - parseInt(a.value));
-        combined.assists.sort((a, b) => parseInt(b.value) - parseInt(a.value));
-        combined.cleanSheets.sort((a, b) => parseInt(b.value) - parseInt(a.value));
+        combined.goals.sort((a, b) => b.value - a.value);
+        combined.assists.sort((a, b) => b.value - a.value);
+        combined.cleanSheets.sort((a, b) => b.value - a.value);
         combined.ratings.sort((a, b) => parseFloat(b.value) - parseFloat(a.value));
-        displayStats({ goals: combined.goals.slice(0, 10), assists: combined.assists.slice(0, 10), cleanSheets: combined.cleanSheets.slice(0, 10), ratings: combined.ratings.slice(0, 10) });
+        displayStats(combined);
     } else {
         await loadStats(league);
-        if (!statsData[league].loaded) {
-            content.innerHTML = '<div class="text-center text-zinc-500 py-8">No stats available</div>';
-            return;
-        }
-        displayStats({ goals: statsData[league].goals.slice(0, 10), assists: statsData[league].assists.slice(0, 10), cleanSheets: statsData[league].cleanSheets.slice(0, 10), ratings: statsData[league].ratings.slice(0, 10) });
+        displayStats(statsData[league]);
     }
 }
-
 function displayStats(data) {
     const content = document.getElementById('statsContent');
     content.innerHTML = `
         <div class="space-y-6">
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">⚽ TOP SCORERS</h3>
-                ${data.goals.map((p, i) => `
+                ${data.goals.slice(0, 10).map((p, i) => `
                     <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
                         <div class="flex items-center gap-3">
                             <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
@@ -1336,10 +1106,9 @@ function displayStats(data) {
                     </div>
                 `).join('')}
             </div>
-
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">🎯 TOP ASSISTS</h3>
-                ${data.assists.map((p, i) => `
+                ${data.assists.slice(0, 10).map((p, i) => `
                     <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
                         <div class="flex items-center gap-3">
                             <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
@@ -1354,10 +1123,9 @@ function displayStats(data) {
                     </div>
                 `).join('')}
             </div>
-
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">🧤 CLEAN SHEETS</h3>
-                ${data.cleanSheets.map((p, i) => `
+                ${data.cleanSheets.slice(0, 10).map((p, i) => `
                     <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
                         <div class="flex items-center gap-3">
                             <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
@@ -1372,10 +1140,9 @@ function displayStats(data) {
                     </div>
                 `).join('')}
             </div>
-
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">⭐ TOP RATED</h3>
-                ${data.ratings.map((p, i) => `
+                ${data.ratings.slice(0, 10).map((p, i) => `
                     <div class="flex items-center justify-between py-2 border-b border-zinc-800 cursor-pointer hover:bg-zinc-900/50" onclick="viewPlayer('${_jsEscapeSingle(p.key || '')}')">
                         <div class="flex items-center gap-3">
                             <span class="text-zinc-600 font-mono w-6">${i + 1}</span>
@@ -1386,16 +1153,14 @@ function displayStats(data) {
                                 </div>
                             </div>
                         </div>
-                        <span class="text-[#00ff85] font-black">${parseFloat(p.value).toFixed(2)}</span>
+                        <span class="text-[#00ff85] font-black">${p.value}</span>
                     </div>
                 `).join('')}
             </div>
         </div>
     `;
 }
-
 function _norm(s) { return (s || '').toString().trim().toLowerCase(); }
-
 function _bestMatch(query, candidates) {
     const q = _norm(query);
     if (!q) return null;
@@ -1407,21 +1172,18 @@ function _bestMatch(query, candidates) {
     if (incl) return incl;
     return null;
 }
-
 function _guessLeagueForTeam(teamName) {
     const logo = getLogo(teamName) || '';
     if (logo.includes('mlssoccer')) return 'MLS';
     if (logo.includes('premierleague')) return 'PREM';
     return 'LALIGA';
 }
-
 function _findTeamLeague(teamName) {
     const tk = canonicalTeamName(teamName);
     const m = allMatches.find(x => x.homeKey === tk || x.awayKey === tk);
     if (m) return m.league;
     return _guessLeagueForTeam(teamName);
 }
-
 function _resolveTeamFromQuery(query) {
     const rep = {};
     const add = (t) => {
@@ -1429,27 +1191,21 @@ function _resolveTeamFromQuery(query) {
         const k = canonicalTeamName(t);
         if (!rep[k]) rep[k] = t;
     };
-
     allMatches.forEach(m => { add(m.home); add(m.away); });
     Object.keys(LOGOS).forEach(add);
     Object.keys(TEAM_ALIASES).forEach(aliasNorm => add(TEAM_ALIASES[aliasNorm]));
-
     const qKey = canonicalTeamName(query);
     if (rep[qKey]) return rep[qKey];
-
     const candidates = Object.values(rep);
     return _bestMatch(query, candidates);
 }
-
 async function searchPlayer(e, inputId = 'globalSearch') {
     if (e.key !== 'Enter') return;
     const el = document.getElementById(inputId);
     if (!el) return;
     const query = el.value.trim();
     if (!query) return;
-
     await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
-
     const playerCandidates = [];
     ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
         const players = statsData[lg].players ? Object.values(statsData[lg].players) : [];
@@ -1457,42 +1213,33 @@ async function searchPlayer(e, inputId = 'globalSearch') {
             if (p && p.key && p.name) playerCandidates.push({ key: p.key, name: p.name, team: p.team || '' });
         });
     });
-
     const matchedPlayer = _bestFuzzyPlayerMatch(query, playerCandidates);
     if (matchedPlayer) {
         viewPlayer(matchedPlayer.key);
         return;
     }
-
     const matchedTeam = _resolveTeamFromQuery(query);
     if (matchedTeam) {
         viewTeam(matchedTeam, _findTeamLeague(matchedTeam));
         return;
     }
-
     viewPlayer(query);
 }
-
 function getPlayerInitials(name) {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
 }
-
 async function viewPlayer(playerKeyOrName) {
     document.getElementById('player-tab').classList.remove('hidden');
     document.getElementById('hub-tab').classList.add('hidden');
     document.getElementById('standings-tab').classList.add('hidden');
     document.getElementById('stats-tab').classList.add('hidden');
     document.getElementById('team-tab').classList.add('hidden');
-
     const content = document.getElementById('playerContent');
     content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading player...</div>';
-
     const parts = _splitPlayerKey(playerKeyOrName);
     if (parts.league) await loadStats(parts.league);
     await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
-
     let playerData = null;
-
     if (parts.league && statsData[parts.league].players && statsData[parts.league].players[playerKeyOrName]) {
         playerData = statsData[parts.league].players[playerKeyOrName];
     } else {
@@ -1501,14 +1248,13 @@ async function viewPlayer(playerKeyOrName) {
             if (pool[playerKeyOrName]) { playerData = pool[playerKeyOrName]; break; }
         }
     }
-
     if (!playerData) {
         content.innerHTML = '<div class="text-center text-zinc-500 py-8">Player not found</div>';
         return;
     }
-
+    const isGK = playerData.position && playerData.position.toLowerCase().includes('gk');
     const photoUrl = (playerData.photoUrl || '').toString().trim();
-
+    const teamEmoji = getTeamEmoji(playerData.team);
     content.innerHTML = `
         <div class="space-y-6">
             <div class="flex flex-col items-center gap-4">
@@ -1517,15 +1263,17 @@ async function viewPlayer(playerKeyOrName) {
                     <div id="playerAvatarFallback" class="player-avatar">${getPlayerInitials(playerData.name)}</div>
                 </div>
                 <div class="text-center">
-                    <h2 class="text-2xl font-black">${playerData.name}</h2>
+                    <div class="flex items-center justify-center gap-2">
+                        <img src="${getLogo(playerData.team)}" class="w-5 h-5 object-contain">
+                        <h2 class="text-2xl font-black">${playerData.name}</h2>
+                    </div>
                     <p class="text-zinc-500 text-sm flex items-center justify-center gap-2">
                         <img src="${getLogo(playerData.team)}" class="w-4 h-4 object-contain">
                         <span class="cursor-pointer hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(playerData.team)}', '${playerData.league}')">${playerData.team}</span>
                     </p>
-                    <p class="text-zinc-600 text-xs mt-1">${playerData.position || 'N/A'} • ${playerData.matches || 0} apps</p>
+                    <p class="text-zinc-600 text-xs mt-1">${playerData.position || 'N/A'}</p>
                 </div>
             </div>
-
             <div class="grid grid-cols-2 gap-4">
                 <div class="stat-card text-center relative overflow-hidden">
                     <div class="text-3xl font-black text-[#00ff85]">${playerData.goals || 0}</div>
@@ -1535,69 +1283,69 @@ async function viewPlayer(playerKeyOrName) {
                     <div class="text-3xl font-black text-[#00ff85]">${playerData.assists || 0}</div>
                     <div class="text-xs text-zinc-500 mt-1">ASSISTS</div>
                 </div>
+                ${isGK ? `
                 <div class="stat-card text-center relative overflow-hidden">
                     <div class="text-3xl font-black text-[#00ff85]">${playerData.cs || 0}</div>
                     <div class="text-xs text-zinc-500 mt-1">CLEAN SHEETS</div>
                 </div>
+                ` : ''}
                 <div class="stat-card text-center relative overflow-hidden">
-                    <div class="text-3xl font-black text-[#00ff85]">${(playerData.value || 0).toFixed ? parseFloat(playerData.value || 0).toFixed(2) : (playerData.value || 0)}</div>
+                    <div class="text-3xl font-black text-[#00ff85]">${playerData.matches || 0}</div>
+                    <div class="text-xs text-zinc-500 mt-1"># of Games</div>
+                </div>
+                <div class="stat-card text-center relative overflow-hidden">
+                    <div class="text-3xl font-black text-[#00ff85]">${parseFloat(playerData.avgRating || 0).toFixed(2)}</div>
                     <div class="text-xs text-zinc-500 mt-1">AVG RATING</div>
                 </div>
             </div>
-
+            ${playerData.recentRatings && playerData.recentRatings.length > 0 ? `
             <div class="stat-card">
-                <h3 class="text-sm font-black text-[#00ff85]">LAST 5 MATCH RATINGS</h3>
-                <div class="flex flex-wrap gap-2 mt-3">
-                    ${(playerData.last5Ratings || []).length
-                        ? (playerData.last5Ratings || []).map(r => `<span class="px-2 py-1 rounded-full bg-zinc-800 text-[10px] font-black border border-zinc-700">${parseFloat(r).toFixed(2)}</span>`).join('')
-                        : `<span class="text-[10px] text-zinc-500">No recent match ratings</span>`}
+                <h3 class="text-sm font-black text-[#00ff85] mb-4">LAST 5 RATINGS</h3>
+                <div class="flex gap-2">
+                    ${playerData.recentRatings.slice(-5).map(r => `
+                        <div class="flex-1 bg-zinc-900 rounded-lg py-3 text-center">
+                            <div class="font-black text-[#00ff85]">${parseFloat(r.rating).toFixed(1)}</div>
+                            <div class="text-xs text-zinc-500">${r.fixture}</div>
+                        </div>
+                    `).join('')}
                 </div>
-                <p class="text-[10px] text-zinc-500 mt-2">Latest is the last chip (sheet order).</p>
             </div>
+            ` : ''}
         </div>
     `;
-
-    try {
-        const img = document.getElementById('playerPhoto');
-        const fallback = document.getElementById('playerAvatarFallback');
-        if (img && fallback && photoUrl) {
-            img.src = photoUrl;
-            img.onload = () => { img.style.display = 'block'; fallback.style.display = 'none'; };
-            img.onerror = () => { img.style.display = 'none'; fallback.style.display = 'flex'; };
-        }
-    } catch (e) {}
+    if (photoUrl) {
+        const imgEl = document.getElementById('playerPhoto');
+        const fbEl = document.getElementById('playerAvatarFallback');
+        loadPlayerPhotoToElement(photoUrl, imgEl, fbEl);
+    }
+    // Hide extra team logos
+    const statCards = content.querySelectorAll('.stat-card');
+    statCards.forEach(card => {
+        const imgs = card.querySelectorAll('img');
+        imgs.forEach(img => img.style.display = 'none');
+    });
 }
-
 async function viewTeam(teamName, league) {
     currentTeam = { name: teamName, league: league };
-
     document.getElementById('team-tab').classList.remove('hidden');
     document.getElementById('hub-tab').classList.add('hidden');
     document.getElementById('standings-tab').classList.add('hidden');
     document.getElementById('stats-tab').classList.add('hidden');
     document.getElementById('player-tab').classList.add('hidden');
-
     const content = document.getElementById('teamContent');
     content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading team...</div>';
-
     await loadStats(league);
-
     const teamKey = canonicalTeamName(teamName);
     const standings = await loadStandingsCache(league);
     const standing = standings ? standings[teamKey] : null;
-
     const teamPlayers = Object.values(statsData[league].players || {}).filter(p => (p.teamKey || canonicalTeamName(p.team)) === teamKey);
-
     const teamMatches = allMatches
         .filter(m => m.league === league && (m.homeKey === teamKey || m.awayKey === teamKey))
         .sort((a, b) => a.date - b.date);
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     const past = teamMatches.filter(m => m.date < today && m.score !== 'v').slice(-5).reverse();
     const future = teamMatches.filter(m => m.date >= today || m.score === 'v').slice(0, 5);
-
     content.innerHTML = `
         <div class="space-y-6">
             <div class="flex items-center gap-4 mb-6">
@@ -1611,7 +1359,6 @@ async function viewTeam(teamName, league) {
                     ` : ``}
                 </div>
             </div>
-
             ${past.length > 0 ? `
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">LAST 5 RESULTS</h3>
@@ -1629,7 +1376,6 @@ async function viewTeam(teamName, league) {
                 }).join('')}
             </div>
             ` : ''}
-
             ${future.length > 0 ? `
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">NEXT 5 FIXTURES</h3>
@@ -1649,7 +1395,6 @@ async function viewTeam(teamName, league) {
                 }).join('')}
             </div>
             ` : ''}
-
             ${teamPlayers.length > 0 ? `
             <div class="stat-card">
                 <h3 class="text-sm font-black text-[#00ff85] mb-4">SQUAD</h3>
@@ -1670,846 +1415,47 @@ async function viewTeam(teamName, league) {
         </div>
     `;
 }
-
+async function showSuggestions() {
+    const input = document.getElementById('globalSearch');
+    const suggestions = document.getElementById('globalSearchSuggestions');
+    const query = input.value.trim().toLowerCase();
+    if (query.length < 2) {
+        suggestions.classList.add('hidden');
+        return;
+    }
+    await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
+    const candidates = [];
+    ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
+        const players = Object.values(statsData[lg].players || {});
+        players.forEach(p => candidates.push({ type: 'player', name: p.name, team: p.team, league: lg, key: p.key }));
+        const teams = new Set(allMatches.filter(m => m.league === lg).flatMap(m => [m.home, m.away]));
+        teams.forEach(t => candidates.push({ type: 'team', name: t, league: lg }));
+    });
+    const filtered = candidates.filter(c => {
+        const nameLower = c.name.toLowerCase();
+        const teamLower = c.type === 'player' ? c.team.toLowerCase() : '';
+        return nameLower.includes(query) || teamLower.includes(query);
+    }).slice(0, 10);
+    suggestions.innerHTML = filtered.map(c => {
+        if (c.type === 'player') {
+            return `
+                <div class="search-suggestion" onclick="viewPlayer('${_jsEscapeSingle(c.key)}'); suggestions.classList.add('hidden');">
+                    <img src="${getLogo(c.team)}" class="w-4 h-4 object-contain">
+                    <span>${c.name} (${c.team})</span>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="search-suggestion" onclick="viewTeam('${_jsEscapeSingle(c.name)}', '${c.league}'); suggestions.classList.add('hidden');">
+                    <img src="${getLogo(c.name)}" class="w-4 h-4 object-contain">
+                    <span>${c.name}</span>
+                </div>
+            `;
+        }
+    }).join('');
+    suggestions.classList.remove('hidden');
+}
 init();
 </script>
-
-
-<!-- === Safe Add-ons (updated) === -->
-<script>
-(function(){
-  function waitUntil(cond, cb, tries=200, interval=50){
-    if (cond()) { try { cb(); } catch(e){} return; }
-    let t=0; const id=setInterval(()=>{ if (cond() || ++t>tries){ clearInterval(id); if(cond()) try{cb();}catch(e){} } }, interval);
-  }
-
-  // ---------- Autocomplete (unchanged behavior; no emoji change here) ----------
-      } catch(e){}
-    const teams = {};
-    const addTeam = (t) => { if(!t) return; try{ teams[(window.canonicalTeamName?canonicalTeamName(t):t)] = t; }catch(e){ teams[t]=t; } };
-    try {
-      if (Array.isArray(window.allMatches)) allMatches.forEach(m=>{ addTeam(m.home); addTeam(m.away); });
-      if (window.LOGOS) Object.keys(LOGOS).forEach(addTeam);
-      if (window.TEAM_ALIASES) Object.values(TEAM_ALIASES).forEach(addTeam);
-    } catch(e){}
-    const teamList = Object.values(teams).map(t => ({ type: 'team', name: t, league: (window._findTeamLeague?_findTeamLeague(t):'') }));
-    
-  // fallback: derive players from leaderboards if players map missing
-  try {
-    if ((!players || !players.length) && window.statsData) {
-      Object.keys(statsData).forEach(lg => {
-        const d = statsData[lg] || {};
-        ['goals','assists','cleanSheets'].forEach(listName => {
-          (d[listName]||[]).forEach(it => {
-            if (!it || !it.name) return;
-            players.push({ type:'player', key: it.key || '', name: it.name, team: it.team || '', league: lg });
-          });
-        });
-      });
-    }
-  } catch(e){}
-  return { players, teams: teamList };
-}
-  let searchCache = null;
-    } catch(e){}
-}
-    if (!searchCache) searchCache = buildCandidates();
-    const norm = s => (s||'').toLowerCase();
-    const startsWith = (s) => norm(s).startsWith(q);
-    const contains = (s) => norm(s).includes(q);
-
-    const playerHits = (searchCache.players||[]).filter(p => startsWith(p.name) || contains(`${p.name} ${p.team}`)).slice(0,8);
-    const teamHits = (searchCache.teams||[]).filter(t => startsWith(t.name) || contains(t.name)).slice(0,6);
-
-    const item = (h) => {
-      if (h.type==='player') {
-        return '<div class="search-suggestion" data-name="' + (p.name||'').replace(/"/g,'&quot;') + '" onclick="try{viewPlayer(\'' + (h.key||'').replace(/'/g, '\\'') + '\')}catch(e){}; document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">'
-                + '<span>👤</span><span class="flex-1">' + h.name + '</span><span class="text-zinc-500">' + (h.team||'') + '</span>'
-                + '</div>';
-      }
-      const l = h.league || '';
-      return '<div class="search-suggestion" data-name="' + (p.name||'').replace(/"/g,'&quot;') + '" onclick="try{viewTeam(\'' + (h.name||'').replace(/'/g, '\\'') + '\', \' + l + '\')}catch(e){}; document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">'
-              + '<img src="' + (window.getLogo?getLogo(h.name):'') + '" class="w-4 h-4 object-contain"><span class="flex-1">' + h.name + '</span>'
-              + '</div>';
-    };
-    box.innerHTML = [...playerHits, ...teamHits].map(item).join('') || '<div class="search-suggestion text-zinc-500">No matches</div>';
-    box.classList.remove('hidden');
-  }
-  waitUntil(()=>document.getElementById('globalSearch'), function(){
-    const input = document.getElementById('globalSearch');
-    if (!input) return;
-    input.addEventListener('input', showSuggestions);
-    input.addEventListener('focus', showSuggestions);
-    document.addEventListener('click', (e)=>{
-      const box = document.getElementById('globalSearchSuggestions');
-      if (!box || !input) return;
-      if (!box.contains(e.target) && e.target !== input) box.classList.add('hidden');
-    });
-    document.addEventListener('keydown', (e)=>{
-      if (e.key === 'Escape') {
-        const box = document.getElementById('globalSearchSuggestions'); if (box) box.classList.add('hidden');
-      }
-    });
-  });
-
-  // ---------- Individual Player Page Enhancements ----------
-  function stripEmoji(s){
-    try {
-      return (s||'').replace(/[\u{1F300}-\u{1FAFF}\u{1F1E6}-\u{1F1FF}\u2600-\u27BF]/gu, '');
-    } catch(e) {
-      return (s||'').replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');
-    }
-  }
-  function findCurrentPlayerFromDOM(){
-    const container = document.getElementById('content') || document.body;
-    const nameEl = container.querySelector('h2, h1');
-    const teamEl = Array.from(container.querySelectorAll('p, span, a')).find(x => x.textContent && x.textContent.trim().length && /team|fc|sc|united|city|cf|ac|club/i.test(x.textContent));
-    const name = nameEl ? stripEmoji(nameEl.textContent).trim() : '';
-    const team = teamEl ? teamEl.textContent.trim() : '';
-    return { name, team };
-  }
-  function getPlayerDataByNameTeam(name, team){
-    if (!window.statsData) return null;
-    let best = null;
-    Object.keys(statsData).forEach(lg => {
-      const pool = statsData[lg] && statsData[lg].players ? statsData[lg].players : {};
-      Object.values(pool).forEach(p => {
-        if (!p || !p.name) return;
-        const sameName = p.name.trim().toLowerCase() === (name||'').trim().toLowerCase();
-        const sameTeam = team && p.team ? p.team.trim().toLowerCase() === team.trim().toLowerCase() : true;
-        if (sameName && sameTeam) best = p;
-      });
-    });
-    return best;
-  }
-  (function patchViewPlayer(){
-    if (window.__patchedViewPlayer || typeof window.viewPlayer !== 'function') { 
-      return waitUntil(()=> typeof window.viewPlayer === 'function' && !window.__patchedViewPlayer, patchViewPlayer);
-    }
-    const _orig = window.viewPlayer;
-    window.viewPlayer = function(){
-      const args = Array.from(arguments);
-      _orig.apply(this, args);
-      setTimeout(()=>{
-        try {
-          const container = document.getElementById('content') || document.body;
-
-          // Remove emoji next to player's NAME only
-          const nameEl = container.querySelector('h2, h1');
-          if (nameEl) nameEl.textContent = stripEmoji(nameEl.textContent);
-
-          // Ensure Last 5 Match Ratings exists (individual page only)
-          let ratingsBox = container.querySelector('#last5Ratings');
-          if (!ratingsBox) {
-            const wrap = document.createElement('div');
-            wrap.className = 'stat-card';
-            wrap.innerHTML = '<h3 class="text-sm font-black text-[#00ff85] mb-3">Last 5 Match Ratings</h3>' +
-                              '<div id="last5Ratings" class="space-y-2 text-sm"></div>';
-            container.appendChild(wrap);
-            ratingsBox = wrap.querySelector('#last5Ratings');
-          }
-
-          // Appearances card: insert after the Assists section
-          let assistsCard = Array.from(container.querySelectorAll('.stat-card .text-xs')).find(el => /assists/i.test(el.textContent||''));
-          let targetGrid = container.querySelector('.grid') || container;
-          if (assistsCard && !container.querySelector('#appsValue')) {
-            const appsCard = document.createElement('div');
-            appsCard.className = 'stat-card text-center relative overflow-hidden';
-            appsCard.setAttribute('data-added', 'apps');
-            appsCard.innerHTML = '<div class="text-3xl font-black text-[#00ff85]" id="appsValue">0</div>' +
-                                  '<div class="text-xs text-zinc-500 mt-1"># of Games (Appearances)</div>';
-            const insertPoint = assistsCard.closest('.stat-card');
-            if (insertPoint && insertPoint.parentNode) insertPoint.parentNode.insertBefore(appsCard, insertPoint.nextSibling);
-            else targetGrid.appendChild(appsCard);
-          }
-
-          // Fill ratings (from ratingsLog, latest at bottom)
-          const cur = findCurrentPlayerFromDOM();
-          const pdata = getPlayerDataByNameTeam(cur.name, cur.team);
-          if (ratingsBox) {
-            const list = pdata && Array.isArray(pdata.recentRatings) ? pdata.recentRatings.slice(-5) : [];
-            if (!list.length) ratingsBox.innerHTML = '<div class="text-zinc-500">No recent ratings</div>';
-            else ratingsBox.innerHTML = list.map(r => {
-              const when = r.date || r.fixture || '';
-              const opp = r.opponent ? ' vs ' + r.opponent : '';
-              const val = (r.rating != null) ? Number(r.rating).toFixed(2) : '—';
-              return '<div class="flex items-center justify-between border-b border-zinc-800/40 pb-2"><span class="text-zinc-400">' + when + opp + '</span><span class="font-mono font-bold">' + val + '</span></div>';
-            }).join('');
-          }
-
-          // Fill # of appearances from avg rating sheet Column F (by matching Column B name).
-          const appsEl = container.querySelector('#appsValue');
-          if (appsEl && pdata && typeof pdata.matches === 'number') {
-            appsEl.textContent = pdata.matches;
-          }
-        } catch(e){}
-      }, 0);
-    };
-    window.__patchedViewPlayer = true;
-  })();
-
-  // ---------- Coverage Augmentation (column-based parsing per your spec) ----------
-  (function augmentCoverage(){
-    if (!window.STATS_URLS || !window.Papa) return;
-
-    function parseCsv(url, header=false){
-      return new Promise(res=> Papa.parse(url,{ download:true, header:header, complete:r=>res(r.data||[]), error:()=>res([])}));
-    }
-    function ensurePlayer(data, league, name, team){
-      const teamKey = (window.canonicalTeamName?canonicalTeamName(team||''):(team||''));
-      const key = (window._makePlayerKey?_makePlayerKey(league,teamKey,name||''):(league+':'+teamKey+':'+name));
-      if (!data.players[key]) data.players[key] = { key, league, name:name||'Unknown', team:team||'', teamKey, goals:0, assists:0, cs:0, matches:0, recentRatings:[] };
-      return key;
-    }
-    async function run(league){
-      try{
-        const data = (window.statsData && statsData[league]) ? statsData[league] : null;
-        const src = STATS_URLS[league]; if (!data || !src) return;
-        if (!data.players) data.players = {};
-
-        // Goals: Column A = Player (0), B = Goals (1), C = Team (2)
-        if (src.goals){
-          const rows = await parseCsv(src.goals, false);
-          rows.forEach((row,i)=>{
-            if (!Array.isArray(row)) return;
-            const name = (row[0]||'').trim(); const val = parseInt(row[1],10)||0; const team = (row[2]||'').trim();
-            if (!name || (i===0 && name.toLowerCase()==='player')) return;
-            const key = ensurePlayer(data, league, name, team);
-            data.players[key].goals = Math.max(data.players[key].goals||0, val);
-            if (!Array.isArray(data.goals)) data.goals = [];
-            data.goals.push({ key, name, value: val, team, league });
-          });
-        }
-
-        // Assists: same indexing
-        if (src.assists){
-          const rows = await parseCsv(src.assists, false);
-          rows.forEach((row,i)=>{
-            if (!Array.isArray(row)) return;
-            const name = (row[0]||'').trim(); const val = parseInt(row[1],10)||0; const team = (row[2]||'').trim();
-            if (!name || (i===0 && name.toLowerCase()==='player')) return;
-            const key = ensurePlayer(data, league, name, team);
-            data.players[key].assists = Math.max(data.players[key].assists||0, val);
-            if (!Array.isArray(data.assists)) data.assists = [];
-            data.assists.push({ key, name, value: val, team, league });
-          });
-        }
-
-        // Clean Sheets (GK): same indexing
-        if (src.cleanSheets){
-          const rows = await parseCsv(src.cleanSheets, false);
-          rows.forEach((row,i)=>{
-            if (!Array.isArray(row)) return;
-            const name = (row[0]||'').trim(); const val = parseInt(row[1],10)||0; const team = (row[2]||'').trim();
-            if (!name || (i===0 && name.toLowerCase()==='player')) return;
-            const key = ensurePlayer(data, league, name, team);
-            data.players[key].cs = Math.max(data.players[key].cs||0, val);
-            if (!Array.isArray(data.cleanSheets)) data.cleanSheets = [];
-            data.cleanSheets.push({ key, name, value: val, team, league });
-          });
-        }
-
-        /* Avg Ratings: Column I = Player (8), Column F = Appearances (5) */
-        if (src.avgRatings){
-          const rows = await parseCsv(src.avgRatings, false);
-          rows.forEach((row,i)=>{
-            if (!Array.isArray(row)) return;
-            const name = (row[8]||'').trim();
-            const apps = parseInt(row[5], 10);
-            if (!name || Number.isNaN(apps)) return;
-            Object.values(data.players).forEach(p => {
-              if (p.name && p.name.trim().toLowerCase() === name.toLowerCase()) {
-                p.matches = apps;
-              }
-            });
-          });
-        }
-
-        // Ratings log: use header row to map fields; used only for last-5 ratings display
-        if (src.ratingsLog){
-          const rows = await parseCsv(src.ratingsLog, true);
-          rows.forEach(row=>{
-            if (!row) return;
-            const name = row.Player || row.Name || row['Player Name'] || '';
-            const team = row.Team || row['Team Name'] || '';
-            const rating = parseFloat(row.Rating || row.Score || row['Match Rating'] || '');
-            const date = row.Date || row.MatchDate || row.Round || row['Date'] || '';
-            const opponent = row.Opponent || row.Opp || row['Opponent'] || '';
-            if (!name) return;
-            const key = ensurePlayer(data, league, name, team);
-            if (!Number.isNaN(rating)) data.players[key].recentRatings.push({ date, opponent, rating });
-          });
-        }
-
-        // Sort lists if present
-        if (Array.isArray(data.goals)) data.goals.sort((a,b)=> (parseInt(b.value)||0)-(parseInt(a.value)||0));
-        if (Array.isArray(data.assists)) data.assists.sort((a,b)=> (parseInt(b.value)||0)-(parseInt(a.value)||0));
-        if (Array.isArray(data.cleanSheets)) data.cleanSheets.sort((a,b)=> (parseInt(b.value)||0)-(parseInt(a.value)||0));
-      }catch(e){}
-    }
-
-    setTimeout(()=>{
-      try {
-        if (window.statsData && typeof statsData === 'object') Object.keys(statsData).forEach(run);
-      } catch(e){}
-    }, 1500);
-  })();
-})();
-</script>
-<!-- === End Add-ons (updated) === -->
-
-
-<script>
-(function(){
-  function bindHomeClick(){
-    try {
-      const header = document.querySelector('header');
-      if (!header) return;
-      // find an element that likely contains the app title "ScoreHub"
-      const cand = Array.from(header.querySelectorAll('a, h1, h2, div, span')).find(el => (el.textContent||'').toLowerCase().includes('scorehub'));
-      if (!cand) return;
-      if (cand.__boundHome) return;
-      cand.style.cursor = 'pointer';
-      cand.addEventListener('click', function(){
-        try { switchTab('hub'); } catch(e) {}
-        window.scrollTo({top:0, behavior:'smooth'});
-      });
-      cand.__boundHome = true;
-    } catch(e){}
-  }
-  // bind on load and after slight delay to catch dynamic header
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bindHomeClick);
-  else bindHomeClick();
-  setTimeout(bindHomeClick, 1000);
-})();
-</script>
-
-
-<script>
-(function(){
-  // Build a flat "players" index from statsData (league-agnostic), once after data is loaded
-  async function ensureIndex(){
-    try {
-      if (!window.__suggestionsReady) {
-        if (typeof loadStats === 'function') {
-          await Promise.all(['PREM','LALIGA','MLS'].map(lg => loadStats(lg))).catch(()=>{});
-        }
-        let arr = [];
-        if (window.statsData) {
-          Object.keys(statsData).forEach(lg => {
-            const pool = (statsData[lg] && statsData[lg].players) ? statsData[lg].players : {};
-            Object.values(pool).forEach(p => {
-              if (!p || !p.name) return;
-              arr.push({ id: p.key || (p.name + '::' + (p.team||'')), name: p.name, team: p.team || '', league: p.league || lg });
-            });
-          });
-        }
-        // If still empty, fetch from CSVs directly (goals/assists/cleanSheets) using Papa.parse
-        if (!arr.length && window.STATS_URLS && window.Papa) {
-          const leagues = ['PREM','LALIGA','MLS'];
-          const parseCsv = (url)=> new Promise(res=> Papa.parse(url,{download:true,header:false,complete:r=>res(r.data||[]),error:()=>res([])}));
-          for (const lg of leagues) {
-            const src = STATS_URLS[lg]; if (!src) continue;
-            const collect = async (url) => {
-              if (!url) return;
-              const rows = await parseCsv(url);
-              rows.forEach((row,i)=>{
-                if (!Array.isArray(row)) return;
-                const name = (row[0]||'').trim();
-                const team = (row[2]||'').trim();
-                if (!name || (i===0 && name.toLowerCase()==='player')) return;
-                arr.push({ id: name + '::' + team, name, team, league: lg });
-              });
-            };
-            await collect(src.goals);
-            await collect(src.assists);
-            await collect(src.cleanSheets);
-          }
-        }
-        window.__playersIndex = arr;
-        window.__suggestionsReady = true;
-      }
-    } catch(e){}
-  }
-    } catch(e){}
-  }
-
-  async function handleSearchScoreHub(){
-    const box = document.getElementById('globalSearchSuggestions');
-    const input = document.getElementById('globalSearch');
-    if (!box || !input) return;
-    const q = (input.value||'').trim().toLowerCase();
-    if (q.length < 2) { box.classList.add('hidden'); box.innerHTML = ''; return; }
-    await ensureIndex();
-    const src = Array.isArray(window.__playersIndex) ? window.__playersIndex : [];
-    const hits = src.filter(p => (p.name && p.name.toLowerCase().includes(q)) || (p.team && p.team.toLowerCase().includes(q))).slice(0, 8);
-    box.innerHTML = hits.map(p => { const nm=p.name||''; const team=p.team||''; return '(<div class="search-suggestion" data-name=\"' + nm.replace(/\"/g,'&quot;') + '\" 'onclick="try{viewPlayer(\'' + nameEsc + '\')}catch(e){}; document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">' +
-             '<span class="font-bold">' + p.name + '</span>' +
-             '<span class="text-[10px] text-zinc-500">(' + (p.team||'') + ')</span>' +
-             (teamLogo ? '<img src="' + teamLogo + '" class="w-4 h-4 ml-auto">' : '') +
-             '</div>';
-    }).join('');
-    box.classList.remove('hidden');
-  }
-
-  // Hook input/focus to new handler; keep original enter-to-search intact
-  (function hookSearch(){
-    const input = document.getElementById('globalSearch');
-    if (!input) return;
-    if (!input.__scorehubSuggestionsBound) {
-      input.addEventListener('input', handleSearchScoreHub);
-      input.addEventListener('focus', handleSearchScoreHub);
-      document.addEventListener('click', (e)=>{
-        const box = document.getElementById('globalSearchSuggestions');
-        if (!box || !input) return;
-        if (!box.contains(e.target) && e.target !== input) box.classList.add('hidden');
-      });
-      input.__scorehubSuggestionsBound = true;
-    }
-  })();
-})();
-</script>
-
-
-<script>
-(function(){
-  function stripExtraTeamLogos(){
-    try{
-      const container = document.getElementById('content') || document.body;
-      // Team line: find line that includes team name (heuristic: has an <img> + text of team)
-      const teamLine = Array.from(container.querySelectorAll('p, div')).find(el => {
-        const hasImg = !!el.querySelector('img');
-        const txt = (el.textContent||'').trim();
-        return hasImg && txt.length > 0 && /team|fc|sc|united|city|cf|club/i.test(txt);
-      });
-      const keepImg = teamLine ? teamLine.querySelector('img') : null;
-
-      // Remove or hide all other images that look like team logos inside the player page
-      const allImgs = container.querySelectorAll('img');
-      allImgs.forEach(img => {
-        if (keepImg && img === keepImg) return;
-        // if image is small logo-like or inside stat cards or watermark areas, hide it
-        if (img.width <= 64 || img.height <= 64 || img.closest('.stat-card') || img.style.opacity === '0.1' || img.style.opacity === '0.05') {
-          img.style.display = 'none';
-        }
-      });
-    }catch(e){}
-  }
-  // Attach after viewPlayer renders
-  (function waitPatch(){
-    if (typeof window.viewPlayer !== 'function') return setTimeout(waitPatch, 300);
-    const _orig = window.viewPlayer;
-    window.viewPlayer = function(){
-      const r = _orig.apply(this, arguments);
-      setTimeout(stripExtraTeamLogos, 0);
-      return r;
-    };
-  })();
-})();
-</script>
-
-
-<!-- ADD-ONLY PATCH: sheets-only suggestions + player logos cleanup + appearances + last-5 -->
-<script>
-(function(){
-  // Simple CSV loader (Papa present in app)
-  function parseCsv(url, header=false){
-    return new Promise(res=>Papa.parse(url,{download:true,header:!!header,complete:r=>res(r.data||[]),error:()=>res([])}));
-  }
-
-  // ------------------ SUGGESTIONS: from sheets only (goals/assists/cleanSheets) ------------------
-  async function buildSuggestionIndex(){
-    const out = [];
-    const leagues = Object.keys(window.STATS_URLS||{});
-    for (const lg of leagues){
-      const src = STATS_URLS[lg]||{};
-      async function take(url){
-        if (!url) return;
-        const rows = await parseCsv(url, false);
-        rows.forEach((row,i)=>{
-          if (!Array.isArray(row)) return;
-          const name = (row[0]||'').trim(); // A=Player
-          const team = (row[2]||'').trim(); // C=Team
-          if (!name || (i===0 && name.toLowerCase()==='player')) return;
-          out.push({ name, team, league: lg });
-        });
-      }
-      await take(src.goals);
-      await take(src.assists);
-      await take(src.cleanSheets);
-    }
-    return out;
-  }
-
-  async function handleSuggest(){
-    const input = document.getElementById('globalSearch');
-    const box = document.getElementById('globalSearchSuggestions');
-    if (!input || !box) return;
-    const q = (input.value||'').trim().toLowerCase();
-    if (q.length < 2){ box.classList.add('hidden'); box.innerHTML=''; return; }
-
-    if (!window.__sheetSuggest){
-      window.__sheetSuggest = await buildSuggestionIndex();
-    }
-    const hits = window.__sheetSuggest.filter(p=> (p.name && p.name.toLowerCase().includes(q)) || (p.team && p.team.toLowerCase().includes(q))).slice(0,10);
-    box.innerHTML = hits.map(p => {
-      const logo = (typeof getLogo==='function') ? getLogo(p.team) : '';
-      return '<div class="search-suggestion" data-name="'+(p.name||'').replace(/"/g,'&quot;')+'" onclick="try{document.getElementById(\'globalSearch\').value=this.getAttribute(\'data-name\');searchPlayer({key:\'Enter\'},\'globalSearch\');}catch(e){};document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">'
-             + '<span class="font-bold">'+p.name+'</span>'
-             + '<span class="text-[10px] text-zinc-500"> ('+(p.team||'')+')</span>'
-             + (logo?'<img src="'+logo+'" class="w-4 h-4 ml-auto">':'')
-             + '</div>';
-    }).join('');
-    box.classList.remove('hidden');
-  }
-
-  function bindSuggestions(){
-    const input = document.getElementById('globalSearch');
-    if (!input || input.__boundAddOnly) return;
-    input.addEventListener('input', handleSuggest);
-    input.addEventListener('focus', handleSuggest);
-    document.addEventListener('click', (e)=>{
-      const box = document.getElementById('globalSearchSuggestions');
-      if (!box) return;
-      if (!box.contains(e.target) && e.target !== input) box.classList.add('hidden');
-    });
-    input.__boundAddOnly = true;
-  }
-
-  // ------------------ PLAYER PAGE: logos cleanup + appearances + last-5 ratings ------------------
-  async function lookupAppsFromAvgSheets(name){
-    const leagues = Object.keys(window.STATS_URLS||{});
-    for (const lg of leagues){
-      const src = STATS_URLS[lg]||{}; if (!src.avgRatings) continue;
-      const rows = await parseCsv(src.avgRatings, false);
-      for (const row of rows){
-        if (!Array.isArray(row)) continue;
-        const n = (row[8]||'').trim(); // Column I = Player Name
-        const apps = parseInt(row[5], 10); // Column F = Appearances
-        if (!n || Number.isNaN(apps)) continue;
-        if (n.toLowerCase() === name.toLowerCase()) return apps;
-      }
-    }
-    return null;
-  }
-
-  async function getLast5FromRatingsLog(name){
-    const leagues = Object.keys(window.STATS_URLS||{});
-    for (const lg of leagues){
-      const src = STATS_URLS[lg]||{}; if (!src.ratingsLog) continue;
-      const rows = await parseCsv(src.ratingsLog, true);
-      const list = [];
-      rows.forEach(r=>{
-        const n = r.Player || r.Name || r['Player Name'] || '';
-        if (!n || n.trim().toLowerCase() !== name.toLowerCase()) return;
-        const rating = parseFloat(r.Rating || r.Score || r['Match Rating'] || '');
-        if (Number.isNaN(rating)) return;
-        const date = r.Date || r.MatchDate || r.Round || r['Date'] || '';
-        const opponent = r.Opponent || r.Opp || r['Opponent'] || '';
-        list.push({ date, opponent, rating });
-      });
-      if (list.length) return list.slice(-5); // earliest->latest already in sheet order
-    }
-    return [];
-  }
-
-  function keepOnlyTeamLogo(container){
-    // Identify the team line as the element that has both text and an <img> and likely shows the team
-    const teamLine = Array.from(container.querySelectorAll('p, div, span')).find(el => el.querySelector && el.querySelector('img') && /team|fc|sc|united|city|cf|club/i.test((el.textContent||'')));
-    const keep = teamLine ? teamLine.querySelector('img') : null;
-    const allImgs = container.querySelectorAll('img');
-    allImgs.forEach(img => {
-      if (keep && img === keep) return; // keep only this one
-      // if the img src matches a team logo (likely returned by getLogo), or it's in stat cards/watermark, hide it
-      if (img.closest('.stat-card') || (img.width && img.width <= 64) || (img.height && img.height <= 64)) {
-        img.classList.add('hide-team-logo');
-      }
-      // also hide any translucent watermark logos
-      const op = parseFloat(getComputedStyle(img).opacity||'1');
-      if (op < 0.5) img.classList.add('hide-team-logo');
-    });
-  }
-
-  async function augmentPlayerPage(){
-    const container = document.getElementById('content') || document.body;
-    const nameEl = container.querySelector('h2, h1');
-    if (!nameEl) return;
-    const playerName = (nameEl.textContent||'').trim();
-    if (!playerName) return;
-
-    keepOnlyTeamLogo(container);
-
-    // Insert appearances card directly *after* the Assists stat card
-    let assistsLabel = Array.from(container.querySelectorAll('.stat-card .text-xs')).find(el => /assists/i.test(el.textContent||''));
-    if (assistsLabel && !container.querySelector('#appsValue')){
-      const card = document.createElement('div');
-      card.className = 'stat-card text-center relative overflow-hidden';
-      card.innerHTML = '<div class="text-3xl font-black text-[#00ff85]" id="appsValue">…</div><div class="text-xs text-zinc-500 mt-1"># of Games (Appearances)</div>';
-      const anchor = assistsLabel.closest('.stat-card');
-      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(card, anchor.nextSibling);
-      else container.appendChild(card);
-    }
-
-    // Ensure Last 5 ratings block exists
-    if (!container.querySelector('#last5Ratings')){
-      const wrap = document.createElement('div');
-      wrap.className = 'stat-card';
-      wrap.innerHTML = '<h3 class="text-sm font-black text-[#00ff85] mb-3">Last 5 Match Ratings</h3><div id="last5Ratings" class="space-y-2 text-sm"></div>';
-      container.appendChild(wrap);
-    }
-
-    // Fill appearances
-    try {
-      const apps = await lookupAppsFromAvgSheets(playerName);
-      const appsEl = container.querySelector('#appsValue');
-      if (appsEl) appsEl.textContent = (apps!=null) ? apps : '0';
-    } catch(e){}
-
-    // Fill last 5
-    try {
-      const last5 = await getLast5FromRatingsLog(playerName);
-      const box = container.querySelector('#last5Ratings');
-      if (box){
-        if (!last5.length) box.innerHTML = '<div class="text-zinc-500">No recent ratings</div>';
-        else box.innerHTML = last5.map(r => {
-          const when = r.date || ''; const opp = r.opponent ? (' vs ' + r.opponent) : ''; const val = (r.rating!=null)? Number(r.rating).toFixed(2) : '—';
-          return '<div class="flex items-center justify-between border-b border-zinc-800/40 pb-2"><span class="text-zinc-400">' + when + opp + '</span><span class="font-mono font-bold">' + val + '</span></div>';
-        }).join('');
-      }
-    } catch(e){}
-  }
-
-  function wrapViewPlayer(){
-    if (window.__addonWrapped_v5b) return;
-    if (typeof window.viewPlayer !== 'function'){ setTimeout(wrapViewPlayer, 500); return; }
-    const _orig = window.viewPlayer;
-    window.viewPlayer = function(){
-      const r = _orig.apply(this, arguments);
-      setTimeout(augmentPlayerPage, 0);
-      return r;
-    };
-    window.__addonWrapped_v5b = true;
-  }
-
-  // Bind
-  if (document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', function(){ bindSuggestions(); wrapViewPlayer(); });
-  } else { bindSuggestions(); wrapViewPlayer(); }
-  setTimeout(function(){ bindSuggestions(); wrapViewPlayer(); }, 800);
-})();
-</script>
-
-
-<!-- ADD-ONLY: sheets-only suggestions + individual player enhancements (no LB), safe handlers -->
-<script>
-(function(){
-  // ---- CSV helper (PapaParse is already included by the app) ----
-  function parseCsv(url, header=false){
-    return new Promise(function(res){ Papa.parse(url,{download:true,header:!!header,complete:function(r){res(r.data||[])},error:function(){res([])}}); });
-  }
-
-  // ---- Build a per-league cache strictly from the required sheets ----
-  const sheetsCache = { byLeague: {}, builtSuggest: null };
-
-  async function ensureLeague(league){
-    if (sheetsCache.byLeague[league]) return sheetsCache.byLeague[league];
-    const src = (window.STATS_URLS && STATS_URLS[league]) ? STATS_URLS[league] : null;
-    const info = sheetsCache.byLeague[league] = { players:new Map(), apps:new Map(), ratings:new Map() };
-    if (!src) return info;
-
-    async function addFromList(url){
-      if (!url) return;
-      const rows = await parseCsv(url, false);
-      for (let i=0;i<rows.length;i++){
-        const row = rows[i];
-        if (!Array.isArray(row)) continue;
-        const name = (row[0]||'').trim(); // A=Player
-        const team = (row[2]||'').trim(); // C=Team
-        if (!name || (i===0 && name.toLowerCase()==='player')) continue;
-        if (!info.players.has(name)) info.players.set(name, new Set());
-        if (team) info.players.get(name).add(team);
-      }
-    }
-    await addFromList(src.goals);
-    await addFromList(src.assists);
-    await addFromList(src.cleanSheets);
-
-    if (src.avgRatings){
-      const avg = await parseCsv(src.avgRatings, false);
-      avg.forEach(function(row){
-        if (!Array.isArray(row)) return;
-        const name = (row[8]||'').trim();      // I = Player
-        const apps = parseInt(row[5],10);      // F = Appearances
-        if (!name || Number.isNaN(apps)) return;
-        info.apps.set(name, apps);
-      });
-    }
-
-    if (src.ratingsLog){
-      const rl = await parseCsv(src.ratingsLog, true);
-      rl.forEach(function(r){
-        if (!r) return;
-        const name = (r.Player || r.Name || r['Player Name'] || '').trim();
-        if (!name) return;
-        const rating = parseFloat(r.Rating || r.Score || r['Match Rating'] || '');
-        if (Number.isNaN(rating)) return;
-        const date = (r.Date || r.MatchDate || r.Round || r['Date'] || '').trim();
-        const opponent = (r.Opponent || r.Opp || r['Opponent'] || '').trim();
-        if (!info.ratings.has(name)) info.ratings.set(name, []);
-        info.ratings.get(name).push({ date: date, opponent: opponent, rating: rating });
-      });
-    }
-    return info;
-  }
-
-  async function ensureAllLeagues(){
-    const leagues = Object.keys(window.STATS_URLS || {});
-    for (var i=0;i<leagues.length;i++){ await ensureLeague(leagues[i]); }
-  }
-
-  // ---- Suggestions (no LB). We build DOM nodes and attach listeners (no inline try/catch). ----
-  async function showSuggestions(){
-    var input = document.getElementById('globalSearch');
-    var box = document.getElementById('globalSearchSuggestions');
-    if (!input || !box) return;
-    var q = (input.value||'').trim().toLowerCase();
-    if (q.length < 2){ box.classList.add('hidden'); box.innerHTML=''; return; }
-
-    if (!sheetsCache.builtSuggest){
-      await ensureAllLeagues();
-      var arr = [];
-      Object.keys(sheetsCache.byLeague).forEach(function(lg){
-        var idx = sheetsCache.byLeague[lg];
-        idx.players.forEach(function(teams, name){
-          var team = teams && teams.size ? Array.from(teams)[0] : '';
-          arr.push({ name:name, team:team, league:lg });
-        });
-      });
-      sheetsCache.builtSuggest = arr;
-    }
-
-    var hits = sheetsCache.builtSuggest.filter(function(p){
-      return (p.name && p.name.toLowerCase().includes(q)) || (p.team && p.team.toLowerCase().includes(q));
-    }).slice(0, 10);
-
-    box.innerHTML = '';
-    hits.forEach(function(p){
-      var div = document.createElement('div');
-      div.className = 'search-suggestion';
-      var logo = (typeof getLogo==='function') ? getLogo(p.team) : '';
-      div.innerHTML = '<span class="font-bold">'+p.name+'</span>' +
-                      '<span class="text-[10px] text-zinc-500"> ('+(p.team||'')+')</span>' +
-                      (logo ? '<img src="'+logo+'" class="w-4 h-4 ml-auto">' : '');
-      div.addEventListener('click', function(){
-        try {
-          var el = document.getElementById('globalSearch');
-          if (el) el.value = p.name;
-          if (typeof searchPlayer === 'function') searchPlayer({ key: 'Enter' }, 'globalSearch');
-        } finally {
-          box.classList.add('hidden');
-        }
-      });
-      box.appendChild(div);
-    });
-    box.classList.remove('hidden');
-  }
-
-  function bindSuggestions(){
-    var input = document.getElementById('globalSearch');
-    if (!input || input.__sheetsSuggestBound) return;
-    input.addEventListener('input', showSuggestions);
-    input.addEventListener('focus', showSuggestions);
-    document.addEventListener('click', function(e){
-      var box = document.getElementById('globalSearchSuggestions');
-      if (!box || !input) return;
-      if (!box.contains(e.target) && e.target !== input) box.classList.add('hidden');
-    });
-    input.__sheetsSuggestBound = true;
-  }
-
-  // ---- Individual player page: hide duplicate logos; add #Apps (avg I/F) and Last 5 (ratings log) ----
-  function hideExtraTeamLogos(){
-    var container = document.getElementById('content') || document.body;
-    var lines = Array.prototype.slice.call(container.querySelectorAll('p, div, span'));
-    var teamLine = lines.find(function(el){ return el.querySelector && el.querySelector('img') && /team|fc|sc|united|city|cf|club/i.test((el.textContent||'')); });
-    var keep = teamLine ? teamLine.querySelector('img') : null;
-    Array.prototype.slice.call(container.querySelectorAll('img')).forEach(function(img){
-      if (keep && img === keep) return;
-      if (img.closest('.stat-card') || (img.width && img.width <= 64) || (img.height && img.height <= 64)) img.classList.add('hide-team-logo');
-      var op = parseFloat((getComputedStyle(img).opacity||'1')); if (op < 0.5) img.classList.add('hide-team-logo');
-    });
-  }
-
-  async function fillAppsAndRatingsFor(name){
-    await ensureAllLeagues();
-    // appearances: scan avg ratings per-league (I=player, F=apps)
-    var apps = null, last5 = [];
-    Object.keys(sheetsCache.byLeague).forEach(function(lg){
-      var idx = sheetsCache.byLeague[lg];
-      if (apps===null && idx.apps.has(name)) apps = idx.apps.get(name);
-      if (!last5.length && idx.ratings.has(name)) last5 = idx.ratings.get(name);
-    });
-    var appsEl = document.getElementById('appsValue');
-    if (appsEl) appsEl.textContent = (apps!=null ? apps : 0);
-    var box = document.getElementById('last5Ratings');
-    if (box){
-      var list = (last5||[]).slice(-5);
-      if (!list.length) box.innerHTML = '<div class="text-zinc-500">No recent ratings</div>';
-      else box.innerHTML = list.map(function(r){
-        var when = r.date || ''; var opp = r.opponent ? (' vs ' + r.opponent) : ''; var val = (r.rating!=null)? Number(r.rating).toFixed(2) : '—';
-        return '<div class="flex items-center justify-between border-b border-zinc-800/40 pb-2"><span class="text-zinc-400">' + when + opp + '</span><span class="font-mono font-bold">' + val + '</span></div>';
-      }).join('');
-    }
-  }
-
-  function ensureAppsAndRatingsUI(){
-    var container = document.getElementById('content') || document.body;
-    var assistsLabel = Array.prototype.slice.call(container.querySelectorAll('.stat-card .text-xs')).find(function(el){ return /assists/i.test(el.textContent||''); });
-    if (assistsLabel && !container.querySelector('#appsValue')){
-      var card = document.createElement('div');
-      card.className = 'stat-card text-center relative overflow-hidden';
-      card.innerHTML = '<div class="text-3xl font-black text-[#00ff85]" id="appsValue">0</div><div class="text-xs text-zinc-500 mt-1"># of Games (Appearances)</div>';
-      var anchor = assistsLabel.closest('.stat-card');
-      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(card, anchor.nextSibling); else container.appendChild(card);
-    }
-    if (!container.querySelector('#last5Ratings')){
-      var wrap = document.createElement('div');
-      wrap.className = 'stat-card';
-      wrap.innerHTML = '<h3 class="text-sm font-black text-[#00ff85] mb-3">Last 5 Match Ratings</h3><div id="last5Ratings" class="space-y-2 text-sm"></div>';
-      container.appendChild(wrap);
-    }
-  }
-
-  function wrapViewPlayer(){
-    if (window.__sheetsEnhanceWrapped) return;
-    if (typeof window.viewPlayer !== 'function'){ setTimeout(wrapViewPlayer, 400); return; }
-    var _orig = window.viewPlayer;
-    window.viewPlayer = function(){
-      var out = _orig.apply(this, arguments);
-      setTimeout(function(){
-        try {
-          hideExtraTeamLogos();
-          ensureAppsAndRatingsUI();
-          var container = document.getElementById('content') || document.body;
-          var nameEl = container.querySelector('h2, h1');
-          var name = nameEl ? (nameEl.textContent||'').trim() : '';
-          if (name) fillAppsAndRatingsFor(name);
-        } catch(e){}
-      }, 0);
-      return out;
-    };
-    window.__sheetsEnhanceWrapped = true;
-  }
-
-  function start(){
-    bindSuggestions();
-    wrapViewPlayer();
-  }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
-  else start();
-  setTimeout(start, 1000); // in case DOM mutated
-})();
-</script>
-
 </body>
 </html>
