@@ -1137,120 +1137,144 @@ function _resolvePlayerKeyForEntry(teamIndex, league, team, name) {
 }
 
 async function loadStats(league) {
-    if (!STATS_URLS[league].leaderboard) {
-        statsData[league] = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {}, loaded: true };
-        return;
-    }
+    if (league === 'COMBINED') return;
 
-    if (statsData[league].loaded) return;
+    if (statsData[league] && statsData[league].loaded) return;
 
-    const data = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {} };
+    const urls = STATS_URLS[league] || {};
+    const data = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {}, loaded: false };
+
+    const fetchCsv = (url) => new Promise((resolve) => {
+        if (!url) return resolve([]);
+        Papa.parse(url, {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: (res) => resolve(res.data || []),
+            error: () => resolve([])
+        });
+    });
+
+    const rowToTriplet = (row) => {
+        if (!row) return { name: '', value: '', team: '' };
+
+        // Papa header:true returns objects. If the sheet has no headers, keys may still be created; we rely on value order.
+        if (Array.isArray(row)) {
+            return {
+                name: (row[0] || '').toString().trim(),
+                value: (row[1] || '').toString().trim(),
+                team: (row[2] || '').toString().trim()
+            };
+        }
+
+        if (typeof row === 'object') {
+            const vals = Object.values(row).map(v => (v == null ? '' : v).toString().trim());
+            return { name: (vals[0] || ''), value: (vals[1] || ''), team: (vals[2] || '') };
+        }
+
+        return { name: '', value: '', team: '' };
+    };
+
+    const ensurePlayer = (name, team) => {
+        const nm = (name || '').toString().trim();
+        const tm = canonicalTeamName(team || '');
+        if (!nm) return null;
+
+        const key = _makePlayerKey(league, tm, nm);
+        if (!data.players[key]) {
+            data.players[key] = {
+                key,
+                league,
+                name: nm,
+                team: tm,
+                goals: 0,
+                assists: 0,
+                cs: 0,
+                value: 0,          // avg rating
+                matches: 0,        // appearances (# of ratings in ratings log)
+                last5Ratings: [],
+                ratingsAll: []
+            };
+        }
+        return key;
+    };
 
     try {
-        const leaderboardData = await new Promise((resolve) => {
-            Papa.parse(STATS_URLS[league].leaderboard, {
-                download: true,
-                complete: (r) => resolve(r.data),
-                error: () => resolve([])
+        const [goalsRows, assistsRows, csRows, ratingsLogRows, avgRatingsRows] = await Promise.all([
+            fetchCsv(urls.goals),
+            fetchCsv(urls.assists),
+            fetchCsv(urls.cleanSheets),
+            fetchCsv(urls.ratingsLog),
+            fetchCsv(urls.avgRatings)
+        ]);
+
+        // Goals / Assists / Clean Sheets: Player (A), Stat (B), Team (C)
+        const ingestStat = (rows, kind) => {
+            (rows || []).forEach(r => {
+                const t = rowToTriplet(r);
+                const nm = t.name;
+                const tm = t.team;
+                const val = parseInt((t.value || '0').toString().replace(/[^0-9-]/g, ''), 10);
+                if (!nm || !tm || isNaN(val)) return;
+
+                const k = ensurePlayer(nm, tm);
+                if (!k) return;
+
+                if (kind === 'goals') data.players[k].goals = val;
+                if (kind === 'assists') data.players[k].assists = val;
+                if (kind === 'cs') data.players[k].cs = val;
+
+                const arr = kind === 'goals' ? data.goals : (kind === 'assists' ? data.assists : data.cleanSheets);
+                arr.push({ key: k, name: data.players[k].name, team: data.players[k].team, value: val, league });
             });
+        };
+
+        ingestStat(goalsRows, 'goals');
+        ingestStat(assistsRows, 'assists');
+        ingestStat(csRows, 'cs');
+
+        // Ratings log: Player (A), Rating (B), Team (C)
+        // Sheet order is earliest at top, latest at bottom.
+        (ratingsLogRows || []).forEach(r => {
+            const t = rowToTriplet(r);
+            const nm = t.name;
+            const tm = t.team;
+            const rating = parseFloat((t.value || '').toString().replace(/[^0-9.\-]/g, ''));
+            if (!nm || !tm || isNaN(rating)) return;
+
+            const k = ensurePlayer(nm, tm);
+            if (!k) return;
+
+            data.players[k].ratingsAll.push(rating);
         });
 
-        leaderboardData.forEach((row, i) => {
-            if (i === 0) return;
-            if (row[1] && row[2]) data.goals.push({ rank: row[0], name: row[1], value: row[2], team: row[3], league });
-            if (row[7] && row[8]) data.assists.push({ rank: row[6], name: row[7], value: row[8], team: row[9], league });
-            if (row[13] && row[14]) data.cleanSheets.push({ rank: row[12], name: row[13], value: row[14], team: row[15], league });
+        // Avg ratings: Player (A), Avg (B), Team (C)
+        (avgRatingsRows || []).forEach(r => {
+            const t = rowToTriplet(r);
+            const nm = t.name;
+            const tm = t.team;
+            const avg = parseFloat((t.value || '').toString().replace(/[^0-9.\-]/g, ''));
+            if (!nm || !tm || isNaN(avg)) return;
+
+            const k = ensurePlayer(nm, tm);
+            if (!k) return;
+
+            data.players[k].value = avg;
+            data.ratings.push({ key: k, name: data.players[k].name, team: data.players[k].team, value: avg, league });
         });
 
-        if (STATS_URLS[league].avgRatings) {
-            const ratingsData = await new Promise((resolve) => {
-                Papa.parse(STATS_URLS[league].avgRatings, {
-                    download: true,
-                    complete: (r) => resolve(r.data),
-                    error: () => resolve([])
-                });
-            });
+        // Finalize appearances + last 5 ratings
+        Object.values(data.players).forEach(p => {
+            const all = Array.isArray(p.ratingsAll) ? p.ratingsAll : [];
+            p.matches = all.length;
+            p.last5Ratings = all.slice(Math.max(0, all.length - 5));
+        });
 
-            ratingsData.forEach((row, i) => {
-                if (i === 0) return;
-                if (row[8] && row[10]) {
-                    const name = row[8];
-                    const team = row[11];
-                    const teamKey = canonicalTeamName(team);
-                    const key = _makePlayerKey(league, teamKey, name);
-
-                    const photoUrl = _extractPhotoUrlFromRow(row);
-
-                    data.ratings.push({
-                        rank: row[7],
-                        name,
-                        position: row[9],
-                        value: row[10],
-                        team,
-                        matches: row[12],
-                        league,
-                        key
-                    });
-
-                    data.players[key] = {
-                        key,
-                        league,
-                        name,
-                        team,
-                        teamKey,
-                        position: row[9],
-                        goals: 0,
-                        assists: 0,
-                        cs: 0,
-                        avgRating: row[10],
-                        matches: row[12],
-                        recentRatings: [],
-                        photoUrl
-                    };
-                }
-            });
-        }
-
-        const teamIndex = _buildTeamPlayerIndex(data.players);
-
-        function ensurePlayerForEntry(entry) {
-            const resolvedKey = _resolvePlayerKeyForEntry(teamIndex, league, entry.team, entry.name);
-            if (resolvedKey) return resolvedKey;
-
-            const teamKey = canonicalTeamName(entry.team);
-            const key = _makePlayerKey(league, teamKey, entry.name);
-
-            if (!data.players[key]) {
-                data.players[key] = {
-                    key,
-                    league,
-                    name: entry.name,
-                    team: entry.team,
-                    teamKey,
-                    position: '',
-                    goals: 0,
-                    assists: 0,
-                    cs: 0,
-                    avgRating: 0,
-                    matches: 0,
-                    recentRatings: [],
-                    photoUrl: ''
-                };
-
-                const tNorm = _normMatch(teamKey);
-                if (!teamIndex[tNorm]) teamIndex[tNorm] = { keys: [], byExactName: {}, keyToNameNorm: {} };
-                teamIndex[tNorm].keys.push(key);
-                const nNorm = _normMatch(entry.name);
-                if (!teamIndex[tNorm].byExactName[nNorm]) teamIndex[tNorm].byExactName[nNorm] = key;
-                teamIndex[tNorm].keyToNameNorm[key] = nNorm;
-            }
-
-            return key;
-        }
-
-        data.goals.forEach(g => { const k = ensurePlayerForEntry(g); g.key = k; if (data.players[k]) data.players[k].goals = g.value; });
-        data.assists.forEach(a => { const k = ensurePlayerForEntry(a); a.key = k; if (data.players[k]) data.players[k].assists = a.value; });
-        data.cleanSheets.forEach(c => { const k = ensurePlayerForEntry(c); c.key = k; if (data.players[k]) data.players[k].cs = c.value; });
+        // Sort leaderboards
+        data.goals.sort((a, b) => (b.value || 0) - (a.value || 0));
+        data.assists.sort((a, b) => (b.value || 0) - (a.value || 0));
+        data.cleanSheets.sort((a, b) => (b.value || 0) - (a.value || 0));
+        data.ratings.sort((a, b) => parseFloat(b.value || 0) - parseFloat(a.value || 0));
 
         statsData[league] = { ...data, loaded: true };
     } catch (e) {
@@ -1483,9 +1507,7 @@ async function viewPlayer(playerKeyOrName) {
         return;
     }
 
-    const isGK = playerData.position && playerData.position.toLowerCase().includes('gk');
     const photoUrl = (playerData.photoUrl || '').toString().trim();
-    const teamEmoji = getTeamEmoji(playerData.team);
 
     content.innerHTML = `
         <div class="space-y-6">
@@ -1495,63 +1517,55 @@ async function viewPlayer(playerKeyOrName) {
                     <div id="playerAvatarFallback" class="player-avatar">${getPlayerInitials(playerData.name)}</div>
                 </div>
                 <div class="text-center">
-                    <div class="flex items-center justify-center gap-2">
-                        <img src="${getLogo(playerData.team)}" class="w-5 h-5 object-contain">
-                        <h2 class="text-2xl font-black">${playerData.name}</h2>
-                    </div>
+                    <h2 class="text-2xl font-black">${playerData.name}</h2>
                     <p class="text-zinc-500 text-sm flex items-center justify-center gap-2">
                         <img src="${getLogo(playerData.team)}" class="w-4 h-4 object-contain">
                         <span class="cursor-pointer hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(playerData.team)}', '${playerData.league}')">${playerData.team}</span>
                     </p>
-                    <p class="text-zinc-600 text-xs mt-1">${playerData.position || 'N/A'}</p>
+                    <p class="text-zinc-600 text-xs mt-1">${playerData.position || 'N/A'} • ${playerData.matches || 0} apps</p>
                 </div>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
                 <div class="stat-card text-center relative overflow-hidden">
-                    <img src="${getLogo(playerData.team)}" class="absolute right-2 bottom-2 w-12 h-12 object-contain opacity-10 pointer-events-none">
                     <div class="text-3xl font-black text-[#00ff85]">${playerData.goals || 0}</div>
                     <div class="text-xs text-zinc-500 mt-1">GOALS</div>
                 </div>
                 <div class="stat-card text-center relative overflow-hidden">
-                    <img src="${getLogo(playerData.team)}" class="absolute right-2 bottom-2 w-12 h-12 object-contain opacity-10 pointer-events-none">
                     <div class="text-3xl font-black text-[#00ff85]">${playerData.assists || 0}</div>
                     <div class="text-xs text-zinc-500 mt-1">ASSISTS</div>
                 </div>
-                ${isGK ? `
                 <div class="stat-card text-center relative overflow-hidden">
-                    <img src="${getLogo(playerData.team)}" class="absolute right-2 bottom-2 w-12 h-12 object-contain opacity-10 pointer-events-none">
                     <div class="text-3xl font-black text-[#00ff85]">${playerData.cs || 0}</div>
                     <div class="text-xs text-zinc-500 mt-1">CLEAN SHEETS</div>
                 </div>
-                ` : ''}
                 <div class="stat-card text-center relative overflow-hidden">
-                    <img src="${getLogo(playerData.team)}" class="absolute right-2 bottom-2 w-12 h-12 object-contain opacity-10 pointer-events-none">
-                    <div class="text-3xl font-black text-[#00ff85]">${parseFloat(playerData.avgRating || 0).toFixed(2)}</div>
+                    <div class="text-3xl font-black text-[#00ff85]">${(playerData.value || 0).toFixed ? parseFloat(playerData.value || 0).toFixed(2) : (playerData.value || 0)}</div>
                     <div class="text-xs text-zinc-500 mt-1">AVG RATING</div>
                 </div>
             </div>
 
-            ${playerData.recentRatings && playerData.recentRatings.length > 0 ? `
             <div class="stat-card">
-                <h3 class="text-sm font-black text-[#00ff85] mb-4">LAST 5 RATINGS</h3>
-                <div class="flex gap-2">
-                    ${playerData.recentRatings.map(r => `
-                        <div class="flex-1 bg-zinc-900 rounded-lg py-3 text-center">
-                            <div class="font-black text-[#00ff85]">${parseFloat(r).toFixed(1)}</div>
-                        </div>
-                    `).join('')}
+                <h3 class="text-sm font-black text-[#00ff85]">LAST 5 MATCH RATINGS</h3>
+                <div class="flex flex-wrap gap-2 mt-3">
+                    ${(playerData.last5Ratings || []).length
+                        ? (playerData.last5Ratings || []).map(r => `<span class="px-2 py-1 rounded-full bg-zinc-800 text-[10px] font-black border border-zinc-700">${parseFloat(r).toFixed(2)}</span>`).join('')
+                        : `<span class="text-[10px] text-zinc-500">No recent match ratings</span>`}
                 </div>
+                <p class="text-[10px] text-zinc-500 mt-2">Latest is the last chip (sheet order).</p>
             </div>
-            ` : ''}
         </div>
     `;
 
-    if (photoUrl) {
-        const imgEl = document.getElementById('playerPhoto');
-        const fbEl = document.getElementById('playerAvatarFallback');
-        loadPlayerPhotoToElement(photoUrl, imgEl, fbEl);
-    }
+    try {
+        const img = document.getElementById('playerPhoto');
+        const fallback = document.getElementById('playerAvatarFallback');
+        if (img && fallback && photoUrl) {
+            img.src = photoUrl;
+            img.onload = () => { img.style.display = 'block'; fallback.style.display = 'none'; };
+            img.onerror = () => { img.style.display = 'none'; fallback.style.display = 'flex'; };
+        }
+    } catch (e) {}
 }
 
 async function viewTeam(teamName, league) {
