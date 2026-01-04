@@ -85,7 +85,7 @@
     <header class="p-4">
         <div class="flex items-center justify-between gap-3 relative">
             <h1 class="text-xl font-black italic uppercase cursor-pointer select-none" onclick="switchTab('hub'); jumpToToday();">Score<span class="text-[#00ff85]">Hub</span></h1>
-            <input type="text" id="globalSearch" class="header-search-input" placeholder="Search teams or players..." onkeyup="searchPlayer(event)" oninput="queueSuggestions('globalSearch', 'globalSearchSuggestions')" onkeydown="handleSearchEnter(event, 'globalSearch', 'globalSearchSuggestions')" onfocus="queueSuggestions('globalSearch', 'globalSearchSuggestions')">
+            <input type="text" id="globalSearch" class="header-search-input" placeholder="Search teams or players..." onkeyup="searchPlayer(event)" oninput="queueSuggestions('globalSearch', 'globalSearchSuggestions')" onfocus="queueSuggestions('globalSearch', 'globalSearchSuggestions')">
             <div id="globalSearchSuggestions" class="search-suggestions hidden"></div>
         </div>
     </header>
@@ -249,72 +249,6 @@ function _normMatch(s) {
         .replace(/[^a-z0-9]+/g, ' ')
         .trim()
         .replace(/\s+/g, ' ');
-}
-
-
-function _levenshtein(a, b, maxDist = 3) {
-    a = _normMatch(a); b = _normMatch(b);
-    if (!a || !b) return 99;
-    if (a === b) return 0;
-    const la = a.length, lb = b.length;
-    if (Math.abs(la - lb) > maxDist) return 99;
-
-    // DP with early exit
-    const prev = new Array(lb + 1);
-    const cur = new Array(lb + 1);
-    for (let j = 0; j <= lb; j++) prev[j] = j;
-
-    for (let i = 1; i <= la; i++) {
-        cur[0] = i;
-        let rowMin = cur[0];
-        const ca = a.charCodeAt(i - 1);
-        for (let j = 1; j <= lb; j++) {
-            const cost = (ca === b.charCodeAt(j - 1)) ? 0 : 1;
-            cur[j] = Math.min(
-                prev[j] + 1,
-                cur[j - 1] + 1,
-                prev[j - 1] + cost
-            );
-            if (cur[j] < rowMin) rowMin = cur[j];
-        }
-        if (rowMin > maxDist) return 99;
-        for (let j = 0; j <= lb; j++) prev[j] = cur[j];
-    }
-    return prev[lb];
-}
-
-function _playerNameScore(query, candidateName) {
-    // Higher = better. 0 = no match.
-    const q = _normMatch(query);
-    const n = _normMatch(candidateName);
-    if (!q || !n) return 0;
-
-    // direct substring (handles last-name only like "messi")
-    if (n.includes(q)) return 100;
-
-    const qParts = q.split(' ').filter(Boolean);
-    const nParts = n.split(' ').filter(Boolean);
-    if (!qParts.length || !nParts.length) return 0;
-
-    // token overlap
-    let overlap = 0;
-    qParts.forEach(tp => { if (nParts.includes(tp)) overlap++; });
-    if (overlap > 0) return 70 + overlap * 5;
-
-    // first+last shorthand: "k de bruyne" vs "kevin de bruyne"
-    if (qParts.length === 2 && nParts.length >= 2) {
-        const firstInit = qParts[0][0];
-        const last = qParts[1];
-        const candLast = nParts[nParts.length - 1];
-        if (last === candLast && firstInit === nParts[0][0]) return 65;
-    }
-
-    // fuzzy distance on full string
-    const maxDist = (q.length <= 6) ? 1 : (q.length <= 10 ? 2 : 3);
-    const d = _levenshtein(q, n, maxDist);
-    if (d !== 99) return 55 - d * 8;
-
-    return 0;
 }
 
 const TEAM_ALIASES = {
@@ -566,17 +500,6 @@ function _pickBestPhotoKey(normalizedName) {
     }
 
     return null;
-}
-
-
-function _playerSuggestAvatarHTML(playerName) {
-    const photo = getPlayerPhotoUrl(playerName, '');
-    const initials = getInitials(playerName) || '';
-    if (!photo) {
-        return `${avatar}`;
-    }
-    return `${avatar}
-    </div>`;
 }
 
 function getPlayerPhotoUrl(playerName, teamName) {
@@ -1363,31 +1286,13 @@ let __suggestTimer = null;
 let __searchIndexBuilt = false;
 let __searchIndex = { players: [], teams: [] };
 
-async function ensureSearchIndex(forceRebuild = false) {
-    // Build a search index for autosuggest. We *cannot* rely on a one-time build
-    // because loadStats() can finish parsing slightly later depending on network.
-    if (__searchIndexBuilt && !forceRebuild && __searchIndex.players.length > 0) return;
+async function ensureSearchIndex() {
+    if (__searchIndexBuilt) return;
 
-    // Ensure stats are loaded (these calls are safe to repeat).
     await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
 
-    // Wait briefly for player objects to populate (prevents caching an empty index).
-    const leagues = ['PREM','LALIGA','MLS'];
-    const hasAnyPlayers = () => leagues.some(lg => {
-        const obj = (statsData[lg] && statsData[lg].players) ? statsData[lg].players : {};
-        return Object.keys(obj).length > 0;
-    });
-
-    if (!hasAnyPlayers()) {
-        // Poll up to ~4 seconds
-        for (let i = 0; i < 20; i++) {
-            await new Promise(r => setTimeout(r, 200));
-            if (hasAnyPlayers()) break;
-        }
-    }
-
     const players = [];
-    leagues.forEach(lg => {
+    ['PREM','LALIGA','MLS'].forEach(lg => {
         const obj = (statsData[lg] && statsData[lg].players) ? statsData[lg].players : {};
         Object.keys(obj).forEach(k => {
             const p = obj[k];
@@ -1397,17 +1302,21 @@ async function ensureSearchIndex(forceRebuild = false) {
     });
 
     const teamRep = {};
-    // Use the global LOGOS keys as the authoritative list of teams.
-    Object.keys(LOGOS || {}).forEach(teamName => {
-        const canon = canonicalTeamName(teamName);
-        if (!teamRep[canon]) teamRep[canon] = { type:'team', name: canon };
-    });
+    const addTeam = (t, lgHint=null) => {
+        if (!t) return;
+        const k = canonicalTeamName(t);
+        if (!k) return;
+        if (!teamRep[k]) teamRep[k] = { type:'team', name: t, league: lgHint || _findTeamLeague(t) };
+    };
+
+    (allMatches || []).forEach(m => { addTeam(m.home, m.league); addTeam(m.away, m.league); });
+    Object.keys(LOGOS || {}).forEach(t => addTeam(t, _guessLeagueForTeam(t)));
+    Object.keys(TEAM_ALIASES || {}).forEach(a => addTeam(TEAM_ALIASES[a], _guessLeagueForTeam(TEAM_ALIASES[a])));
 
     __searchIndex.players = players;
     __searchIndex.teams = Object.values(teamRep);
     __searchIndexBuilt = true;
 }
-
 
 function queueSuggestions(inputId, boxId) {
     clearTimeout(__suggestTimer);
@@ -1427,21 +1336,16 @@ async function showSearchSuggestions(query, inputId, boxId) {
     if (q.length < 1) { box.classList.add('hidden'); box.innerHTML=''; return; }
 
     await ensureSearchIndex();
-    if (!__searchIndex.players || __searchIndex.players.length === 0) {
-        await ensureSearchIndex(true);
-    }
 
     const qn = _normMatch(q);
 
     const pMatches = __searchIndex.players
-        .map(p => ({...p, __score: _playerNameScore(q, p.name)}))
-        .filter(p => p.__score > 0)
-        .sort((a,b) => b.__score - a.__score)
+        .filter(p => _normMatch(p.name).includes(qn))
         .slice(0, 8);
 
     const tMatches = __searchIndex.teams
         .filter(t => _normMatch(t.name).includes(qn))
-        .slice(0, 8);
+        .slice(0, 6);
 
     const items = [...pMatches, ...tMatches].slice(0, 12);
 
@@ -1449,23 +1353,18 @@ async function showSearchSuggestions(query, inputId, boxId) {
 
     box.innerHTML = items.map(item => {
         if (item.type === 'player') {
-            const avatar = _playerSuggestAvatarHTML(item.name);
-            return `<div class="search-suggestion" onclick="selectSuggestion('player','${_jsEscapeSingle(item.name)}','${_jsEscapeSingle(item.name)}','${inputId}','${boxId}')">
-                <div class="flex items-center gap-2">
-                    ${avatar}
-                    <div class="flex flex-col leading-tight">
-                        <span class="font-bold">${item.name}</span>
-                        <span class="text-[11px] text-white/60">${item.team}</span>
-                    </div>
+            return `<div class="search-suggestion" onclick="selectSuggestion('player','${_jsEscapeSingle(item.key)}','${_jsEscapeSingle(item.name)}','${inputId}','${boxId}')">
+                <span class="text-[#00ff85] font-black">P</span>
+                <div class="flex flex-col leading-tight">
+                    <span class="font-bold">${item.name}</span>
+                    <span class="text-zinc-500 text-[10px]">${item.team}</span>
                 </div>
             </div>`;
         }
-        // team
         return `<div class="search-suggestion" onclick="selectSuggestion('team','${_jsEscapeSingle(item.name)}','${_jsEscapeSingle(item.name)}','${inputId}','${boxId}')">
+            <span class="text-[#00ff85] font-black">T</span>
             <div class="flex items-center gap-2">
-                <div class="w-6 h-6 rounded-full bg-[#0f1720] border border-[#30363d] flex items-center justify-center">
-                    <img src="${getLogo(item.name)}" class="w-4 h-4 object-contain" onerror="this.style.display='none';">
-                </div>
+                <img src="${getLogo(item.name)}" class="w-4 h-4 object-contain">
                 <span class="font-bold">${item.name}</span>
             </div>
         </div>`;
@@ -1482,52 +1381,6 @@ function selectSuggestion(type, value, displayName, inputId, boxId) {
 
     if (type === 'player') viewPlayer(value);
     else viewTeam(value, _findTeamLeague(value));
-}
-
-async function handleSearchEnter(e, inputId, boxId) {
-    if (!e || e.key !== 'Enter') return;
-    e.preventDefault();
-
-    const input = document.getElementById(inputId);
-    const box = document.getElementById(boxId);
-    const q = (input && input.value) ? input.value.trim() : '';
-    if (!q) { if (box) { box.classList.add('hidden'); box.innerHTML=''; } return; }
-
-    await ensureSearchIndex();
-
-    const qn = _normMatch(q);
-
-    // Prefer exact team match first
-    const exactTeam = (__searchIndex.teams || []).find(t => _normMatch(t.name) === qn);
-    if (exactTeam) { if (box) { box.classList.add('hidden'); box.innerHTML=''; } viewTeam(exactTeam.name, _findTeamLeague(exactTeam.name)); return; }
-
-    // Best player match (supports first OR last name and small typos)
-    let bestPlayer = null;
-    let bestScore = 0;
-    (__searchIndex.players || []).forEach(p => {
-        const sc = _playerNameScore(q, p.name);
-        if (sc > bestScore) { bestScore = sc; bestPlayer = p; }
-    });
-
-    if (bestPlayer && bestScore >= 55) { // threshold avoids random matches
-        if (box) { box.classList.add('hidden'); box.innerHTML=''; }
-        viewPlayer(bestPlayer.name);
-        return;
-    }
-
-    // Otherwise, fall back to best team partial match
-    const bestTeam = (__searchIndex.teams || [])
-        .map(t => ({t, sc: (_normMatch(t.name).includes(qn) ? 40 : 0)}))
-        .sort((a,b) => b.sc - a.sc)[0];
-
-    if (bestTeam && bestTeam.sc > 0) {
-        if (box) { box.classList.add('hidden'); box.innerHTML=''; }
-        viewTeam(bestTeam.t.name, _findTeamLeague(bestTeam.t.name));
-        return;
-    }
-
-    // Nothing found: just hide suggestions
-    if (box) { box.classList.add('hidden'); box.innerHTML=''; }
 }
 
 document.addEventListener('click', (e) => {
@@ -2112,43 +1965,36 @@ async function viewPlayer(playerKeyOrName) {
 }
 
 async function searchPlayer(e) {
-    if (!e || e.key !== 'Enter') return;
-    const input = document.getElementById('globalSearch');
-    const query = (input ? input.value : '').trim();
+    if (e.key !== 'Enter') return;
+    const query = document.getElementById('globalSearch').value.trim();
     if (!query) return;
 
-    // Can't use `await` here because this is called from an inline onkeypress handler.
-    Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')])
-        .then(() => ensureSearchIndex(true))
-        .then(() => {
-            const playerCandidates = [];
-            ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
-                const players = (statsData[lg] && statsData[lg].players) ? Object.values(statsData[lg].players) : [];
-                players.forEach(p => {
-                    if (p && p.key && p.name) playerCandidates.push({ key: p.key, name: p.name, team: p.team || '' });
-                });
-            });
+    await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
+    await ensureSearchIndex();
 
-            const matchedPlayer = _bestFuzzyPlayerMatch(query, playerCandidates);
-            if (matchedPlayer) {
-                viewPlayer(matchedPlayer.key);
-                return;
-            }
-
-            const teamCandidates = (__searchIndex.teams || []).map(t => ({ name: t.name, league: t.league }));
-            const matchedTeam = _bestFuzzyTeamMatch(query, teamCandidates);
-
-            if (matchedTeam) {
-                viewTeam(matchedTeam.name, _findTeamLeague(matchedTeam.name));
-                return;
-            }
-
-            // Fall back: treat input as a team name
-            viewTeam(query, _findTeamLeague(query));
-        })
-        .catch(() => {
-            // Silent fail: don't break the app if suggestions/stats are still loading
+    const playerCandidates = [];
+    ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
+        const players = statsData[lg].players ? Object.values(statsData[lg].players) : [];
+        players.forEach(p => {
+            if (p && p.key && p.name) playerCandidates.push({ key: p.key, name: p.name, team: p.team || '' });
         });
+    });
+
+    const matchedPlayer = _bestFuzzyPlayerMatch(query, playerCandidates);
+    if (matchedPlayer) {
+        viewPlayer(matchedPlayer.key);
+        return;
+    }
+
+    const teamCandidates = (__searchIndex.teams || []).map(t => ({ name: t.name, league: t.league }));
+    const matchedTeam = _bestFuzzyTeamMatch(query, teamCandidates);
+
+    if (matchedTeam) {
+        viewTeam(matchedTeam.name, _findTeamLeague(matchedTeam.name));
+        return;
+    }
+
+    viewTeam(query, _findTeamLeague(query));
 }
 
 init();
