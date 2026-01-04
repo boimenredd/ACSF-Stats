@@ -1397,8 +1397,8 @@ async function ensureSearchIndex(forceRebuild = false) {
     });
 
     const teamRep = {};
-    // Use the global TEAM_LOGOS keys as the authoritative list of teams.
-    Object.keys(TEAM_LOGOS || {}).forEach(teamName => {
+    // Use the global LOGOS keys as the authoritative list of teams.
+    Object.keys(LOGOS || {}).forEach(teamName => {
         const canon = canonicalTeamName(teamName);
         if (!teamRep[canon]) teamRep[canon] = { type:'team', name: canon };
     });
