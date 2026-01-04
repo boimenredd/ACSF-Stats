@@ -587,6 +587,62 @@ const STANDINGS_URLS = {
     MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv'
 };
 
+// --- Standings cache + helpers (for Team page table snapshot) ---
+let standingsCache = {};
+
+// Loads standings rows for a league once, returns sorted array by position.
+// Each row: { pos:number, team:string, wdl:string, pts:number, mp:number }
+function loadStandingsData(lg) {
+    if (standingsCache[lg] && standingsCache[lg].loaded) return Promise.resolve(standingsCache[lg].rows);
+
+    standingsCache[lg] = { loaded: false, rows: [] };
+
+    return new Promise((resolve) => {
+        Papa.parse(STANDINGS_URLS[lg], {
+            download: true,
+            header: true,
+            complete: (res) => {
+                const rows = (res.data || []).map(r => {
+                    let pos = r.Position || r.position || r['#'] || '';
+                    let team = r.Team || r.team || '';
+                    const fixed = _stripLeadingPosFromTeam(pos, team);
+                    pos = fixed.pos;
+                    team = fixed.team;
+
+                    const mp = parseInt((r.MP || r.mp || 0), 10);
+                    const pts = parseInt((r.Points || r.Pts || r.points || 0), 10);
+                    const wdl = (r['W-D-L'] || r['WDL'] || r['WDL '] || '').toString().trim();
+
+                    const posNum = parseInt(pos, 10);
+                    return {
+                        pos: Number.isNaN(posNum) ? 999 : posNum,
+                        team: team,
+                        wdl: wdl || '0-0-0',
+                        pts: Number.isNaN(pts) ? 0 : pts,
+                        mp: Number.isNaN(mp) ? 0 : mp
+                    };
+                }).filter(r => r.team);
+
+                rows.sort((a,b) => a.pos - b.pos);
+
+                standingsCache[lg] = { loaded: true, rows };
+                resolve(rows);
+            },
+            error: () => {
+                standingsCache[lg] = { loaded: true, rows: [] };
+                resolve([]);
+            }
+        });
+    });
+}
+
+function goToStandingsFromTeam(lg) {
+    currentView = 'standings';
+    switchTab('standings');
+    renderStandings(lg);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 const LEAGUE_META = {
     PREM: { name: 'England - Premier League', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/eng.png' },
     LALIGA: { name: 'Spain - La Liga', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/esp.png' },
@@ -1507,6 +1563,56 @@ async function viewTeam(teamName, league) {
     const tk = canonicalTeamName(teamName);
     const teamPlayers = Object.values(statsData[league].players || {}).filter(p => canonicalTeamName(p.team) === tk);
 
+    // --- Table snapshot (current position with one above/below) ---
+    const standingsRows = await loadStandingsData(league);
+    const tableSnapshotHTML = (() => {
+        if (!standingsRows || !standingsRows.length) return '';
+
+        const tk2 = canonicalTeamName(teamName);
+        const idx = standingsRows.findIndex(r => canonicalTeamName(r.team) === tk2);
+        if (idx === -1) return '';
+
+        const start = Math.max(0, idx - 1);
+        const end = Math.min(standingsRows.length - 1, idx + 1);
+        const slice = standingsRows.slice(start, end + 1);
+
+        const rowHTML = (r) => {
+            const isCurrent = canonicalTeamName(r.team) === tk2;
+            const base = isCurrent ? 'border-[#00ff85] bg-zinc-900/70' : 'border-zinc-800 bg-zinc-900/40 hover:border-[#00ff85]';
+            return `
+                <div class="flex items-center justify-between py-2 px-2 rounded-lg border ${base} cursor-pointer"
+                     onclick="viewTeam('${_jsEscapeSingle(r.team)}','${league}')">
+                    <div class="flex items-center gap-3">
+                        <div class="text-[10px] font-black text-zinc-500 w-6">${r.pos}</div>
+                        <div class="flex items-center gap-2">
+                            <img src="${getLogo(r.team)}" class="w-4 h-4 object-contain">
+                            <div class="font-bold ${isCurrent ? 'text-[#00ff85]' : ''}">${r.team}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 font-mono text-[11px]">
+                        <div class="text-zinc-400">${r.wdl}</div>
+                        <div class="${isCurrent ? 'text-[#00ff85]' : 'text-zinc-200'} font-black">${r.pts}</div>
+                    </div>
+                </div>
+            `;
+        };
+
+        return `
+            <div class="mt-4 stat-card">
+                <div class="flex items-center justify-between">
+                    <div class="text-[10px] font-black text-zinc-500 uppercase">Table Snapshot</div>
+                    <button class="text-[10px] font-black text-[#00ff85] hover:opacity-80" onclick="goToStandingsFromTeam('${league}')">VIEW FULL TABLE</button>
+                </div>
+                <div class="mt-2 grid grid-cols-1 gap-2">
+                    ${slice.map(rowHTML).join('')}
+                </div>
+                <div class="mt-2 text-[10px] text-zinc-500 font-black uppercase flex items-center justify-between">
+                    <span>W-D-L</span><span>PTS</span>
+                </div>
+            </div>
+        `;
+    })();
+
     currentTeamPlayersList = teamPlayers.slice();
     currentTeamLeague = league;
     currentTeamName = teamName;
@@ -1536,6 +1642,8 @@ async function viewTeam(teamName, league) {
                 </div>
             </div>
         </div>
+
+        ${tableSnapshotHTML}
 
         <div class="mt-4 grid grid-cols-1 gap-3">
             <div class="leader-pill" onclick="showTeamLeaderboard('goals')">
