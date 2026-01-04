@@ -2246,5 +2246,196 @@ init();
 })();
 </script>
 
+
+<!-- ADD-ONLY PATCH: sheets-only suggestions + player logos cleanup + appearances + last-5 -->
+<script>
+(function(){
+  // Simple CSV loader (Papa present in app)
+  function parseCsv(url, header=false){
+    return new Promise(res=>Papa.parse(url,{download:true,header:!!header,complete:r=>res(r.data||[]),error:()=>res([])}));
+  }
+
+  // ------------------ SUGGESTIONS: from sheets only (goals/assists/cleanSheets) ------------------
+  async function buildSuggestionIndex(){
+    const out = [];
+    const leagues = Object.keys(window.STATS_URLS||{});
+    for (const lg of leagues){
+      const src = STATS_URLS[lg]||{};
+      async function take(url){
+        if (!url) return;
+        const rows = await parseCsv(url, false);
+        rows.forEach((row,i)=>{
+          if (!Array.isArray(row)) return;
+          const name = (row[0]||'').trim(); // A=Player
+          const team = (row[2]||'').trim(); // C=Team
+          if (!name || (i===0 && name.toLowerCase()==='player')) return;
+          out.push({ name, team, league: lg });
+        });
+      }
+      await take(src.goals);
+      await take(src.assists);
+      await take(src.cleanSheets);
+    }
+    return out;
+  }
+
+  async function handleSuggest(){
+    const input = document.getElementById('globalSearch');
+    const box = document.getElementById('globalSearchSuggestions');
+    if (!input || !box) return;
+    const q = (input.value||'').trim().toLowerCase();
+    if (q.length < 2){ box.classList.add('hidden'); box.innerHTML=''; return; }
+
+    if (!window.__sheetSuggest){
+      window.__sheetSuggest = await buildSuggestionIndex();
+    }
+    const hits = window.__sheetSuggest.filter(p=> (p.name && p.name.toLowerCase().includes(q)) || (p.team && p.team.toLowerCase().includes(q))).slice(0,10);
+    box.innerHTML = hits.map(p => {
+      const logo = (typeof getLogo==='function') ? getLogo(p.team) : '';
+      return '<div class="search-suggestion" data-name="'+(p.name||'').replace(/"/g,'&quot;')+'" onclick="try{document.getElementById(\'globalSearch\').value=this.getAttribute(\'data-name\');searchPlayer({key:\'Enter\'},\'globalSearch\');}catch(e){};document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">'
+             + '<span class="font-bold">'+p.name+'</span>'
+             + '<span class="text-[10px] text-zinc-500"> ('+(p.team||'')+')</span>'
+             + (logo?'<img src="'+logo+'" class="w-4 h-4 ml-auto">':'')
+             + '</div>';
+    }).join('');
+    box.classList.remove('hidden');
+  }
+
+  function bindSuggestions(){
+    const input = document.getElementById('globalSearch');
+    if (!input || input.__boundAddOnly) return;
+    input.addEventListener('input', handleSuggest);
+    input.addEventListener('focus', handleSuggest);
+    document.addEventListener('click', (e)=>{
+      const box = document.getElementById('globalSearchSuggestions');
+      if (!box) return;
+      if (!box.contains(e.target) && e.target !== input) box.classList.add('hidden');
+    });
+    input.__boundAddOnly = true;
+  }
+
+  // ------------------ PLAYER PAGE: logos cleanup + appearances + last-5 ratings ------------------
+  async function lookupAppsFromAvgSheets(name){
+    const leagues = Object.keys(window.STATS_URLS||{});
+    for (const lg of leagues){
+      const src = STATS_URLS[lg]||{}; if (!src.avgRatings) continue;
+      const rows = await parseCsv(src.avgRatings, false);
+      for (const row of rows){
+        if (!Array.isArray(row)) continue;
+        const n = (row[8]||'').trim(); // Column I = Player Name
+        const apps = parseInt(row[5], 10); // Column F = Appearances
+        if (!n || Number.isNaN(apps)) continue;
+        if (n.toLowerCase() === name.toLowerCase()) return apps;
+      }
+    }
+    return null;
+  }
+
+  async function getLast5FromRatingsLog(name){
+    const leagues = Object.keys(window.STATS_URLS||{});
+    for (const lg of leagues){
+      const src = STATS_URLS[lg]||{}; if (!src.ratingsLog) continue;
+      const rows = await parseCsv(src.ratingsLog, true);
+      const list = [];
+      rows.forEach(r=>{
+        const n = r.Player || r.Name || r['Player Name'] || '';
+        if (!n || n.trim().toLowerCase() !== name.toLowerCase()) return;
+        const rating = parseFloat(r.Rating || r.Score || r['Match Rating'] || '');
+        if (Number.isNaN(rating)) return;
+        const date = r.Date || r.MatchDate || r.Round || r['Date'] || '';
+        const opponent = r.Opponent || r.Opp || r['Opponent'] || '';
+        list.push({ date, opponent, rating });
+      });
+      if (list.length) return list.slice(-5); // earliest->latest already in sheet order
+    }
+    return [];
+  }
+
+  function keepOnlyTeamLogo(container){
+    // Identify the team line as the element that has both text and an <img> and likely shows the team
+    const teamLine = Array.from(container.querySelectorAll('p, div, span')).find(el => el.querySelector && el.querySelector('img') && /team|fc|sc|united|city|cf|club/i.test((el.textContent||'')));
+    const keep = teamLine ? teamLine.querySelector('img') : null;
+    const allImgs = container.querySelectorAll('img');
+    allImgs.forEach(img => {
+      if (keep && img === keep) return; // keep only this one
+      // if the img src matches a team logo (likely returned by getLogo), or it's in stat cards/watermark, hide it
+      if (img.closest('.stat-card') || (img.width && img.width <= 64) || (img.height && img.height <= 64)) {
+        img.classList.add('hide-team-logo');
+      }
+      // also hide any translucent watermark logos
+      const op = parseFloat(getComputedStyle(img).opacity||'1');
+      if (op < 0.5) img.classList.add('hide-team-logo');
+    });
+  }
+
+  async function augmentPlayerPage(){
+    const container = document.getElementById('content') || document.body;
+    const nameEl = container.querySelector('h2, h1');
+    if (!nameEl) return;
+    const playerName = (nameEl.textContent||'').trim();
+    if (!playerName) return;
+
+    keepOnlyTeamLogo(container);
+
+    // Insert appearances card directly *after* the Assists stat card
+    let assistsLabel = Array.from(container.querySelectorAll('.stat-card .text-xs')).find(el => /assists/i.test(el.textContent||''));
+    if (assistsLabel && !container.querySelector('#appsValue')){
+      const card = document.createElement('div');
+      card.className = 'stat-card text-center relative overflow-hidden';
+      card.innerHTML = '<div class="text-3xl font-black text-[#00ff85]" id="appsValue">…</div><div class="text-xs text-zinc-500 mt-1"># of Games (Appearances)</div>';
+      const anchor = assistsLabel.closest('.stat-card');
+      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(card, anchor.nextSibling);
+      else container.appendChild(card);
+    }
+
+    // Ensure Last 5 ratings block exists
+    if (!container.querySelector('#last5Ratings')){
+      const wrap = document.createElement('div');
+      wrap.className = 'stat-card';
+      wrap.innerHTML = '<h3 class="text-sm font-black text-[#00ff85] mb-3">Last 5 Match Ratings</h3><div id="last5Ratings" class="space-y-2 text-sm"></div>';
+      container.appendChild(wrap);
+    }
+
+    // Fill appearances
+    try {
+      const apps = await lookupAppsFromAvgSheets(playerName);
+      const appsEl = container.querySelector('#appsValue');
+      if (appsEl) appsEl.textContent = (apps!=null) ? apps : '0';
+    } catch(e){}
+
+    // Fill last 5
+    try {
+      const last5 = await getLast5FromRatingsLog(playerName);
+      const box = container.querySelector('#last5Ratings');
+      if (box){
+        if (!last5.length) box.innerHTML = '<div class="text-zinc-500">No recent ratings</div>';
+        else box.innerHTML = last5.map(r => {
+          const when = r.date || ''; const opp = r.opponent ? (' vs ' + r.opponent) : ''; const val = (r.rating!=null)? Number(r.rating).toFixed(2) : '—';
+          return '<div class="flex items-center justify-between border-b border-zinc-800/40 pb-2"><span class="text-zinc-400">' + when + opp + '</span><span class="font-mono font-bold">' + val + '</span></div>';
+        }).join('');
+      }
+    } catch(e){}
+  }
+
+  function wrapViewPlayer(){
+    if (window.__addonWrapped_v5b) return;
+    if (typeof window.viewPlayer !== 'function'){ setTimeout(wrapViewPlayer, 500); return; }
+    const _orig = window.viewPlayer;
+    window.viewPlayer = function(){
+      const r = _orig.apply(this, arguments);
+      setTimeout(augmentPlayerPage, 0);
+      return r;
+    };
+    window.__addonWrapped_v5b = true;
+  }
+
+  // Bind
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ bindSuggestions(); wrapViewPlayer(); });
+  } else { bindSuggestions(); wrapViewPlayer(); }
+  setTimeout(function(){ bindSuggestions(); wrapViewPlayer(); }, 800);
+})();
+</script>
+
 </body>
 </html>
