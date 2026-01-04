@@ -2437,5 +2437,262 @@ init();
 })();
 </script>
 
+
+<!-- ADD-ONLY (v7) SHEETS-ONLY AUGMENTATION -->
+<script>
+(function(){
+  // ---- Helpers ----
+  function parseCsv(url, header=false){
+    return new Promise(res=>Papa.parse(url,{download:true,header:!!header,complete:r=>res(r.data||[]),error:()=>res([])}));
+  }
+  function can(a){ return (a||'').trim(); }
+
+  // ---- Build stats strictly from sheets (per league) ----
+  async function buildLeagueFromSheets(league, urls){
+    const out = { players:{}, goals:[], assists:[], cleanSheets:[] };
+    function keyFor(name, team){ return league + '::' + (team||'') + '::' + (name||''); }
+    function ensure(name, team){
+      const k = keyFor(name, team);
+      if (!out.players[k]) out.players[k] = { key:k, league, name, team, goals:0, assists:0, cs:0, matches:0, recentRatings:[] };
+      return out.players[k];
+    }
+    async function takeList(url, field){ // field in {'goals','assists','cs'}
+      if (!url) return;
+      const rows = await parseCsv(url, false);
+      rows.forEach((row,i)=>{
+        if (!Array.isArray(row)) return;
+        const name = can(row[0]);            // A = Player
+        const val  = parseInt(row[1],10)||0; // B = Stat
+        const team = can(row[2]);            // C = Team
+        if (!name || (i===0 && name.toLowerCase()==='player')) return; // skip header-like first row
+        const p = ensure(name, team);
+        if (field==='goals') p.goals = Math.max(p.goals||0, val);
+        if (field==='assists') p.assists = Math.max(p.assists||0, val);
+        if (field==='cs') p.cs = Math.max(p.cs||0, val);
+      });
+      // also build leaderboard arrays from players
+    }
+    await takeList(urls.goals, 'goals');
+    await takeList(urls.assists, 'assists');
+    await takeList(urls.cleanSheets, 'cs');
+
+    // Avg Ratings: I (8) = Player, F (5) = Appearances
+    if (urls.avgRatings){
+      const avg = await parseCsv(urls.avgRatings, false);
+      avg.forEach(row=>{
+        if (!Array.isArray(row)) return;
+        const name = can(row[8]);
+        const apps = parseInt(row[5],10);
+        if (!name || Number.isNaN(apps)) return;
+        // match by name across teams (same league)
+        Object.values(out.players).forEach(p => {
+          if ((p.name||'').toLowerCase() === name.toLowerCase()) p.matches = apps;
+        });
+      });
+    }
+
+    // Ratings Log: for last-5 (name must match; league separation will depend on sheet source)
+    if (urls.ratingsLog){
+      const log = await parseCsv(urls.ratingsLog, true);
+      log.forEach(r=>{
+        const name = can(r.Player || r.Name || r['Player Name']);
+        if (!name) return;
+        const rating = parseFloat(r.Rating || r.Score || r['Match Rating'] || '');
+        if (Number.isNaN(rating)) return;
+        const date = can(r.Date || r.MatchDate || r.Round || r['Date']);
+        const opponent = can(r.Opponent || r.Opp || r['Opponent']);
+        // attach to all matches for that name in this league (by name only)
+        Object.values(out.players).forEach(p => {
+          if ((p.name||'').toLowerCase() === name.toLowerCase()){
+            if (!Array.isArray(p.recentRatings)) p.recentRatings = [];
+            p.recentRatings.push({ date, opponent, rating });
+          }
+        });
+      });
+    }
+
+    // Build leaderboards from aggregated players
+    Object.values(out.players).forEach(p => {
+      out.goals.push({ key:p.key, name:p.name, value:p.goals||0, team:p.team, league });
+      out.assists.push({ key:p.key, name:p.name, value:p.assists||0, team:p.team, league });
+      out.cleanSheets.push({ key:p.key, name:p.name, value:p.cs||0, team:p.team, league });
+    });
+    out.goals.sort((a,b)=> (b.value||0)-(a.value||0));
+    out.assists.sort((a,b)=> (b.value||0)-(a.value||0));
+    out.cleanSheets.sort((a,b)=> (b.value||0)-(a.value||0));
+
+    return out;
+  }
+
+  async function rebuildAllLeaguesFromSheets(){
+    if (!window.STATS_URLS || !window.statsData) return;
+    const leagues = Object.keys(STATS_URLS);
+    for (const lg of leagues){
+      const built = await buildLeagueFromSheets(lg, STATS_URLS[lg]);
+      // Apply into statsData (non-destructive to app structure, but we do set the arrays/maps)
+      if (!statsData[lg]) statsData[lg] = {};
+      statsData[lg].players = built.players;
+      statsData[lg].goals = built.goals;
+      statsData[lg].assists = built.assists;
+      statsData[lg].cleanSheets = built.cleanSheets;
+    }
+    window.__sheetsBuilt = true;
+  }
+
+  // ---- Suggestions strictly from sheets ----
+  async function ensureSuggestEntries(){
+    if (window.__sheetSuggest) return window.__sheetSuggest;
+    // if we've already rebuilt statsData from sheets, use that; otherwise parse directly
+    const entries = [];
+    if (window.__sheetsBuilt){
+      Object.keys(statsData).forEach(lg => {
+        const pool = (statsData[lg] && statsData[lg].players) ? statsData[lg].players : {};
+        Object.values(pool).forEach(p => entries.push({ name:p.name, team:p.team, league: lg }));
+      });
+    } else {
+      // parse from sheets directly
+      const leagues = Object.keys(STATS_URLS||{});
+      for (const lg of leagues){
+        const src = STATS_URLS[lg]||{};
+        async function take(url){
+          if (!url) return;
+          const rows = await parseCsv(url, false);
+          rows.forEach((row,i)=>{
+            if (!Array.isArray(row)) return;
+            const name=can(row[0]); const team=can(row[2]);
+            if (!name || (i===0 && name.toLowerCase()==='player')) return;
+            entries.push({ name, team, league: lg });
+          });
+        }
+        await take(src.goals); await take(src.assists); await take(src.cleanSheets);
+      }
+    }
+    window.__sheetSuggest = entries;
+    return entries;
+  }
+
+  async function handleSuggestions(){
+    const box = document.getElementById('globalSearchSuggestions');
+    const input = document.getElementById('globalSearch');
+    if (!box || !input) return;
+    const q = (input.value||'').trim().toLowerCase();
+    if (q.length < 2){ box.classList.add('hidden'); box.innerHTML=''; return; }
+    const entries = await ensureSuggestEntries();
+    const hits = entries.filter(p => (p.name && p.name.toLowerCase().includes(q)) || (p.team && p.team.toLowerCase().includes(q))).slice(0,10);
+    box.innerHTML = hits.map(p => {
+      const logo = (typeof getLogo==='function') ? getLogo(p.team) : '';
+      return '<div class="search-suggestion" data-name="'+(p.name||'').replace(/"/g,'&quot;')+'" onclick="try{document.getElementById(\'globalSearch\').value=this.getAttribute(\'data-name\');searchPlayer({key:\'Enter\'},\'globalSearch\');}catch(e){};document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">'
+           + '<span class="font-bold">'+p.name+'</span>'
+           + '<span class="text-[10px] text-zinc-500"> ('+(p.team||'')+')</span>'
+           + (logo?'<img src="'+logo+'" class="w-4 h-4 ml-auto">':'')
+           + '</div>';
+    }).join('');
+    box.classList.remove('hidden');
+  }
+  function bindSuggestions(){
+    const input = document.getElementById('globalSearch');
+    if (!input || input.__v7Bound) return;
+    input.addEventListener('input', handleSuggestions);
+    input.addEventListener('focus', handleSuggestions);
+    document.addEventListener('click', (e)=>{
+      const box = document.getElementById('globalSearchSuggestions');
+      if (!box) return;
+      if (!box.contains(e.target) && e.target !== input) box.classList.add('hidden');
+    });
+    input.__v7Bound = true;
+  }
+
+  // ---- Player page: keep only team-line logo + add #Apps + Last 5 ratings ----
+  function keepOnlyTeamLogo(){
+    const container = document.getElementById('content') || document.body;
+    const lines = Array.from(container.querySelectorAll('p, div, span'));
+    const teamLine = lines.find(el => el.querySelector && el.querySelector('img') && /team|fc|sc|united|city|cf|club/i.test((el.textContent||'')));
+    const keep = teamLine ? teamLine.querySelector('img') : null;
+    container.querySelectorAll('img').forEach(img => {
+      if (keep && img === keep) return;
+      if (img.closest('.stat-card') || img.width <= 64 || img.height <= 64) img.classList.add('hide-team-logo');
+      const op = parseFloat(getComputedStyle(img).opacity||'1'); if (op < 0.5) img.classList.add('hide-team-logo');
+    });
+  }
+
+  function ensureAppsAndRatingsUI(){
+    const container = document.getElementById('content') || document.body;
+    // Insert appearances card directly after "Assists" stat card
+    const assistsLabel = Array.from(container.querySelectorAll('.stat-card .text-xs')).find(el => /assists/i.test(el.textContent||''));
+    if (assistsLabel && !container.querySelector('#appsValue')){
+      const card = document.createElement('div');
+      card.className = 'stat-card text-center relative overflow-hidden';
+      card.innerHTML = '<div class="text-3xl font-black text-[#00ff85]" id="appsValue">0</div><div class="text-xs text-zinc-500 mt-1"># of Games (Appearances)</div>';
+      const anchor = assistsLabel.closest('.stat-card');
+      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(card, anchor.nextSibling);
+      else container.appendChild(card);
+    }
+    // Ensure "Last 5" box exists
+    if (!container.querySelector('#last5Ratings')){
+      const wrap = document.createElement('div');
+      wrap.className = 'stat-card';
+      wrap.innerHTML = '<h3 class="text-sm font-black text-[#00ff85] mb-3">Last 5 Match Ratings</h3><div id="last5Ratings" class="space-y-2 text-sm"></div>';
+      container.appendChild(wrap);
+    }
+  }
+
+  function fillAppsAndRatings(){
+    const container = document.getElementById('content') || document.body;
+    const nameEl = container.querySelector('h2, h1'); if (!nameEl) return;
+    const name = (nameEl.textContent||'').trim();
+    if (!name || !window.statsData) return;
+    // locate matches and recentRatings by scanning all leagues (they were filled in rebuildAllLeaguesFromSheets)
+    let apps = null, last5 = [];
+    Object.keys(statsData).forEach(lg => {
+      const pool = statsData[lg] && statsData[lg].players ? statsData[lg].players : {};
+      Object.values(pool).forEach(p => {
+        if ((p.name||'').toLowerCase() !== name.toLowerCase()) return;
+        if (apps===null && typeof p.matches === 'number') apps = p.matches;
+        if (!last5.length && Array.isArray(p.recentRatings)) last5 = p.recentRatings;
+      });
+    });
+    const appsEl = container.querySelector('#appsValue'); if (appsEl && apps!=null) appsEl.textContent = apps;
+    const box = container.querySelector('#last5Ratings');
+    if (box){
+      const list = (last5||[]).slice(-5);
+      box.innerHTML = list.length ? list.map(r => {
+        const when = r.date || ''; const opp = r.opponent ? (' vs ' + r.opponent) : ''; const val = (r.rating!=null)? Number(r.rating).toFixed(2) : '—';
+        return '<div class="flex items-center justify-between border-b border-zinc-800/40 pb-2"><span class="text-zinc-400">' + when + opp + '</span><span class="font-mono font-bold">' + val + '</span></div>';
+      }).join('') : '<div class="text-zinc-500">No recent ratings</div>';
+    }
+  }
+
+  function wrapViewPlayerOnce(){
+    if (window.__v7PlayerWrapped) return;
+    if (typeof window.viewPlayer !== 'function'){ setTimeout(wrapViewPlayerOnce, 400); return; }
+    const _orig = window.viewPlayer;
+    window.viewPlayer = function(){
+      const r = _orig.apply(this, arguments);
+      setTimeout(()=>{ keepOnlyTeamLogo(); ensureAppsAndRatingsUI(); fillAppsAndRatings(); }, 0);
+      return r;
+    };
+    window.__v7PlayerWrapped = true;
+  }
+
+  // ---- Bind ----
+  function startAll(){
+    // rebuild stats strictly from sheets, then bind suggestions and player enhancements
+    rebuildAllLeaguesFromSheets().then(()=>{
+      wrapViewPlayerOnce();
+      bindSuggestions();
+    }).catch(()=>{
+      // even if rebuild fails, still try to bind UI helpers
+      wrapViewPlayerOnce();
+      bindSuggestions();
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startAll);
+  else startAll();
+  setTimeout(startAll, 1200); // retry safety
+})();
+</script>
+<!-- END ADD-ONLY (v7) -->
+
 </body>
 </html>
