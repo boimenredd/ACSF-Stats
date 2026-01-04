@@ -1709,12 +1709,12 @@ init();
 
     const item = (h) => {
       if (h.type==='player') {
-        return '<div class="search-suggestion" onclick="try{viewPlayer(\'' + (h.key||'').replace(/'/g, '\\'') + '\')}catch(e){}; document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">'
+        return '<div class="search-suggestion" data-name="' + (p.name||'').replace(/"/g,'&quot;') + '" onclick="try{viewPlayer(\'' + (h.key||'').replace(/'/g, '\\'') + '\')}catch(e){}; document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">'
                 + '<span>👤</span><span class="flex-1">' + h.name + '</span><span class="text-zinc-500">' + (h.team||'') + '</span>'
                 + '</div>';
       }
       const l = h.league || '';
-      return '<div class="search-suggestion" onclick="try{viewTeam(\'' + (h.name||'').replace(/'/g, '\\'') + '\', \' + l + '\')}catch(e){}; document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">'
+      return '<div class="search-suggestion" data-name="' + (p.name||'').replace(/"/g,'&quot;') + '" onclick="try{viewTeam(\'' + (h.name||'').replace(/'/g, '\\'') + '\', \' + l + '\')}catch(e){}; document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">'
               + '<img src="' + (window.getLogo?getLogo(h.name):'') + '" class="w-4 h-4 object-contain"><span class="flex-1">' + h.name + '</span>'
               + '</div>';
     };
@@ -1895,12 +1895,12 @@ init();
           });
         }
 
-        // Avg Ratings: Column B = Player (1), Column F = Appearances (5)
+        /* Avg Ratings: Column I = Player (8), Column F = Appearances (5) */
         if (src.avgRatings){
           const rows = await parseCsv(src.avgRatings, false);
           rows.forEach((row,i)=>{
             if (!Array.isArray(row)) return;
-            const name = (row[1]||'').trim();
+            const name = (row[8]||'').trim();
             const apps = parseInt(row[5], 10);
             if (!name || Number.isNaN(apps)) return;
             Object.values(data.players).forEach(p => {
@@ -1980,7 +1980,7 @@ init();
         if (typeof loadStats === 'function') {
           await Promise.all(['PREM','LALIGA','MLS'].map(lg => loadStats(lg))).catch(()=>{});
         }
-        const arr = [];
+        let arr = [];
         if (window.statsData) {
           Object.keys(statsData).forEach(lg => {
             const pool = (statsData[lg] && statsData[lg].players) ? statsData[lg].players : {};
@@ -1990,21 +1990,33 @@ init();
             });
           });
         }
-        // fallback from leaderboards if empty
-        if (!arr.length && window.statsData) {
-          Object.keys(statsData).forEach(lg => {
-            const d = statsData[lg] || {};
-            ['goals','assists','cleanSheets'].forEach(listName => {
-              (d[listName]||[]).forEach(it => {
-                if (!it || !it.name) return;
-                arr.push({ id: it.key || (it.name + '::' + (it.team||'')), name: it.name, team: it.team || '', league: lg });
+        // If still empty, fetch from CSVs directly (goals/assists/cleanSheets) using Papa.parse
+        if (!arr.length && window.STATS_URLS && window.Papa) {
+          const leagues = ['PREM','LALIGA','MLS'];
+          const parseCsv = (url)=> new Promise(res=> Papa.parse(url,{download:true,header:false,complete:r=>res(r.data||[]),error:()=>res([])}));
+          for (const lg of leagues) {
+            const src = STATS_URLS[lg]; if (!src) continue;
+            const collect = async (url) => {
+              if (!url) return;
+              const rows = await parseCsv(url);
+              rows.forEach((row,i)=>{
+                if (!Array.isArray(row)) return;
+                const name = (row[0]||'').trim();
+                const team = (row[2]||'').trim();
+                if (!name || (i===0 && name.toLowerCase()==='player')) return;
+                arr.push({ id: name + '::' + team, name, team, league: lg });
               });
-            });
-          });
+            };
+            await collect(src.goals);
+            await collect(src.assists);
+            await collect(src.cleanSheets);
+          }
         }
         window.__playersIndex = arr;
         window.__suggestionsReady = true;
       }
+    } catch(e){}
+  }
     } catch(e){}
   }
 
@@ -2017,10 +2029,7 @@ init();
     await ensureIndex();
     const src = Array.isArray(window.__playersIndex) ? window.__playersIndex : [];
     const hits = src.filter(p => (p.name && p.name.toLowerCase().includes(q)) || (p.team && p.team.toLowerCase().includes(q))).slice(0, 8);
-    box.innerHTML = hits.map(p => {
-      const teamLogo = (typeof getLogo === 'function') ? getLogo(p.team) : '';
-      const nameEsc = (p.id||'').replace(/'/g, "\'");
-      return '<div class="search-suggestion" onclick="try{viewPlayer(\'' + nameEsc + '\')}catch(e){}; document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">' +
+    box.innerHTML = hits.map(p => { const nm=p.name||''; const team=p.team||''; return '(<div class="search-suggestion" data-name=\"' + nm.replace(/\"/g,'&quot;') + '\" 'onclick="try{viewPlayer(\'' + nameEsc + '\')}catch(e){}; document.getElementById(\'globalSearchSuggestions\').classList.add(\'hidden\')">' +
              '<span class="font-bold">' + p.name + '</span>' +
              '<span class="text-[10px] text-zinc-500">(' + (p.team||'') + ')</span>' +
              (teamLogo ? '<img src="' + teamLogo + '" class="w-4 h-4 ml-auto">' : '') +
