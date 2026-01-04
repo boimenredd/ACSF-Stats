@@ -1363,13 +1363,31 @@ let __suggestTimer = null;
 let __searchIndexBuilt = false;
 let __searchIndex = { players: [], teams: [] };
 
-async function ensureSearchIndex() {
-    if (__searchIndexBuilt) return;
+async function ensureSearchIndex(forceRebuild = false) {
+    // Build a search index for autosuggest. We *cannot* rely on a one-time build
+    // because loadStats() can finish parsing slightly later depending on network.
+    if (__searchIndexBuilt && !forceRebuild && __searchIndex.players.length > 0) return;
 
+    // Ensure stats are loaded (these calls are safe to repeat).
     await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
 
+    // Wait briefly for player objects to populate (prevents caching an empty index).
+    const leagues = ['PREM','LALIGA','MLS'];
+    const hasAnyPlayers = () => leagues.some(lg => {
+        const obj = (statsData[lg] && statsData[lg].players) ? statsData[lg].players : {};
+        return Object.keys(obj).length > 0;
+    });
+
+    if (!hasAnyPlayers()) {
+        // Poll up to ~4 seconds
+        for (let i = 0; i < 20; i++) {
+            await new Promise(r => setTimeout(r, 200));
+            if (hasAnyPlayers()) break;
+        }
+    }
+
     const players = [];
-    ['PREM','LALIGA','MLS'].forEach(lg => {
+    leagues.forEach(lg => {
         const obj = (statsData[lg] && statsData[lg].players) ? statsData[lg].players : {};
         Object.keys(obj).forEach(k => {
             const p = obj[k];
@@ -1379,21 +1397,17 @@ async function ensureSearchIndex() {
     });
 
     const teamRep = {};
-    const addTeam = (t, lgHint=null) => {
-        if (!t) return;
-        const k = canonicalTeamName(t);
-        if (!k) return;
-        if (!teamRep[k]) teamRep[k] = { type:'team', name: t, league: lgHint || _findTeamLeague(t) };
-    };
-
-    (allMatches || []).forEach(m => { addTeam(m.home, m.league); addTeam(m.away, m.league); });
-    Object.keys(LOGOS || {}).forEach(t => addTeam(t, _guessLeagueForTeam(t)));
-    Object.keys(TEAM_ALIASES || {}).forEach(a => addTeam(TEAM_ALIASES[a], _guessLeagueForTeam(TEAM_ALIASES[a])));
+    // Use the global TEAM_LOGOS keys as the authoritative list of teams.
+    Object.keys(TEAM_LOGOS || {}).forEach(teamName => {
+        const canon = canonicalTeamName(teamName);
+        if (!teamRep[canon]) teamRep[canon] = { type:'team', name: canon };
+    });
 
     __searchIndex.players = players;
     __searchIndex.teams = Object.values(teamRep);
     __searchIndexBuilt = true;
 }
+
 
 function queueSuggestions(inputId, boxId) {
     clearTimeout(__suggestTimer);
@@ -1413,6 +1427,9 @@ async function showSearchSuggestions(query, inputId, boxId) {
     if (q.length < 1) { box.classList.add('hidden'); box.innerHTML=''; return; }
 
     await ensureSearchIndex();
+    if (!__searchIndex.players || __searchIndex.players.length === 0) {
+        await ensureSearchIndex(true);
+    }
 
     const qn = _normMatch(q);
 
@@ -2095,36 +2112,43 @@ async function viewPlayer(playerKeyOrName) {
 }
 
 async function searchPlayer(e) {
-    if (e.key !== 'Enter') return;
-    const query = document.getElementById('globalSearch').value.trim();
+    if (!e || e.key !== 'Enter') return;
+    const input = document.getElementById('globalSearch');
+    const query = (input ? input.value : '').trim();
     if (!query) return;
 
-    await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
-    await ensureSearchIndex();
+    // Can't use `await` here because this is called from an inline onkeypress handler.
+    Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')])
+        .then(() => ensureSearchIndex(true))
+        .then(() => {
+            const playerCandidates = [];
+            ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
+                const players = (statsData[lg] && statsData[lg].players) ? Object.values(statsData[lg].players) : [];
+                players.forEach(p => {
+                    if (p && p.key && p.name) playerCandidates.push({ key: p.key, name: p.name, team: p.team || '' });
+                });
+            });
 
-    const playerCandidates = [];
-    ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
-        const players = statsData[lg].players ? Object.values(statsData[lg].players) : [];
-        players.forEach(p => {
-            if (p && p.key && p.name) playerCandidates.push({ key: p.key, name: p.name, team: p.team || '' });
+            const matchedPlayer = _bestFuzzyPlayerMatch(query, playerCandidates);
+            if (matchedPlayer) {
+                viewPlayer(matchedPlayer.key);
+                return;
+            }
+
+            const teamCandidates = (__searchIndex.teams || []).map(t => ({ name: t.name, league: t.league }));
+            const matchedTeam = _bestFuzzyTeamMatch(query, teamCandidates);
+
+            if (matchedTeam) {
+                viewTeam(matchedTeam.name, _findTeamLeague(matchedTeam.name));
+                return;
+            }
+
+            // Fall back: treat input as a team name
+            viewTeam(query, _findTeamLeague(query));
+        })
+        .catch(() => {
+            // Silent fail: don't break the app if suggestions/stats are still loading
         });
-    });
-
-    const matchedPlayer = _bestFuzzyPlayerMatch(query, playerCandidates);
-    if (matchedPlayer) {
-        viewPlayer(matchedPlayer.key);
-        return;
-    }
-
-    const teamCandidates = (__searchIndex.teams || []).map(t => ({ name: t.name, league: t.league }));
-    const matchedTeam = _bestFuzzyTeamMatch(query, teamCandidates);
-
-    if (matchedTeam) {
-        viewTeam(matchedTeam.name, _findTeamLeague(matchedTeam.name));
-        return;
-    }
-
-    viewTeam(query, _findTeamLeague(query));
 }
 
 init();
