@@ -40,7 +40,6 @@
         .header-search-input { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 8px 10px; color: #fff; width: 170px; font-size: 12px; }
         .header-search-input:focus { outline: none; border-color: var(--accent); }
 
-        /* player page logo de-dupe + search suggestions dropdown */
         .player-logo-dup { display:none !important; }
 
         .search-suggestions{
@@ -65,7 +64,6 @@
         }
         .search-suggestion:hover{ background:#222; }
 
-        /* Added: small clickable leader pills */
         .leader-pill{
             background:#111;
             border:1px solid #2a2a2a;
@@ -350,10 +348,7 @@ const STATS_URLS = {
 
 let allMatches = [], uniqueDates = [], dateIdx = 0, currentView = 'hub', currentTeam = null, currentPlayer = null;
 let statsData = { PREM: {}, LALIGA: {}, MLS: {}, COMBINED: {} };
-let standingsCache = { PREM: null, LALIGA: null, MLS: null };
-let currentStandingsLeague = 'PREM';
 
-/* Added: team page caches for leaderboards */
 let currentTeamPlayersList = [];
 let currentTeamLeague = null;
 let currentTeamName = null;
@@ -401,6 +396,22 @@ function _stripLeadingPosFromTeam(pos, team) {
     const ln = parseInt(lead, 10);
     if (!Number.isNaN(pn) && !Number.isNaN(ln) && pn === ln) return { pos: p, team: rest };
     return { pos: p, team: t };
+}
+
+/* helpers */
+function _fmtRating(x){
+    const v = Number(x);
+    if (Number.isNaN(v)) return '-';
+    return v.toFixed(2);
+}
+function _formatShortDate(d){
+    if (!d) return '';
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${months[d.getMonth()]} ${d.getDate()}`;
+}
+function _isGoalie(player){
+    const pos = (player && player.position ? player.position : '').toString().toLowerCase();
+    return pos.includes('gk') || pos.includes('goalkeeper') || pos === 'keeper';
 }
 
 async function init() {
@@ -457,10 +468,7 @@ async function init() {
                             return;
                         }
 
-                        if (parsedA && parsedA !== 'MATCHDAY_MARKER') {
-                            currentDate = parsedA;
-                        }
-
+                        if (parsedA && parsedA !== 'MATCHDAY_MARKER') currentDate = parsedA;
                         pushMatch(k, currentDate, row);
                     });
 
@@ -574,7 +582,6 @@ function getQualifyColor(lg, pos) {
 }
 
 function renderStandings(lg) {
-    currentStandingsLeague = lg;
     document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active-league'));
     document.getElementById(`btn-${lg}`).classList.add('active-league');
     const head = document.getElementById('standingsHead');
@@ -654,6 +661,7 @@ function _editDistance(a, b, limit = 999) {
     return prev[bl];
 }
 
+/* FIX: players only match by player name (not team) */
 function _bestFuzzyPlayerMatch(query, candidates) {
     const q = _normMatch(query);
     if (!q) return null;
@@ -663,12 +671,35 @@ function _bestFuzzyPlayerMatch(query, candidates) {
 
     for (const c of candidates) {
         const n1 = _normMatch(c.name);
-        const n2 = _normMatch(`${c.name} ${c.team || ''}`);
         const lim = Math.max(2, Math.floor(Math.max(q.length, n1.length) * 0.25));
+        const d = _editDistance(q, n1, lim);
 
-        const d1 = _editDistance(q, n1, lim);
-        const d2 = _editDistance(q, n2, lim);
-        const d = Math.min(d1, d2);
+        if (best === null || d < best.d) { best2 = best; best = { c, d }; }
+        else if (best2 === null || d < best2.d) { best2 = { c, d }; }
+    }
+
+    if (!best) return null;
+
+    const nameLen = Math.max(_normMatch(best.c.name).length, q.length);
+    const threshold = Math.max(2, Math.floor(nameLen * 0.25));
+    if (best.d > threshold) return null;
+    if (best2 && best2.d === best.d) return null;
+
+    return best.c;
+}
+
+/* teams fuzzy match by team name only */
+function _bestFuzzyTeamMatch(query, candidates) {
+    const q = _normMatch(query);
+    if (!q) return null;
+
+    let best = null;
+    let best2 = null;
+
+    for (const c of candidates) {
+        const n1 = _normMatch(c.name);
+        const lim = Math.max(2, Math.floor(Math.max(q.length, n1.length) * 0.25));
+        const d = _editDistance(q, n1, lim);
 
         if (best === null || d < best.d) { best2 = best; best = { c, d }; }
         else if (best2 === null || d < best2.d) { best2 = { c, d }; }
@@ -914,7 +945,7 @@ async function loadStats(league) {
     }
 }
 
-/* live autofill suggestions for players/teams under the search box */
+/* live autofill suggestions */
 let __suggestTimer = null;
 let __searchIndexBuilt = false;
 let __searchIndex = { players: [], teams: [] };
@@ -972,10 +1003,12 @@ async function showSearchSuggestions(query, inputId, boxId) {
 
     const qn = _normMatch(q);
 
+    /* FIX: players suggestions by player name ONLY */
     const pMatches = __searchIndex.players
-        .filter(p => _normMatch(p.name).includes(qn) || _normMatch(p.team).includes(qn))
+        .filter(p => _normMatch(p.name).includes(qn))
         .slice(0, 8);
 
+    /* teams suggestions by team name ONLY */
     const tMatches = __searchIndex.teams
         .filter(t => _normMatch(t.name).includes(qn))
         .slice(0, 6);
@@ -986,7 +1019,7 @@ async function showSearchSuggestions(query, inputId, boxId) {
 
     box.innerHTML = items.map(item => {
         if (item.type === 'player') {
-            return `<div class="search-suggestion" onclick="selectSuggestion('player','${_jsEscapeSingle(item.key)}','${_jsEscapeSingle(item.name)}','${_jsEscapeSingle(item.team)}','${inputId}','${boxId}')">
+            return `<div class="search-suggestion" onclick="selectSuggestion('player','${_jsEscapeSingle(item.key)}','${_jsEscapeSingle(item.name)}','${inputId}','${boxId}')">
                 <span class="text-[#00ff85] font-black">P</span>
                 <div class="flex flex-col leading-tight">
                     <span class="font-bold">${item.name}</span>
@@ -994,7 +1027,7 @@ async function showSearchSuggestions(query, inputId, boxId) {
                 </div>
             </div>`;
         }
-        return `<div class="search-suggestion" onclick="selectSuggestion('team','${_jsEscapeSingle(item.name)}','${_jsEscapeSingle(item.name)}','','${inputId}','${boxId}')">
+        return `<div class="search-suggestion" onclick="selectSuggestion('team','${_jsEscapeSingle(item.name)}','${_jsEscapeSingle(item.name)}','${inputId}','${boxId}')">
             <span class="text-[#00ff85] font-black">T</span>
             <div class="flex items-center gap-2">
                 <img src="${getLogo(item.name)}" class="w-4 h-4 object-contain">
@@ -1006,7 +1039,7 @@ async function showSearchSuggestions(query, inputId, boxId) {
     box.classList.remove('hidden');
 }
 
-function selectSuggestion(type, value, displayName, team, inputId, boxId) {
+function selectSuggestion(type, value, displayName, inputId, boxId) {
     const input = document.getElementById(inputId);
     const box = document.getElementById(boxId);
     if (input) input.value = displayName || value;
@@ -1024,12 +1057,6 @@ document.addEventListener('click', (e) => {
     box.classList.add('hidden');
 });
 
-/* Added: team leaderboards (clickable) */
-function _fmtRating(x){
-    const v = Number(x);
-    if (Number.isNaN(v)) return '-';
-    return v.toFixed(2);
-}
 function _teamLeaders(players){
     const valid = (players || []).slice();
 
@@ -1086,7 +1113,6 @@ async function renderStats(lg) {
     if (lg === 'COMBINED') {
         await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
 
-        /* IMPORTANT FIX: clone entries so combined re-ranking does not overwrite league ranks */
         const cloneArr = (arr) => (arr || []).map(x => ({ ...x }));
 
         const combined = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {}, loaded: true };
@@ -1120,7 +1146,7 @@ async function renderStats(lg) {
     const data = statsData[lg];
     const el = document.getElementById('statsContent');
 
-    const makeList = (title, arr, valueLabel) => {
+    const makeList = (title, arr, valueLabel, options={}) => {
         const top = (arr || []).slice(0, 25);
         return `
             <div class="stat-card mb-4">
@@ -1146,10 +1172,16 @@ async function renderStats(lg) {
             </div>`;
     };
 
+    /* FIX: clean sheets leaderboard should only show goalies */
+    const goalieCleanSheets = (data.cleanSheets || []).filter(cs => {
+        const pl = (data.players && data.players[cs.key]) ? data.players[cs.key] : null;
+        return _isGoalie(pl);
+    });
+
     el.innerHTML = `
         ${makeList('Goals', data.goals, 'GOALS')}
         ${makeList('Assists', data.assists, 'ASSISTS')}
-        ${makeList('Clean Sheets', data.cleanSheets, 'CLEAN')}
+        ${makeList('Clean Sheets', goalieCleanSheets, 'CLEAN')}
         ${makeList('Average Rating', data.ratings, 'RATING')}
     `;
 }
@@ -1170,18 +1202,39 @@ async function viewTeam(teamName, league) {
     const tk = canonicalTeamName(teamName);
     const teamPlayers = Object.values(statsData[league].players || {}).filter(p => canonicalTeamName(p.team) === tk);
 
-    /* Cache for clickable leaderboards */
     currentTeamPlayersList = teamPlayers.slice();
     currentTeamLeague = league;
     currentTeamName = teamName;
 
     const { goalsLeader, assistsLeader, ratingLeader } = _teamLeaders(teamPlayers);
 
-    const teamMatches = allMatches.filter(m => m.league === league && (m.homeKey === tk || m.awayKey === tk));
-    const upcoming = teamMatches
+    const teamMatchesAll = allMatches
+        .filter(m => m.league === league && (m.homeKey === tk || m.awayKey === tk))
         .slice()
-        .sort((a,b)=>a.date-b.date)
-        .slice(0, 10);
+        .sort((a,b)=>a.date-b.date);
+
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    /* NEW: last 5 results (played) + next 5 matches (upcoming) */
+    const played = teamMatchesAll.filter(m => (m.score || '').trim().toLowerCase() !== 'v');
+    const upcoming = teamMatchesAll.filter(m => (m.score || '').trim().toLowerCase() === 'v' && m.date >= today);
+
+    const last5 = played.slice().sort((a,b)=>b.date-a.date).slice(0,5).reverse();
+    const next5 = upcoming.slice(0,5);
+
+    const matchRow = (m) => `
+        <div class="flex items-center justify-between py-2 border-b border-zinc-800/40 last:border-b-0">
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-black text-zinc-500 w-12">${_formatShortDate(m.date)}</span>
+                <img src="${getLogo(m.home)}" class="w-4 h-4 object-contain">
+                <span class="text-[11px] font-bold">${m.home}</span>
+                <span class="text-zinc-500 text-[10px] font-black">vs</span>
+                <span class="text-[11px] font-bold">${m.away}</span>
+                <img src="${getLogo(m.away)}" class="w-4 h-4 object-contain">
+            </div>
+            <div class="font-mono text-[#00ff85] font-black">${m.score}</div>
+        </div>
+    `;
 
     content.innerHTML = `
         <div class="stat-card">
@@ -1240,25 +1293,20 @@ async function viewTeam(teamName, league) {
         </div>
 
         <div class="mt-4 stat-card">
-            <div class="text-[10px] font-black text-zinc-500 uppercase">Upcoming / Results</div>
+            <div class="text-[10px] font-black text-zinc-500 uppercase">Last 5 Results</div>
             <div class="mt-2">
-                ${upcoming.map(m => `
-                    <div class="flex items-center justify-between py-2 border-b border-zinc-800/40 last:border-b-0">
-                        <div class="flex items-center gap-2">
-                            <img src="${getLogo(m.home)}" class="w-4 h-4 object-contain">
-                            <span class="text-[11px] font-bold">${m.home}</span>
-                            <span class="text-zinc-500 text-[10px] font-black">vs</span>
-                            <span class="text-[11px] font-bold">${m.away}</span>
-                            <img src="${getLogo(m.away)}" class="w-4 h-4 object-contain">
-                        </div>
-                        <div class="font-mono text-[#00ff85] font-black">${m.score}</div>
-                    </div>
-                `).join('') || '<div class="text-zinc-500 text-sm py-2">No matches found.</div>'}
+                ${last5.map(matchRow).join('') || '<div class="text-zinc-500 text-sm py-2">No results yet.</div>'}
+            </div>
+        </div>
+
+        <div class="mt-4 stat-card">
+            <div class="text-[10px] font-black text-zinc-500 uppercase">Next 5 Matches</div>
+            <div class="mt-2">
+                ${next5.map(matchRow).join('') || '<div class="text-zinc-500 text-sm py-2">No upcoming matches found.</div>'}
             </div>
         </div>
     `;
 
-    /* default show goals leaderboard so the click behavior is obvious */
     showTeamLeaderboard('goals');
 }
 
@@ -1316,12 +1364,13 @@ async function viewPlayer(playerKeyOrName) {
         return;
     }
 
+    const isGK = _isGoalie(playerData);
+
     content.innerHTML = `
         <div class="stat-card">
             <div class="flex items-center gap-4">
                 <div class="player-avatar">${(playerData.name || '').split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2)}</div>
                 <div class="flex-1">
-                    <!-- Removed: league indicator above player name (kept bottom indicator only) -->
                     <div class="flex items-center justify-center gap-2">
                         <h2 class="text-2xl font-black">${playerData.name}</h2>
                     </div>
@@ -1344,7 +1393,7 @@ async function viewPlayer(playerKeyOrName) {
             </div>
         </div>
 
-        <div class="grid grid-cols-4 gap-3 mt-6">
+        <div class="grid grid-cols-${isGK ? 4 : 3} gap-3 mt-6">
             <div class="stat-card text-center relative overflow-hidden">
                 <div class="text-[10px] font-black text-zinc-500 uppercase">Goals</div>
                 <div class="text-2xl font-black text-[#00ff85] mt-1">${playerData.goals || 0}</div>
@@ -1355,11 +1404,13 @@ async function viewPlayer(playerKeyOrName) {
                 <div class="text-2xl font-black text-[#00ff85] mt-1">${playerData.assists || 0}</div>
                 <img src="${getLogo(playerData.team)}" class="absolute right-2 bottom-2 w-12 h-12 object-contain opacity-10 pointer-events-none player-logo-dup">
             </div>
+            ${isGK ? `
             <div class="stat-card text-center relative overflow-hidden">
                 <div class="text-[10px] font-black text-zinc-500 uppercase">Clean Sheets</div>
                 <div class="text-2xl font-black text-[#00ff85] mt-1">${playerData.cleanSheets || 0}</div>
                 <img src="${getLogo(playerData.team)}" class="absolute right-2 bottom-2 w-12 h-12 object-contain opacity-10 pointer-events-none player-logo-dup">
             </div>
+            ` : ``}
             <div class="stat-card text-center relative overflow-hidden">
                 <div class="text-[10px] font-black text-zinc-500 uppercase">Games</div>
                 <div class="text-2xl font-black text-[#00ff85] mt-1">${playerData.matches || 0}</div>
@@ -1386,6 +1437,7 @@ async function searchPlayer(e) {
     if (!query) return;
 
     await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
+    await ensureSearchIndex();
 
     const playerCandidates = [];
     ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
@@ -1395,12 +1447,23 @@ async function searchPlayer(e) {
         });
     });
 
+    /* FIX: players only match by player name */
     const matchedPlayer = _bestFuzzyPlayerMatch(query, playerCandidates);
     if (matchedPlayer) {
         viewPlayer(matchedPlayer.key);
         return;
     }
 
+    /* FIX: teams only match by team name */
+    const teamCandidates = (__searchIndex.teams || []).map(t => ({ name: t.name, league: t.league }));
+    const matchedTeam = _bestFuzzyTeamMatch(query, teamCandidates);
+
+    if (matchedTeam) {
+        viewTeam(matchedTeam.name, _findTeamLeague(matchedTeam.name));
+        return;
+    }
+
+    /* fallback: try as team exact */
     viewTeam(query, _findTeamLeague(query));
 }
 
