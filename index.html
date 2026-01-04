@@ -1486,13 +1486,31 @@ async function renderStats(lg) {
     const data = statsData[lg];
     const el = document.getElementById('statsContent');
 
-    const makeList = (title, arr, valueLabel) => {
-        const top = (arr || []).slice(0, 25);
+    const makeList = (title, arr, valueLabel, kind, league) => {
+        // Filter out 0 values for leaderboard categories (and protect against nulls)
+        const filtered = (arr || []).filter(p => {
+            const v = Number(p.value);
+            if (Number.isNaN(v)) return false;
+            // Ratings: keep only > 0
+            if (kind === 'RATING') return v > 0;
+            // All other categories: keep only > 0
+            return v > 0;
+        });
+
+        // Keep your existing "top list" view compact
+        const top = filtered.slice(0, 25);
+
         return `
             <div class="stat-card mb-4">
                 <div class="flex items-center justify-between">
                     <div class="text-sm font-black uppercase">${title}</div>
-                    <div class="text-[10px] font-black text-zinc-500 uppercase">${valueLabel}</div>
+                    <div class="flex items-center gap-3">
+                        <button class="text-[10px] font-black text-[#00ff85] hover:underline"
+                            onclick="openFullLeaderboard('${kind}', '${league}')">
+                            SHOW FULL LEADERBOARD
+                        </button>
+                        <div class="text-[10px] font-black text-zinc-500 uppercase">${valueLabel}</div>
+                    </div>
                 </div>
                 <div class="mt-3">
                     ${top.map((p) => `
@@ -1501,28 +1519,145 @@ async function renderStats(lg) {
                                 <div class="text-[10px] font-black text-zinc-500 w-6">${p.rank || ''}</div>
                                 <img src="${getLogo(p.team)}" class="w-5 h-5 object-contain">
                                 <div class="flex flex-col leading-tight">
-                                    <div class="font-bold cursor-pointer hover:text-[#00ff85]" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">${p.name}</div>
-                                    <div class="text-[10px] text-zinc-500 cursor-pointer hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(p.team)}', '${p.league || lg}')">${p.team}</div>
+                                    <div class="font-bold cursor-pointer hover:underline" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">${p.name}</div>
+                                    <div class="text-[10px] text-zinc-500 cursor-pointer hover:underline" onclick="viewTeam('${_jsEscapeSingle(p.team)}', '${p.league || league}')">${p.team}</div>
                                 </div>
                             </div>
-                            <div class="font-black text-[#00ff85] font-mono">${valueLabel === 'RATING' ? (Number(p.value).toFixed(2)) : p.value}</div>
+                            <div class="font-black text-[#00ff85]">${valueLabel === 'RATING' ? (Number(p.value).toFixed(2)) : p.value}</div>
                         </div>
                     `).join('')}
+                    ${filtered.length === 0 ? `<div class="text-sm text-zinc-500 py-3">No players to show.</div>` : ``}
                 </div>
             </div>`;
     };
-
     const goalieCleanSheets = (data.cleanSheets || []).filter(cs => {
         const pl = (data.players && data.players[cs.key]) ? data.players[cs.key] : null;
         return _isGoalie(pl);
     });
 
     el.innerHTML = `
-        ${makeList('Goals', data.goals, 'GOALS')}
-        ${makeList('Assists', data.assists, 'ASSISTS')}
-        ${makeList('Clean Sheets', goalieCleanSheets, 'CLEAN')}
-        ${makeList('Average Rating', data.ratings, 'RATING')}
+        ${makeList('Goals', data.goals, 'GOALS', 'GOALS', lg)}
+        ${makeList('Assists', data.assists, 'ASSISTS', 'ASSISTS', lg)}
+        ${makeList('Clean Sheets', goalieCleanSheets, 'CLEAN', 'CLEAN', lg)}
+        ${makeList('Average Rating', data.ratings, 'RATING', 'RATING', lg)}
     `;
+}
+
+
+/* NEW: Full leaderboard modal for Stats tab (Goals/Assists/Ratings) */
+function _ensureFullLeaderboardModal() {
+    let modal = document.getElementById('full-leaderboard-modal');
+    if (modal) return modal;
+
+    modal = document.createElement('div');
+    modal.id = 'full-leaderboard-modal';
+    modal.className = 'fixed inset-0 z-[9999] hidden';
+    modal.innerHTML = `
+        <div class="absolute inset-0 bg-black/70" onclick="closeFullLeaderboard()"></div>
+        <div class="absolute left-1/2 top-1/2 w-[min(920px,92vw)] max-h-[86vh] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-[#0f1217] border border-zinc-800 shadow-2xl overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
+                <div>
+                    <div id="full-leaderboard-title" class="text-sm font-black uppercase tracking-wide">Leaderboard</div>
+                    <div id="full-leaderboard-subtitle" class="text-[11px] text-zinc-400 mt-0.5"></div>
+                </div>
+                <button class="px-3 py-2 rounded-xl bg-zinc-800/60 hover:bg-zinc-800 text-xs font-black" onclick="closeFullLeaderboard()">Close</button>
+            </div>
+
+            <div class="px-5 py-4 overflow-auto no-scrollbar" style="max-height: calc(86vh - 68px);">
+                <div class="grid grid-cols-12 gap-2 text-[10px] font-black text-zinc-500 uppercase pb-2 border-b border-zinc-800">
+                    <div class="col-span-1">#</div>
+                    <div class="col-span-5">Player</div>
+                    <div class="col-span-3">Team</div>
+                    <div class="col-span-1 text-right">GP</div>
+                    <div class="col-span-2 text-right" id="full-leaderboard-valuehdr">Value</div>
+                </div>
+                <div id="full-leaderboard-body" class="divide-y divide-zinc-800/60"></div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    return modal;
+}
+
+function closeFullLeaderboard() {
+    const modal = document.getElementById('full-leaderboard-modal');
+    if (modal) modal.classList.add('hidden');
+}
+
+function openFullLeaderboard(kind, league) {
+    const modal = _ensureFullLeaderboardModal();
+    const data = statsData[league] || { goals: [], assists: [], cleanSheets: [], ratings: [], players: {} };
+
+    let title = '';
+    let valueHdr = '';
+    let arr = [];
+
+    if (kind === 'GOALS') {
+        title = 'Goals';
+        valueHdr = 'Goals';
+        arr = (data.goals || []);
+    } else if (kind === 'ASSISTS') {
+        title = 'Assists';
+        valueHdr = 'Assists';
+        arr = (data.assists || []);
+    } else if (kind === 'CLEAN') {
+        title = 'Clean Sheets';
+        valueHdr = 'Clean';
+        // Only goalies for clean sheets (same logic as the compact view)
+        arr = (data.cleanSheets || []).filter(cs => {
+            const pl = (data.players && data.players[cs.key]) ? data.players[cs.key] : null;
+            return _isGoalie(pl);
+        });
+    } else if (kind === 'RATING') {
+        title = 'Average Rating';
+        valueHdr = 'Rating';
+        arr = (data.ratings || []);
+    }
+
+    // Filter out zeros
+    const filtered = (arr || []).filter(p => {
+        const v = Number(p.value);
+        return !Number.isNaN(v) && v > 0;
+    });
+
+    // Add games played (matches) via players map when available
+    const enriched = filtered.map(p => {
+        const pl = (data.players && data.players[p.key]) ? data.players[p.key] : null;
+        const gp = (p.matches != null ? Number(p.matches) : (pl && pl.matches != null ? Number(pl.matches) : 0)) || 0;
+        return { ...p, matches: gp };
+    });
+
+    // Sort (desc)
+    enriched.sort((a, b) => Number(b.value) - Number(a.value));
+
+    // Assign ranks (simple 1..n)
+    const ranked = enriched.map((p, idx) => ({ ...p, rank: idx + 1 }));
+
+    document.getElementById('full-leaderboard-title').textContent = `${title} Leaderboard`;
+    document.getElementById('full-leaderboard-subtitle').textContent = league === 'COMBINED' ? 'Combined leagues' : league;
+    document.getElementById('full-leaderboard-valuehdr').textContent = valueHdr;
+
+    const body = document.getElementById('full-leaderboard-body');
+    if (!ranked.length) {
+        body.innerHTML = `<div class="py-4 text-sm text-zinc-400">No players to show.</div>`;
+    } else {
+        body.innerHTML = ranked.map(p => `
+            <div class="grid grid-cols-12 gap-2 py-2 items-center">
+                <div class="col-span-1 text-[11px] font-black text-zinc-500">${p.rank}</div>
+                <div class="col-span-5 flex items-center gap-3">
+                    <img src="${getLogo(p.team)}" class="w-5 h-5 object-contain">
+                    <div class="min-w-0">
+                        <div class="font-bold truncate cursor-pointer hover:underline" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">${p.name}</div>
+                    </div>
+                </div>
+                <div class="col-span-3 text-[11px] text-zinc-300 truncate cursor-pointer hover:underline" onclick="viewTeam('${_jsEscapeSingle(p.team)}', '${p.league || league}')">${p.team}</div>
+                <div class="col-span-1 text-right text-[11px] text-zinc-300">${p.matches || 0}</div>
+                <div class="col-span-2 text-right font-black text-[#00ff85]">${kind === 'RATING' ? Number(p.value).toFixed(2) : p.value}</div>
+            </div>
+        `).join('');
+    }
+
+    modal.classList.remove('hidden');
 }
 
 /* UPDATED: clickable team names in last/next lists */
