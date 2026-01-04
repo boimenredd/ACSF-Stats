@@ -1196,7 +1196,7 @@ async function loadStats(league) {
         srcs.cleanSheets ? _parseCsv(srcs.cleanSheets, { header: true }) : [],
       ]);
 
-      const pick = (row, keys, idx=None)=>{
+      const pick = (row, keys, idx=null)=>{
         for (const k of keys) { if (row[k] != null && row[k] !== '') return row[k]; }
         if (Array.isArray(row) && idx!=None) return row[idx] || '';
         return '';
@@ -1865,6 +1865,122 @@ document.addEventListener('keydown', (e) => {
   }
 });
 // === End suggestions ===
+
+
+/* === Safe augmentation: wrap original loadStats to enhance coverage without touching internals === */
+(function(){
+  try {
+    if (typeof loadStats === 'function' && !window.__origLoadStats) {
+      window.__origLoadStats = loadStats;
+      window.loadStats = async function(league) {
+        // call original
+        try { await window.__origLoadStats(league); } catch(e) {}
+        // now enhance
+        try {
+          if (!statsData || !statsData[league]) return;
+          const data = statsData[league];
+          if (!data.players) data.players = {};
+
+          async function _parseCsv(url, opts = {}) {
+            return await new Promise(resolve => {
+              Papa.parse(url, { download: true, header: !!opts.header, complete: r => resolve(r.data || []), error: () => resolve([]) });
+            });
+          }
+          function _mkKey(lg, teamKey, name) {
+            try { return (typeof _makePlayerKey === 'function') ? _makePlayerKey(lg, teamKey, name) : `${lg}:${teamKey}:${name}`; } catch { return `${lg}:${teamKey}:${name}`; }
+          }
+          function _ensurePlayer(data, league, name, team, extra = {}) {
+            const teamKey = (typeof canonicalTeamName==='function') ? canonicalTeamName(team || '') : (team||'');
+            const key = _mkKey(league, teamKey, name || '');
+            if (!data.players[key]) {
+              data.players[key] = {
+                key, league, name: name || 'Unknown', team: team || '', teamKey,
+                position: extra.position || '',
+                goals: 0, assists: 0, cs: 0, avgRating: null,
+                matches: 0, recentRatings: [], photoUrl: extra.photoUrl || ''
+              };
+            }
+            return key;
+          }
+          const srcs = (typeof STATS_URLS!=='undefined' && STATS_URLS[league]) ? STATS_URLS[league] : null;
+          if (!srcs) return;
+
+          // merge goals/assists/clean sheets
+          try {
+            const [allGoals, allAssists, allCS] = await Promise.all([
+              srcs.goals ? _parseCsv(srcs.goals, { header: true }) : [],
+              srcs.assists ? _parseCsv(srcs.assists, { header: true }) : [],
+              srcs.cleanSheets ? _parseCsv(srcs.cleanSheets, { header: true }) : [],
+            ]);
+            const pickVal = (row, names) => {
+              for (const n of names) if (row[n] != null && row[n] !== '') return row[n];
+              if (Array.isArray(row)) return row[0];
+              return '';
+            };
+            data.goals = Array.isArray(data.goals) ? data.goals : [];
+            data.assists = Array.isArray(data.assists) ? data.assists : [];
+            data.cleanSheets = Array.isArray(data.cleanSheets) ? data.cleanSheets : [];
+
+            (allGoals||[]).forEach(row=>{
+              const name = pickVal(row, ['Player','Name']);
+              const team = pickVal(row, ['Team']);
+              const val  = parseInt(pickVal(row, ['Goals','G']), 10) || 0;
+              if (!name) return;
+              const key = _ensurePlayer(data, league, name, team);
+              data.players[key].goals = Math.max(data.players[key].goals||0, val);
+              data.goals.push({ key, name, value: val, team, league });
+            });
+            (allAssists||[]).forEach(row=>{
+              const name = pickVal(row, ['Player','Name']);
+              const team = pickVal(row, ['Team']);
+              const val  = parseInt(pickVal(row, ['Assists','A']), 10) || 0;
+              if (!name) return;
+              const key = _ensurePlayer(data, league, name, team);
+              data.players[key].assists = Math.max(data.players[key].assists||0, val);
+              data.assists.push({ key, name, value: val, team, league });
+            });
+            (allCS||[]).forEach(row=>{
+              const name = pickVal(row, ['Player','Name']);
+              const team = pickVal(row, ['Team']);
+              const val  = parseInt(pickVal(row, ['CleanSheets','CS']), 10) || 0;
+              if (!name) return;
+              const key = _ensurePlayer(data, league, name, team);
+              data.players[key].cs = Math.max(data.players[key].cs||0, val);
+              data.cleanSheets.push({ key, name, value: val, team, league });
+            });
+
+            data.goals.sort((a,b)=> (parseInt(b.value)||0)-(parseInt(a.value)||0));
+            data.assists.sort((a,b)=> (parseInt(b.value)||0)-(parseInt(a.value)||0));
+            data.cleanSheets.sort((a,b)=> (parseInt(b.value)||0)-(parseInt(a.value)||0));
+          } catch(e) {}
+
+          // ratings log
+          try {
+            if (srcs.ratingsLog) {
+              const logRows = await _parseCsv(srcs.ratingsLog, { header: true });
+              const seen = {};
+              (logRows||[]).forEach(row => {
+                const name = row.Player || row.Name || (Array.isArray(row) ? row[2] : '');
+                const team = row.Team || (Array.isArray(row) ? row[3] : '');
+                const rating = parseFloat(row.Rating || row.Score || (Array.isArray(row) ? row[4] : ''));
+                const date = row.Date || row.MatchDate || row.Round || (Array.isArray(row) ? row[0] : '');
+                const opponent = row.Opponent || row.Opp || (Array.isArray(row) ? row[5] : '');
+                if (!name) return;
+                const key = _ensurePlayer(data, league, name, team);
+                if (!Number.isNaN(rating)) {
+                  data.players[key].recentRatings.push({ date, opponent, rating });
+                }
+                const mk = key + '::' + date + '::' + opponent;
+                if (!seen[mk]) { seen[mk] = true; data.players[key].matches = (data.players[key].matches||0) + 1; }
+              });
+            }
+          } catch(e) {}
+        } catch(e) {}
+      };
+    }
+  } catch(e) {}
+})();
+/* === End safe augmentation === */
 
 </script>
 </body>
