@@ -40,7 +40,42 @@
         .search-input:focus { outline: none; border-color: var(--accent); }
         .header-search-input { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 8px 10px; color: #fff; width: 165px; font-size: 12px; }
         .header-search-input:focus { outline: none; border-color: var(--accent); }
-    </style>
+    
+/* --- Player page: keep only the team logo next to the team name --- */
+.player-logo-dup,
+.player-stat-watermark { display: none; }
+
+/* Suggestions dropdown */
+.search-suggestions {
+    position: absolute;
+    right: 1rem;
+    top: 60px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    width: 280px;
+    max-height: 320px;
+    overflow-y: auto;
+    z-index: 200;
+}
+.search-suggestion {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.search-suggestion:hover { background: #222; }
+
+/* --- Desktop-friendly width without changing existing tailwind classes --- */
+@media (min-width: 768px) {
+  body { max-width: 1100px !important; margin-left: auto; margin-right: auto; }
+  header, .nav-bottom { max-width: 1100px !important; left: 0; right: 0; margin-left: auto; margin-right: auto; }
+  .grid { grid-template-columns: repeat(12, minmax(0,1fr)); }
+}
+
+</style>
 </head>
 <body class="max-w-md mx-auto pb-24">
 
@@ -48,7 +83,8 @@
         <div class="flex items-center justify-between gap-3">
             <h1 class="text-xl font-black italic uppercase">Score<span class="text-[#00ff85]">Hub</span></h1>
             <input type="text" id="globalSearch" class="header-search-input" placeholder="Search teams or players..." onkeyup="searchPlayer(event, 'globalSearch')">
-        </div>
+        
+<div id="globalSearchSuggestions" class="search-suggestions hidden"></div></div>
     </header>
 
     <main id="hub-tab">
@@ -857,7 +893,14 @@ async function init() {
                             pendingMatchRows = [];
                             if (row[1] && row[2]) pendingMatchRows.push(row);
                             return;
-                        }
+                        
+  // --- Added: wire up search suggestions ---
+  const __gs = document.getElementById('globalSearch');
+  if (__gs) {
+    __gs.addEventListener('input', () => showSuggestions('globalSearch'));
+    __gs.addEventListener('focus', () => showSuggestions('globalSearch'));
+  }
+}
 
                         if (awaitingDate) {
                             if (parsedA && parsedA !== 'MATCHDAY_MARKER') {
@@ -1118,7 +1161,112 @@ async function loadStats(league) {
     if (!STATS_URLS[league].leaderboard) {
         statsData[league] = { goals: [], assists: [], cleanSheets: [], ratings: [], players: {}, loaded: true };
         return;
+    
+  // --- Added: merge full lists and ratings log to ensure complete coverage ---
+  if (!statsData[league]) statsData[league] = { players:{}, goals:[], assists:[], cleanSheets:[] };
+  const data = statsData[league];
+
+  async function _parseCsv(url, opts = {}) {
+    return await new Promise(resolve => {
+      Papa.parse(url, { download: true, header: !!opts.header, complete: r => resolve(r.data || []), error: () => resolve([]) });
+    });
+  }
+  function _makePlayerKeySafe(lg, teamKey, name) {
+    try { return (typeof _makePlayerKey === 'function') ? _makePlayerKey(lg, teamKey, name) : `${lg}:${teamKey}:${name}`; } catch { return `${lg}:${teamKey}:${name}`; }
+  }
+  function _ensurePlayer(data, league, name, team, extra = {}) {
+    const teamKey = (typeof canonicalTeamName==='function') ? canonicalTeamName(team || '') : (team||'');
+    const key = _makePlayerKeySafe(league, teamKey, name || '');
+    if (!data.players[key]) {
+      data.players[key] = {
+        key, league, name: name || 'Unknown', team: team || '', teamKey,
+        position: extra.position || '',
+        goals: 0, assists: 0, cs: 0, avgRating: null,
+        matches: 0, recentRatings: [], photoUrl: extra.photoUrl || ''
+      };
     }
+    return key;
+  }
+  const srcs = (typeof STATS_URLS!=='undefined' && STATS_URLS[league]) ? STATS_URLS[league] : null;
+  if (srcs) {
+    try {
+      const [allGoals, allAssists, allCS] = await Promise.all([
+        srcs.goals ? _parseCsv(srcs.goals, { header: true }) : [],
+        srcs.assists ? _parseCsv(srcs.assists, { header: true }) : [],
+        srcs.cleanSheets ? _parseCsv(srcs.cleanSheets, { header: true }) : [],
+      ]);
+
+      const pick = (row, keys, idx=None)=>{
+        for (const k of keys) { if (row[k] != null && row[k] !== '') return row[k]; }
+        if (Array.isArray(row) && idx!=None) return row[idx] || '';
+        return '';
+      };
+    } catch(e) {}
+    try {
+      const allGoals = srcs.goals ? await _parseCsv(srcs.goals, { header: true }) : [];
+      const allAssists = srcs.assists ? await _parseCsv(srcs.assists, { header: true }) : [];
+      const allCS = srcs.cleanSheets ? await _parseCsv(srcs.cleanSheets, { header: true }) : [];
+
+      const pickVal = (row, names) => {
+        for (const n of names) if (row[n] != null && row[n] !== '') return row[n];
+        if (Array.isArray(row)) return row[0];
+        return '';
+      };
+
+      (allGoals||[]).forEach((row,i)=>{
+        const name = pickVal(row, ['Player','Name']);
+        const team = pickVal(row, ['Team']);
+        const val  = parseInt(pickVal(row, ['Goals','G']), 10) || 0;
+        if (!name) return;
+        const key = _ensurePlayer(data, league, name, team);
+        data.players[key].goals = Math.max(data.players[key].goals||0, val);
+        data.goals.push({ key, name, value: val, team, league });
+      });
+      (allAssists||[]).forEach((row,i)=>{
+        const name = pickVal(row, ['Player','Name']);
+        const team = pickVal(row, ['Team']);
+        const val  = parseInt(pickVal(row, ['Assists','A']), 10) || 0;
+        if (!name) return;
+        const key = _ensurePlayer(data, league, name, team);
+        data.players[key].assists = Math.max(data.players[key].assists||0, val);
+        data.assists.push({ key, name, value: val, team, league });
+      });
+      (allCS||[]).forEach((row,i)=>{
+        const name = pickVal(row, ['Player','Name']);
+        const team = pickVal(row, ['Team']);
+        const val  = parseInt(pickVal(row, ['CleanSheets','CS']), 10) || 0;
+        if (!name) return;
+        const key = _ensurePlayer(data, league, name, team);
+        data.players[key].cs = Math.max(data.players[key].cs||0, val);
+        data.cleanSheets.push({ key, name, value: val, team, league });
+      });
+    } catch(e) {}
+    try {
+      if (srcs.ratingsLog) {
+        const logRows = await _parseCsv(srcs.ratingsLog, { header: true });
+        const seen = {};
+        (logRows||[]).forEach(row => {
+          const name = row.Player || row.Name || (Array.isArray(row) ? row[2] : '');
+          const team = row.Team || (Array.isArray(row) ? row[3] : '');
+          const rating = parseFloat(row.Rating || row.Score || (Array.isArray(row) ? row[4] : ''));
+          const date = row.Date || row.MatchDate || row.Round || (Array.isArray(row) ? row[0] : '');
+          const opponent = row.Opponent || row.Opp || (Array.isArray(row) ? row[5] : '');
+          if (!name) return;
+          const key = _ensurePlayer(data, league, name, team);
+          if (!Number.isNaN(rating)) {
+            data.players[key].recentRatings.push({ date, opponent, rating });
+          }
+          const mk = key + '::' + date + '::' + opponent;
+          if (!seen[mk]) { seen[mk] = true; data.players[key].matches = (data.players[key].matches||0) + 1; }
+        });
+      }
+    } catch(e) {}
+    // Sort leaderboards
+    if (Array.isArray(data.goals)) data.goals.sort((a,b)=> (parseInt(b.value)||0)-(parseInt(a.value)||0));
+    if (Array.isArray(data.assists)) data.assists.sort((a,b)=> (parseInt(b.value)||0)-(parseInt(a.value)||0));
+    if (Array.isArray(data.cleanSheets)) data.cleanSheets.sort((a,b)=> (parseInt(b.value)||0)-(parseInt(a.value)||0));
+  }
+}
 
     if (statsData[league].loaded) return;
 
@@ -1636,6 +1784,88 @@ async function viewTeam(teamName, league) {
 }
 
 init();
+
+// === Added: Autocomplete suggestions for players/teams ===
+async function _buildSearchCandidates() {
+  try {
+    if (typeof loadStats === 'function') {
+      await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')].map(p => p.catch(()=>null)));
+    }
+  } catch (e) {}
+
+  const players = [];
+  if (typeof statsData !== 'undefined') {
+    ['PREM','LALIGA','MLS'].forEach(lg => {
+      const pool = (statsData[lg] && statsData[lg].players) ? statsData[lg].players : {};
+      Object.values(pool).forEach(p => {
+        if (!p || !p.name) return;
+        players.push({ type: 'player', key: p.key || '', name: p.name, team: p.team || '', league: p.league || lg });
+      });
+    });
+  }
+
+  const teams = {};
+  const addTeam = (t) => { if (!t) return; teams[(typeof canonicalTeamName==='function'?canonicalTeamName(t):t)] = t; };
+  if (typeof allMatches !== 'undefined' && Array.isArray(allMatches)) {
+    allMatches.forEach(m => { addTeam(m.home); addTeam(m.away); });
+  }
+  if (typeof LOGOS !== 'undefined') Object.keys(LOGOS).forEach(addTeam);
+  if (typeof TEAM_ALIASES !== 'undefined') Object.values(TEAM_ALIASES).forEach(addTeam);
+
+  const teamList = Object.values(teams).map(t => ({ type: 'team', name: t, league: (typeof _findTeamLeague==='function'?_findTeamLeague(t):'PREM') }));
+  return { players, teams: teamList };
+}
+
+let __searchCache = null;
+async function showSuggestions(inputId='globalSearch') {
+  const el = document.getElementById(inputId);
+  const box = document.getElementById('globalSearchSuggestions');
+  if (!el || !box) return;
+  const q = (el.value || '').trim().toLowerCase();
+  if (!q) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+
+  if (!__searchCache) __searchCache = await _buildSearchCandidates();
+  const norm = (s)=> (s||'').toLowerCase();
+  const startsWith = (str)=> norm(str).startsWith(q);
+  const contains   = (str)=> norm(str).includes(q);
+
+  const playerHits = __searchCache.players
+    .filter(p => startsWith(p.name) || contains(`${p.name} ${p.team}`))
+    .slice(0, 8);
+
+  const teamHits = __searchCache.teams
+    .filter(t => startsWith(t.name) || contains(t.name))
+    .slice(0, 6);
+
+  const item = (h) => {
+    if (h.type === 'player') {
+      return `<div class="search-suggestion" onclick="viewPlayer('${(h.key||'').replace(/'/g,\"\'\")}'); document.getElementById('globalSearchSuggestions').classList.add('hidden')">
+                <span>👤</span><span class="flex-1">${h.name}</span><span class="text-zinc-500">${h.team||''}</span>
+              </div>`;
+    }
+    return `<div class="search-suggestion" onclick="viewTeam('${(h.name||'').replace(/'/g,\"\'\")}', '${h.league||'PREM'}'); document.getElementById('globalSearchSuggestions').classList.add('hidden')">
+              <img src="${typeof getLogo==='function'?getLogo(h.name):''}" class="w-4 h-4 object-contain"><span class="flex-1">${h.name}</span>
+            </div>`;
+  };
+
+  box.innerHTML = [...playerHits, ...teamHits].map(item).join('') || '<div class="search-suggestion text-zinc-500">No matches</div>';
+  box.classList.remove('hidden');
+}
+
+document.addEventListener('click', (e) => {
+  const box = document.getElementById('globalSearchSuggestions');
+  const input = document.getElementById('globalSearch');
+  if (!box || !input) return;
+  if (!box.contains(e.target) && e.target !== input) box.classList.add('hidden');
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const box = document.getElementById('globalSearchSuggestions');
+    if (box) box.classList.add('hidden');
+  }
+});
+// === End suggestions ===
+
 </script>
 </body>
 </html>
