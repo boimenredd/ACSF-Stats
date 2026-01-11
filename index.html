@@ -1699,11 +1699,11 @@ function _matchRowClickable(m, highlightWinner = false) {
                 <span class="text-[10px] font-black text-zinc-500 w-12">${_formatShortDate(m.date)}</span>
 
                 <img src="${getLogo(m.home)}" class="w-4 h-4 object-contain">
-                <button class="text-[11px] ${homeWin ? 'font-black' : 'font-bold'} hover:text-...am('${_jsEscapeSingle(m.home)}','${homeLg}')">${m.home}</button>
+                <button class="text-[11px] ${homeWin ? 'font-black' : 'font-normal'} hover:text-...am('${_jsEscapeSingle(m.home)}','${homeLg}')">${m.home}</button>
 
                 <span class="text-zinc-500 text-[10px] font-black">vs</span>
 
-                <button class="text-[11px] ${awayWin ? 'font-black' : 'font-bold'} hover:text-...am('${_jsEscapeSingle(m.away)}','${awayLg}')">${m.away}</button>
+                <button class="text-[11px] ${awayWin ? 'font-black' : 'font-normal'} hover:text-...am('${_jsEscapeSingle(m.away)}','${awayLg}')">${m.away}</button>
                 <img src="${getLogo(m.away)}" class="w-4 h-4 object-contain">
             </div>
             <div class="font-mono text-[#00ff85] font-black">${m.score}</div>
