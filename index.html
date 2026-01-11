@@ -1623,7 +1623,20 @@ function openFullLeaderboard(kind, league) {
     // Add games played (matches) via players map when available
     const enriched = filtered.map(p => {
         const pl = (data.players && data.players[p.key]) ? data.players[p.key] : null;
-        const gp = (p.matches != null ? Number(p.matches) : (pl && pl.matches != null ? Number(pl.matches) : 0)) || 0;
+        let gp = (p.matches != null ? Number(p.matches) : (pl && pl.matches != null ? Number(pl.matches) : 0)) || 0;
+
+        // Fix: when Avg Rating rows don't carry GP (or team names differ), fall back to matching by player name
+        if (!gp && kind === 'RATING' && p.name && data.players) {
+            const nm = p.name.toString().trim().toLowerCase();
+            let best = 0;
+            Object.values(data.players).forEach(x => {
+                if ((x && x.name ? x.name : '').toString().trim().toLowerCase() === nm) {
+                    const mv = Number(x.matches) || 0;
+                    if (mv > best) best = mv;
+                }
+            });
+            gp = best || gp;
+        }
         return { ...p, matches: gp };
     });
 
@@ -1661,20 +1674,36 @@ function openFullLeaderboard(kind, league) {
 }
 
 /* UPDATED: clickable team names in last/next lists */
-function _matchRowClickable(m) {
+function _matchRowClickable(m, highlightWinner = false) {
     const homeLg = _leagueForTeamFast(m.home);
     const awayLg = _leagueForTeamFast(m.away);
+
+    // Winner highlighting (optional)
+    let homeWin = false, awayWin = false;
+    if (highlightWinner) {
+        const s = (m.score || '').toString();
+        const mm = s.match(/(\d+)\s*[-–—:]\s*(\d+)/);
+        if (mm) {
+            const hg = parseInt(mm[1], 10);
+            const ag = parseInt(mm[2], 10);
+            if (!Number.isNaN(hg) && !Number.isNaN(ag)) {
+                if (hg > ag) homeWin = true;
+                else if (ag > hg) awayWin = true;
+            }
+        }
+    }
+
     return `
         <div class="flex items-center justify-between py-2 border-b border-zinc-800/40 last:border-b-0">
             <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-[10px] font-black text-zinc-500 w-12">${_formatShortDate(m.date)}</span>
 
                 <img src="${getLogo(m.home)}" class="w-4 h-4 object-contain">
-                <button class="text-[11px] font-bold hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(m.home)}','${homeLg}')">${m.home}</button>
+                <button class="text-[11px] ${homeWin ? 'font-black' : 'font-bold'} hover:text-...am('${_jsEscapeSingle(m.home)}','${homeLg}')">${m.home}</button>
 
                 <span class="text-zinc-500 text-[10px] font-black">vs</span>
 
-                <button class="text-[11px] font-bold hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(m.away)}','${awayLg}')">${m.away}</button>
+                <button class="text-[11px] ${awayWin ? 'font-black' : 'font-bold'} hover:text-...am('${_jsEscapeSingle(m.away)}','${awayLg}')">${m.away}</button>
                 <img src="${getLogo(m.away)}" class="w-4 h-4 object-contain">
             </div>
             <div class="font-mono text-[#00ff85] font-black">${m.score}</div>
@@ -1828,7 +1857,7 @@ async function viewTeam(teamName, league) {
         <div class="mt-4 stat-card">
             <div class="text-[10px] font-black text-zinc-500 uppercase">Last 5 Results</div>
             <div class="mt-2">
-                ${last5.map(_matchRowClickable).join('') || '<div class="text-zinc-500 text-sm py-2">No results yet.</div>'}
+                ${last5.map(m => _matchRowClickable(m, true)).join('') || '<div class="text-zinc-500 text-sm py-2">No results yet.</div>'}
             </div>
         </div>
 
