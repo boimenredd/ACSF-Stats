@@ -581,6 +581,13 @@ const SCHEDULE_URLS = {
     MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1689966801&single=true&output=csv'
 };
 
+
+const DOMESTIC_TOURNEY_URLS = {
+    PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv',
+    LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1160505035&single=true&output=csv',
+    MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv'
+};
+
 const STANDINGS_URLS = {
     PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=935978435&single=true&output=csv',
     LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv',
@@ -757,10 +764,31 @@ async function init() {
     allMatches = [];
     const dateMap = {};
 
-    const pushMatch = (league, date, row) => {
+    const pushMatch = (league, date, row, compOverride) => {
         if (!date || !row[1] || !row[2]) return;
         const home = (row[1] || '').trim();
         const away = (row[2] || '').trim();
+
+        const rawScore = (row[3] || 'v').toString().trim();
+        const rawComp = (compOverride || row[4] || '').toString().trim();
+
+        const isScoreLike = (s) => {
+            const t = (s || '').toString().trim().toLowerCase();
+            if (!t) return false;
+            if (t === 'v') return true;
+            // 1-0, 1 - 0, 1:0
+            return /^(\d+\s*[-:]\s*\d+)$/.test(t);
+        };
+
+        let score = rawScore || 'v';
+        let comp = rawComp || '';
+
+        // If score cell contains letters (likely a competition label) and comp is blank, treat score as comp.
+        if (!comp && score && !isScoreLike(score) && /[a-z]/i.test(score)) {
+            comp = score;
+            score = 'v';
+        }
+
         allMatches.push({
             league,
             date,
@@ -768,7 +796,8 @@ async function init() {
             away,
             homeKey: canonicalTeamName(home),
             awayKey: canonicalTeamName(away),
-            score: (row[3] || 'v').trim()
+            score: (score || 'v').trim(),
+            comp: (comp || '').trim()
         });
         dateMap[date.getTime()] = true;
     };
@@ -816,6 +845,67 @@ async function init() {
         });
     }
 
+
+    // --- Domestic cup competitions (England/Spain/USA) ---
+    // Expected sheet format is the same as the league schedule sheets (date markers + home/away/score),
+    // with an optional competition name in column E. Competition names are used for the day dividers.
+    for (let k of keys) {
+        const cupUrl = DOMESTIC_TOURNEY_URLS[k];
+        if (!cupUrl) continue;
+
+        await new Promise(res => {
+            Papa.parse(cupUrl, {
+                download: true,
+                complete: (results) => {
+                    let currentDate = null;
+                    let awaitingDate = false;
+                    let pendingMatchRows = [];
+
+                    (results.data || []).forEach((row, i) => {
+                        if (!row || !row.length) return;
+                        if (i === 0) {
+                            // skip header row if it looks like one
+                            const a0 = (row[0] || '').toString().toLowerCase();
+                            const b0 = (row[1] || '').toString().toLowerCase();
+                            if (a0.includes('date') || a0.includes('matchday') || b0.includes('home')) return;
+                        }
+
+                        const cellA = row[0];
+                        const parsedA = cellA ? parseSheetDate(cellA) : null;
+
+                        if (parsedA === 'MATCHDAY_MARKER') {
+                            currentDate = null;
+                            awaitingDate = true;
+                            pendingMatchRows = [];
+                            if (row[1] && row[2]) pendingMatchRows.push(row);
+                            return;
+                        }
+
+                        if (awaitingDate) {
+                            if (parsedA && parsedA !== 'MATCHDAY_MARKER') {
+                                currentDate = parsedA;
+                                awaitingDate = false;
+                                pendingMatchRows.forEach(r => pushMatch(k, currentDate, r));
+                                pendingMatchRows = [];
+                                pushMatch(k, currentDate, row);
+                            }
+                            return;
+                        }
+
+                        if (parsedA && parsedA !== 'MATCHDAY_MARKER') currentDate = parsedA;
+
+                        // Cup sheets may place the competition label in col E (index 4).
+                        // If the sheet uses a fixed competition per file, you can still set it per-row via col E.
+                        pushMatch(k, currentDate, row, row[4]);
+                    });
+
+                    res();
+                },
+                error: () => res()
+            });
+        });
+    }
+
     uniqueDates = Object.keys(dateMap).map(Number).sort((a,b) => a - b);
     if (uniqueDates.length > 0) jumpToToday();
     else {
@@ -851,13 +941,37 @@ function renderMatches() {
     document.getElementById('dateText').textContent = `${days[dObj.getDay()]}, ${months[dObj.getMonth()]} ${dObj.getDate()}`;
 
     const filtered = allMatches.filter(m => m.date.getTime() === target);
-    container.innerHTML = ['PREM', 'LALIGA', 'MLS'].map(lg => {
+    const leagueOrder = ['PREM', 'LALIGA', 'MLS'];
+
+    let html = '';
+    leagueOrder.forEach(lg => {
         const matches = filtered.filter(m => m.league === lg);
-        if (matches.length === 0) return '';
-        return `
+        if (!matches.length) return;
+
+        // Group by competition label (league name by default, cup name when present)
+        const leagueLabel = LEAGUE_META[lg].name;
+        const groups = {};
+        matches.forEach(m => {
+            const label = (m.comp && m.comp.trim()) ? m.comp.trim() : leagueLabel;
+            if (!groups[label]) groups[label] = [];
+            groups[label].push(m);
+        });
+
+        const labels = Object.keys(groups);
+        labels.sort((a,b) => {
+            // Show league matches first, then cups alphabetically
+            if (a === leagueLabel && b !== leagueLabel) return -1;
+            if (b === leagueLabel && a !== leagueLabel) return 1;
+            return a.localeCompare(b);
+        });
+
+        labels.forEach(label => {
+            const groupMatches = groups[label] || [];
+            if (!groupMatches.length) return;
+            html += `
             <div class="league-container">
-                <div class="league-header"><img src="${LEAGUE_META[lg].logo}" class="league-logo"><span>${LEAGUE_META[lg].name}</span></div>
-                ${matches.map(m => {
+                <div class="league-header"><img src="${LEAGUE_META[lg].logo}" class="league-logo"><span>${label}</span></div>
+                ${groupMatches.map(m => {
                     return `
                     <div class="match-row">
                         <div class="team-box justify-end cursor-pointer hover:opacity-70" onclick="viewTeam('${_jsEscapeSingle(m.home)}', '${lg}')"><span class="team-name text-right">${m.home}</span><img src="${getLogo(m.home)}" class="team-logo"></div>
@@ -868,7 +982,10 @@ function renderMatches() {
                     </div>`;
                 }).join('')}
             </div>`;
-    }).join('');
+        });
+    });
+
+    container.innerHTML = html;
 }
 
 function changeDate(step) {
