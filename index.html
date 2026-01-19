@@ -240,33 +240,6 @@ const LOGOS = {
     "Sporting KC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265350/assets/logos/mls-clubs/Club_Logo-Sporting_Kansas_City_rrkzdb.png",
     "DC United": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500504/assets/logos/mls-clubs/Club_Logo-D.C_t03ekm.png",
     "Cincinnati": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500252/assets/logos/mls-clubs/Club_Logo-Cincinatti_ohmgcp.png"
-    "Deportivo La Coruna": "https://upload.wikimedia.org/wikipedia/en/thumb/4/4e/RC_Deportivo_La_Coru%C3%B1a_logo.svg/1280px-RC_Deportivo_La_Coru%C3%B1a_logo.svg.png",
-    "Racing Santander": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Racing_de_Santander_logo.svg/960px-Racing_de_Santander_logo.svg.png",
-    "Cultural Leonesa": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Logo_of_Cultural_y_Deportiva_Leonesa.svg/960px-Logo_of_Cultural_y_Deportiva_Leonesa.svg.png",
-    "Albacete": "https://upload.wikimedia.org/wikipedia/en/thumb/3/37/Albacete_balompie.svg/960px-Albacete_balompie.svg.png",
-    "Burgos": "https://upload.wikimedia.org/wikipedia/en/0/00/Burgos_CF_escudo.png",
-    "Derby County": "https://upload.wikimedia.org/wikipedia/en/thumb/4/4a/Derby_County_crest.svg/250px-Derby_County_crest.svg.png",
-    "Norwich": "https://upload.wikimedia.org/wikipedia/en/thumb/1/17/Norwich_City_FC_logo.svg/250px-Norwich_City_FC_logo.svg.png",
-    "Huddersfield": "https://upload.wikimedia.org/wikipedia/en/4/43/Huddersfield_Town_AFC_crest.svg",
-    "Oxford United": "https://upload.wikimedia.org/wikipedia/en/thumb/3/3e/Oxford_United_FC_logo.svg/250px-Oxford_United_FC_logo.svg.png",
-    "Grimsby Town": "https://upload.wikimedia.org/wikipedia/en/d/db/Grimsby_Town_F.C._logo.svg",
-    "Millwall": "https://upload.wikimedia.org/wikipedia/en/9/98/Millwall_FC_crest.svg",
-    "Swansea": "https://upload.wikimedia.org/wikipedia/en/f/f9/Swansea_City_AFC_logo.svg",
-    "Barnsley": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c9/Barnsley_FC.svg/250px-Barnsley_FC.svg.png",
-    "Cambridge United": "https://upload.wikimedia.org/wikipedia/en/5/57/Cambridge_United_FC_crest.svg",
-    "Lincoln City": "https://upload.wikimedia.org/wikipedia/en/thumb/3/39/Lincoln_City_FC_2024_crest.svg/960px-Lincoln_City_FC_2024_crest.svg.png",
-    "Bradford City": "https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Bradford_City_AFC_crest.svg/250px-Bradford_City_AFC_crest.svg.png",
-    "Doncaster": "https://upload.wikimedia.org/wikipedia/en/c/c5/Doncaster_Rovers_F.C._logo.svg",
-    "Port Vale": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5f/Port_Vale_logo.svg/250px-Port_Vale_logo.svg.png",
-    "Wycombe": "https://upload.wikimedia.org/wikipedia/en/f/fb/Wycombe_Wanderers_FC_logo.svg",
-    "Shrewsbury": "https://upload.wikimedia.org/wikipedia/en/thumb/1/1b/Shrewsbury_Town_F.C._logo.svg/250px-Shrewsbury_Town_F.C._logo.svg.png",
-    "Charlton Athletic": "https://upload.wikimedia.org/wikipedia/en/f/f5/Charlton_Athletic_FC_crest.svg",
-    "Exeter City": "https://upload.wikimedia.org/wikipedia/en/thumb/7/71/Exeter_City_FC.svg/250px-Exeter_City_FC.svg.png",
-    "QPR": "https://upload.wikimedia.org/wikipedia/en/3/31/Queens_Park_Rangers_crest.svg",
-    "Sheffield Wednesday": "https://upload.wikimedia.org/wikipedia/en/thumb/8/88/Sheffield_Wednesday_badge.svg/960px-Sheffield_Wednesday_badge.svg.png",
-    "Portsmouth": "https://upload.wikimedia.org/wikipedia/en/3/38/Portsmouth_FC_logo.svg",
-    "Cheltenham": "https://upload.wikimedia.org/wikipedia/en/c/c3/Cheltenham_Town_F.C._logo.svg",
-    "Macclesfield": "https://upload.wikimedia.org/wikipedia/en/4/40/Macclesfield_Town_FC.svg",
 };
 
 function _normMatch(s) {
@@ -318,10 +291,6 @@ const TEAM_ALIASES = {
     "columbus crew": "Columbus",
     "fc dallas": "FC Dallas",
     "dallas": "FC Dallas"
-    "bilbao": "Athletic Bilbao",
-    "athletic bilbao": "Athletic Bilbao",
-    "doncaster rovers": "Doncaster",
-    "doncaster": "Doncaster",
 };
 
 
@@ -2434,11 +2403,29 @@ ADD-ONLY: DOMESTIC CUPS (COMPETITION-FIRST, SAFE LOAD)
 </script>
 
 
+
 <script>
-/* ADD-ONLY: DOMESTIC CUPS v2 (does not affect standings/stats/nav) */
+/* =====================
+ADD-ONLY PATCH PACK (SAFE)
+- Does not modify existing functions or event handlers
+- Only extends LOGOS and TEAM_ALIASES, and appends cup fixtures blocks
+===================== */
 (function(){
-  if (window.__DOMESTIC_CUPS_V2__) return;
-  window.__DOMESTIC_CUPS_V2__ = true;
+  try {
+    if (typeof LOGOS === 'object' && LOGOS) {
+      Object.assign(LOGOS, {"Deportivo La Coruna": "https://upload.wikimedia.org/wikipedia/en/thumb/4/4e/RC_Deportivo_La_Coru%C3%B1a_logo.svg/1280px-RC_Deportivo_La_Coru%C3%B1a_logo.svg.png", "Racing Santander": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Racing_de_Santander_logo.svg/960px-Racing_de_Santander_logo.svg.png", "Cultural Leonesa": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Logo_of_Cultural_y_Deportiva_Leonesa.svg/960px-Logo_of_Cultural_y_Deportiva_Leonesa.svg.png", "Albacete": "https://upload.wikimedia.org/wikipedia/en/thumb/3/37/Albacete_balompie.svg/960px-Albacete_balompie.svg.png", "Burgos": "https://upload.wikimedia.org/wikipedia/en/0/00/Burgos_CF_escudo.png", "Derby County": "https://upload.wikimedia.org/wikipedia/en/thumb/4/4a/Derby_County_crest.svg/250px-Derby_County_crest.svg.png", "Norwich": "https://upload.wikimedia.org/wikipedia/en/thumb/1/17/Norwich_City_FC_logo.svg/250px-Norwich_City_FC_logo.svg.png", "Huddersfield": "https://upload.wikimedia.org/wikipedia/en/4/43/Huddersfield_Town_AFC_crest.svg", "Oxford United": "https://upload.wikimedia.org/wikipedia/en/thumb/3/3e/Oxford_United_FC_logo.svg/250px-Oxford_United_FC_logo.svg.png", "Grimsby Town": "https://upload.wikimedia.org/wikipedia/en/d/db/Grimsby_Town_F.C._logo.svg", "Millwall": "https://upload.wikimedia.org/wikipedia/en/9/98/Millwall_FC_crest.svg", "Swansea": "https://upload.wikimedia.org/wikipedia/en/f/f9/Swansea_City_AFC_logo.svg", "Barnsley": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c9/Barnsley_FC.svg/250px-Barnsley_FC.svg.png", "Cambridge United": "https://upload.wikimedia.org/wikipedia/en/5/57/Cambridge_United_FC_crest.svg", "Lincoln City": "https://upload.wikimedia.org/wikipedia/en/thumb/3/39/Lincoln_City_FC_2024_crest.svg/960px-Lincoln_City_FC_2024_crest.svg.png", "Everton": "https://upload.wikimedia.org/wikipedia/en/thumb/7/7c/Everton_FC_logo.svg/250px-Everton_FC_logo.svg.png", "Bradford City": "https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Bradford_City_AFC_crest.svg/250px-Bradford_City_AFC_crest.svg.png", "Doncaster": "https://upload.wikimedia.org/wikipedia/en/c/c5/Doncaster_Rovers_F.C._logo.svg", "Port Vale": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5f/Port_Vale_logo.svg/250px-Port_Vale_logo.svg.png", "Wycombe": "https://upload.wikimedia.org/wikipedia/en/f/fb/Wycombe_Wanderers_FC_logo.svg", "Shrewsbury": "https://upload.wikimedia.org/wikipedia/en/thumb/1/1b/Shrewsbury_Town_F.C._logo.svg/250px-Shrewsbury_Town_F.C._logo.svg.png", "Charlton Athletic": "https://upload.wikimedia.org/wikipedia/en/f/f5/Charlton_Athletic_FC_crest.svg", "Exeter City": "https://upload.wikimedia.org/wikipedia/en/thumb/7/71/Exeter_City_FC.svg/250px-Exeter_City_FC.svg.png", "QPR": "https://upload.wikimedia.org/wikipedia/en/3/31/Queens_Park_Rangers_crest.svg", "Sheffield Wednesday": "https://upload.wikimedia.org/wikipedia/en/thumb/8/88/Sheffield_Wednesday_badge.svg/960px-Sheffield_Wednesday_badge.svg.png", "Portsmouth": "https://upload.wikimedia.org/wikipedia/en/3/38/Portsmouth_FC_logo.svg", "Cheltenham": "https://upload.wikimedia.org/wikipedia/en/c/c3/Cheltenham_Town_F.C._logo.svg", "Macclesfield": "https://upload.wikimedia.org/wikipedia/en/4/40/Macclesfield_Town_FC.svg"});
+    }
+  } catch(e) {}
+
+  try {
+    if (typeof TEAM_ALIASES === 'object' && TEAM_ALIASES) {
+      Object.assign(TEAM_ALIASES, {"bilbao": "Athletic Bilbao", "athletic bilbao": "Athletic Bilbao", "doncaster rovers": "Doncaster", "doncaster": "Doncaster"});
+    }
+  } catch(e) {}
+
+  // DOMESTIC CUPS (England/Spain vertical; MLS USOC+Continental columns)
+  if (window.__DOMESTIC_CUPS_SAFE_APPEND__) return;
+  window.__DOMESTIC_CUPS_SAFE_APPEND__ = true;
 
   const SOURCES = [
     { flag:'🇬🇧', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv', mode:'vertical' },
@@ -2446,121 +2433,111 @@ ADD-ONLY: DOMESTIC CUPS (COMPETITION-FIRST, SAFE LOAD)
     { flag:'🇺🇸', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv', mode:'mls' }
   ];
 
-  function safeTrim(x){ return (x==null?'':String(x)).trim(); }
+  function t(x) { return (x==null?'':String(x)).trim(); }
 
-  function renderCupBlock(flag, comp, date, matches){
-    try{
+  function renderCup(flag, comp, date, games) {
+    try {
       const list = document.getElementById('league-list');
-      if (!list || !matches || !matches.length) return;
+      if (!list || !games || !games.length) return;
 
       const wrap = document.createElement('div');
       wrap.className = 'league-container';
-
       wrap.innerHTML =
         '<div class="league-header"><span>' + flag + '</span><span>' + comp + '</span></div>' +
         '<div class="px-4 py-2 text-[11px] font-bold uppercase opacity-80">' + date + '</div>';
 
-      for (const m of matches){
+      for (const g of games) {
         const row = document.createElement('div');
         row.className = 'match-row';
         row.innerHTML =
           '<div class="team-box">' +
-            '<img class="team-logo" src="' + (LOGOS[m.home] || '') + '">' +
-            '<span class="team-name">' + m.home + '</span>' +
+            '<img class="team-logo" src="' + (LOGOS && LOGOS[g.home] ? LOGOS[g.home] : '') + '">' +
+            '<span class="team-name">' + g.home + '</span>' +
           '</div>' +
-          '<div class="match-info"><div class="match-score">' + (m.score ? m.score : 'vs') + '</div></div>' +
+          '<div class="match-info"><div class="match-score">' + (g.score ? g.score : 'vs') + '</div></div>' +
           '<div class="team-box justify-end">' +
-            '<span class="team-name">' + m.away + '</span>' +
-            '<img class="team-logo" src="' + (LOGOS[m.away] || '') + '">' +
+            '<span class="team-name">' + g.away + '</span>' +
+            '<img class="team-logo" src="' + (LOGOS && LOGOS[g.away] ? LOGOS[g.away] : '') + '">' +
           '</div>';
         wrap.appendChild(row);
       }
 
       list.appendChild(wrap);
-    }catch(e){ /* never break the app */ }
+    } catch(e) {}
   }
 
-  // England/Spain format:
-  // Column A: tournament name
-  // Row BELOW: date (same column)
-  // Matches START on SAME ROW as tournament name: cols B/C are home/away, D is result
-  function parseVertical(rows, flag){
-    for (let i=0;i<rows.length;i++){
-      const comp = safeTrim(rows[i] && rows[i][0]);
-      const date = safeTrim(rows[i+1] && rows[i+1][0]);
+  function parseVertical(rows, flag) {
+    for (let i=0; i<rows.length; i++) {
+      const comp = t(rows[i] && rows[i][0]);      // tournament name row
+      const date = t(rows[i+1] && rows[i+1][0]);  // date row below
       if (!comp || !date) continue;
 
-      const matches = [];
+      const games = [];
+      // games start same row as tournament name: B/C/D
+      const h0 = t(rows[i] && rows[i][1]);
+      const a0 = t(rows[i] && rows[i][2]);
+      const s0 = t(rows[i] && rows[i][3]);
+      if (h0 && a0) games.push({home:h0, away:a0, score:s0});
 
-      // match on SAME row as comp
-      const h0 = safeTrim(rows[i] && rows[i][1]);
-      const a0 = safeTrim(rows[i] && rows[i][2]);
-      const s0 = safeTrim(rows[i] && rows[i][3]);
-      if (h0 && a0) matches.push({home:h0, away:a0, score:s0});
-
-      // continue after the date row
-      let j = i + 2;
-      while (rows[j] && safeTrim(rows[j][1]) && safeTrim(rows[j][2])){
-        matches.push({
-          home: safeTrim(rows[j][1]),
-          away: safeTrim(rows[j][2]),
-          score: safeTrim(rows[j][3])
-        });
+      let j = i + 2; // skip date row
+      while (rows[j] && t(rows[j][1]) && t(rows[j][2])) {
+        games.push({home:t(rows[j][1]), away:t(rows[j][2]), score:t(rows[j][3])});
         j++;
       }
-
-      renderCupBlock(flag, comp, date, matches);
+      renderCup(flag, comp, date, games);
       i = j - 1;
     }
   }
 
-  // MLS cup format:
-  // USOC: round/date in F (index 5); home/away in G/H; result in I
-  // Continental: round/date in K (index 10); home/away in L/M; result in N
-  function parseMLS(rows, flag){
-    const buckets = {};
-    for (const r of rows){
-      const usocKey = safeTrim(r && r[5]);
-      const usocH = safeTrim(r && r[6]);
-      const usocA = safeTrim(r && r[7]);
-      const usocS = safeTrim(r && r[8]);
-      if (usocKey && usocH && usocA){
-        if (!buckets[usocKey]) buckets[usocKey] = [];
-        buckets[usocKey].push({home:usocH, away:usocA, score:usocS});
+  function parseMLS(rows, flag) {
+    const buckets = Object.create(null);
+    for (const r of rows) {
+      const usKey = t(r && r[5]);
+      const usH = t(r && r[6]);
+      const usA = t(r && r[7]);
+      const usS = t(r && r[8]);
+      if (usKey && usH && usA) {
+        (buckets[usKey] ||= []).push({home:usH, away:usA, score:usS});
       }
-
-      const contKey = safeTrim(r && r[10]);
-      const contH = safeTrim(r && r[11]);
-      const contA = safeTrim(r && r[12]);
-      const contS = safeTrim(r && r[13]);
-      if (contKey && contH && contA){
-        if (!buckets[contKey]) buckets[contKey] = [];
-        buckets[contKey].push({home:contH, away:contA, score:contS});
+      const ccKey = t(r && r[10]);
+      const ccH = t(r && r[11]);
+      const ccA = t(r && r[12]);
+      const ccS = t(r && r[13]);
+      if (ccKey && ccH && ccA) {
+        (buckets[ccKey] ||= []).push({home:ccH, away:ccA, score:ccS});
       }
     }
-
-    for (const key in buckets){
-      renderCupBlock(flag, key, key, buckets[key]);
+    for (const key in buckets) {
+      renderCup(flag, key, key, buckets[key]);
     }
   }
 
-  async function fetchCSV(url){
-    const res = await fetch(url, { cache:'no-store' });
-    const text = await res.text();
-    return Papa.parse(text, { skipEmptyLines:true }).data;
-  }
+  async function loadCups() {
+    try {
+      if (typeof Papa === 'undefined') return false;
+      const list = document.getElementById('league-list');
+      if (!list) return false;
 
-  // wait until the existing app has had time to load its fixtures
-  setTimeout(async function(){
-    try{
-      if (typeof Papa === 'undefined') return;
-      for (const src of SOURCES){
-        const rows = await fetchCSV(src.url);
+      for (const src of SOURCES) {
+        const res = await fetch(src.url, { cache:'no-store' });
+        const csv = await res.text();
+        const rows = Papa.parse(csv, { skipEmptyLines:true }).data;
         if (src.mode === 'vertical') parseVertical(rows, src.flag);
         else parseMLS(rows, src.flag);
       }
-    }catch(e){ /* never break the app */ }
-  }, 1200);
+      return true;
+    } catch(e) {
+      return false;
+    }
+  }
+
+  // Retry a few times without blocking the main app
+  let tries = 0;
+  const timer = setInterval(async ()=>{
+    tries++;
+    const ok = await loadCups();
+    if (ok || tries >= 10) clearInterval(timer);
+  }, 500);
 })();
 </script>
 
