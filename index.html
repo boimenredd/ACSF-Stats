@@ -240,6 +240,33 @@ const LOGOS = {
     "Sporting KC": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1748265350/assets/logos/mls-clubs/Club_Logo-Sporting_Kansas_City_rrkzdb.png",
     "DC United": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500504/assets/logos/mls-clubs/Club_Logo-D.C_t03ekm.png",
     "Cincinnati": "https://images.mlssoccer.com/image/upload/t_club_logo_medium/v1747500252/assets/logos/mls-clubs/Club_Logo-Cincinatti_ohmgcp.png"
+    "Deportivo La Coruna": "https://upload.wikimedia.org/wikipedia/en/thumb/4/4e/RC_Deportivo_La_Coru%C3%B1a_logo.svg/1280px-RC_Deportivo_La_Coru%C3%B1a_logo.svg.png",
+    "Racing Santander": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Racing_de_Santander_logo.svg/960px-Racing_de_Santander_logo.svg.png",
+    "Cultural Leonesa": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Logo_of_Cultural_y_Deportiva_Leonesa.svg/960px-Logo_of_Cultural_y_Deportiva_Leonesa.svg.png",
+    "Albacete": "https://upload.wikimedia.org/wikipedia/en/thumb/3/37/Albacete_balompie.svg/960px-Albacete_balompie.svg.png",
+    "Burgos": "https://upload.wikimedia.org/wikipedia/en/0/00/Burgos_CF_escudo.png",
+    "Derby County": "https://upload.wikimedia.org/wikipedia/en/thumb/4/4a/Derby_County_crest.svg/250px-Derby_County_crest.svg.png",
+    "Norwich": "https://upload.wikimedia.org/wikipedia/en/thumb/1/17/Norwich_City_FC_logo.svg/250px-Norwich_City_FC_logo.svg.png",
+    "Huddersfield": "https://upload.wikimedia.org/wikipedia/en/4/43/Huddersfield_Town_AFC_crest.svg",
+    "Oxford United": "https://upload.wikimedia.org/wikipedia/en/thumb/3/3e/Oxford_United_FC_logo.svg/250px-Oxford_United_FC_logo.svg.png",
+    "Grimsby Town": "https://upload.wikimedia.org/wikipedia/en/d/db/Grimsby_Town_F.C._logo.svg",
+    "Millwall": "https://upload.wikimedia.org/wikipedia/en/9/98/Millwall_FC_crest.svg",
+    "Swansea": "https://upload.wikimedia.org/wikipedia/en/f/f9/Swansea_City_AFC_logo.svg",
+    "Barnsley": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c9/Barnsley_FC.svg/250px-Barnsley_FC.svg.png",
+    "Cambridge United": "https://upload.wikimedia.org/wikipedia/en/5/57/Cambridge_United_FC_crest.svg",
+    "Lincoln City": "https://upload.wikimedia.org/wikipedia/en/thumb/3/39/Lincoln_City_FC_2024_crest.svg/960px-Lincoln_City_FC_2024_crest.svg.png",
+    "Bradford City": "https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Bradford_City_AFC_crest.svg/250px-Bradford_City_AFC_crest.svg.png",
+    "Doncaster": "https://upload.wikimedia.org/wikipedia/en/c/c5/Doncaster_Rovers_F.C._logo.svg",
+    "Port Vale": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5f/Port_Vale_logo.svg/250px-Port_Vale_logo.svg.png",
+    "Wycombe": "https://upload.wikimedia.org/wikipedia/en/f/fb/Wycombe_Wanderers_FC_logo.svg",
+    "Shrewsbury": "https://upload.wikimedia.org/wikipedia/en/thumb/1/1b/Shrewsbury_Town_F.C._logo.svg/250px-Shrewsbury_Town_F.C._logo.svg.png",
+    "Charlton Athletic": "https://upload.wikimedia.org/wikipedia/en/f/f5/Charlton_Athletic_FC_crest.svg",
+    "Exeter City": "https://upload.wikimedia.org/wikipedia/en/thumb/7/71/Exeter_City_FC.svg/250px-Exeter_City_FC.svg.png",
+    "QPR": "https://upload.wikimedia.org/wikipedia/en/3/31/Queens_Park_Rangers_crest.svg",
+    "Sheffield Wednesday": "https://upload.wikimedia.org/wikipedia/en/thumb/8/88/Sheffield_Wednesday_badge.svg/960px-Sheffield_Wednesday_badge.svg.png",
+    "Portsmouth": "https://upload.wikimedia.org/wikipedia/en/3/38/Portsmouth_FC_logo.svg",
+    "Cheltenham": "https://upload.wikimedia.org/wikipedia/en/c/c3/Cheltenham_Town_F.C._logo.svg",
+    "Macclesfield": "https://upload.wikimedia.org/wikipedia/en/4/40/Macclesfield_Town_FC.svg",
 };
 
 function _normMatch(s) {
@@ -291,6 +318,11 @@ const TEAM_ALIASES = {
     "columbus crew": "Columbus",
     "fc dallas": "FC Dallas",
     "dallas": "FC Dallas"
+    "bilbao": "Athletic Bilbao",
+    "athletic bilbao": "Athletic Bilbao",
+    "doncaster rovers": "Doncaster",
+    "doncaster": "Doncaster",
+    "qpr": "QPR",
 };
 
 
@@ -2256,70 +2288,29 @@ DO NOT REMOVE OR MODIFY EXISTING CODE
 
 <script>
 /* =====================
-ADD-ONLY: CUP MATCH CLICK GUARD (NON-INTRUSIVE)
-- Does NOT override switchTab, renderStandings, renderStats, or viewTeam
-- Only disables clicks for teams not present in league standings WHEN the click originates from cup fixtures
+ADD-ONLY: DOMESTIC CUPS (COMPETITION-FIRST, SAFE)
+- Tournament name is in the row ABOVE the date (same column)
+- Matches START on the SAME ROW as the tournament name
+- Does NOT replace or hook league loaders
 ===================== */
 (function(){
-  if (window.__CUP_CLICK_GUARD__) return;
-  window.__CUP_CLICK_GUARD__ = true;
+  if (window.__CUPS_OK__) return;
+  window.__CUPS_OK__ = true;
 
-  function canon(name){
-    try{
-      if (typeof resolveTeamName === 'function') return resolveTeamName(name);
-    }catch(e){}
-    return name;
-  }
-
-  async function teamExistsInLeague(team){
-    const leagues = ['PREM','LALIGA','MLS'];
-    for (const lg of leagues){
-      try{
-        const rows = await loadStandingsData(lg);
-        if ((rows||[]).some(r => canon(r.team) === canon(team))) return true;
-      }catch(e){}
-    }
-    return false;
-  }
-
-  document.addEventListener('click', async (e)=>{
-    const row = e.target.closest('.cup-match');
-    if (!row) return;
-
-    const team = row.getAttribute('data-team');
-    if (!team) return;
-
-    const ok = await teamExistsInLeague(team);
-    if (!ok){
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  }, true);
-})();
-</script>
-
-<script>
-/* =====================
-ADD-ONLY: DOMESTIC CUPS (COMPETITION-FIRST, SAFE LOAD)
-===================== */
-(function(){
-  if (window.__DOMESTIC_CUPS_SAFE__) return;
-  window.__DOMESTIC_CUPS_SAFE__ = true;
-
-  const CUP_SOURCES = [
-    { flag:'🇬🇧', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv', mode:'vertical' },
-    { flag:'🇪🇸', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1160505035&single=true&output=csv', mode:'vertical' },
-    { flag:'🇺🇸', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv', mode:'mls' }
+  const SOURCES = [
+    {flag:'🇬🇧', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv', mode:'vertical'},
+    {flag:'🇪🇸', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1160505035&single=true&output=csv', mode:'vertical'},
+    {flag:'🇺🇸', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv', mode:'mls'}
   ];
 
-  function renderCup(flag, comp, date, matches){
+  function render(flag, comp, date, games){
+    if (!games.length) return;
     const list = document.getElementById('league-list');
-    if (!list || !matches.length) return;
+    if (!list) return;
 
-    const wrap = document.createElement('div');
-    wrap.className = 'league-container';
-
-    wrap.innerHTML = `
+    const box = document.createElement('div');
+    box.className = 'league-container';
+    box.innerHTML = `
       <div class="league-header">
         <span>${flag}</span>
         <span>${comp}</span>
@@ -2327,50 +2318,43 @@ ADD-ONLY: DOMESTIC CUPS (COMPETITION-FIRST, SAFE LOAD)
       <div class="px-4 py-2 text-[11px] font-bold uppercase opacity-80">${date}</div>
     `;
 
-    matches.forEach(m=>{
+    games.forEach(g=>{
       const row = document.createElement('div');
-      row.className = 'match-row cup-match';
-      row.setAttribute('data-team', m.home);
-
+      row.className = 'match-row';
       row.innerHTML = `
         <div class="team-box">
-          <img class="team-logo" src="${LOGOS[m.home]||''}">
-          <span class="team-name">${m.home}</span>
+          <img class="team-logo" src="${LOGOS[g.home]||''}">
+          <span class="team-name">${g.home}</span>
         </div>
-        <div class="match-info">
-          <div class="match-score">${m.score||'vs'}</div>
-        </div>
+        <div class="match-info"><div class="match-score">${g.score||'vs'}</div></div>
         <div class="team-box justify-end">
-          <span class="team-name">${m.away}</span>
-          <img class="team-logo" src="${LOGOS[m.away]||''}">
+          <span class="team-name">${g.away}</span>
+          <img class="team-logo" src="${LOGOS[g.away]||''}">
         </div>
       `;
-      wrap.appendChild(row);
+      box.appendChild(row);
     });
-
-    list.appendChild(wrap);
+    list.appendChild(box);
   }
 
   function parseVertical(rows, flag){
     for (let i=0;i<rows.length;i++){
       const comp = rows[i]?.[0]?.trim();
-      const date = rows[i+1]?.[0]?.trim();
+      const date = rows[i+1]?.[0]?.trim(); // DATE IS ROW BELOW TOURNAMENT
       if (!comp || !date) continue;
 
-      const matches = [];
-
-      // SAME ROW as tournament name
+      const games = [];
+      // matches START on SAME ROW as tournament name (cols B/C/D)
       if (rows[i][1] && rows[i][2]){
-        matches.push({home:rows[i][1], away:rows[i][2], score:rows[i][3]||''});
+        games.push({home:rows[i][1], away:rows[i][2], score:rows[i][3]||''});
       }
-
+      // then continue after date row
       let j = i+2;
       while (rows[j] && rows[j][1] && rows[j][2]){
-        matches.push({home:rows[j][1], away:rows[j][2], score:rows[j][3]||''});
+        games.push({home:rows[j][1], away:rows[j][2], score:rows[j][3]||''});
         j++;
       }
-
-      if (matches.length) renderCup(flag, comp, date, matches);
+      render(flag, comp, date, games);
       i = j-1;
     }
   }
@@ -2379,24 +2363,21 @@ ADD-ONLY: DOMESTIC CUPS (COMPETITION-FIRST, SAFE LOAD)
     const buckets = {};
     rows.forEach(r=>{
       if (r[5] && r[6] && r[7]){
-        buckets[r[5]] ??= [];
-        buckets[r[5]].push({home:r[6], away:r[7], score:r[8]||''});
+        (buckets[r[5]] ||= []).push({home:r[6], away:r[7], score:r[8]||''});
       }
       if (r[10] && r[11] && r[12]){
-        buckets[r[10]] ??= [];
-        buckets[r[10]].push({home:r[11], away:r[12], score:r[13]||''});
+        (buckets[r[10]] ||= []).push({home:r[11], away:r[12], score:r[13]||''});
       }
     });
-    Object.entries(buckets).forEach(([k,v])=>renderCup(flag,k,k,v));
+    Object.entries(buckets).forEach(([k,v])=>render(flag, k, k, v));
   }
 
-  // Delay load so core fixtures + tabs initialize first
   window.addEventListener('load', async ()=>{
-    for (const src of CUP_SOURCES){
-      const text = await fetch(src.url).then(r=>r.text());
-      const rows = Papa.parse(text,{skipEmptyLines:true}).data;
-      if (src.mode==='vertical') parseVertical(rows, src.flag);
-      else parseMLS(rows, src.flag);
+    for (const s of SOURCES){
+      const csv = await fetch(s.url).then(r=>r.text());
+      const rows = Papa.parse(csv,{skipEmptyLines:true}).data;
+      if (s.mode==='vertical') parseVertical(rows, s.flag);
+      else parseMLS(rows, s.flag);
     }
   });
 })();
