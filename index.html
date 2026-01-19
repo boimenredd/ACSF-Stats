@@ -322,7 +322,6 @@ const TEAM_ALIASES = {
     "athletic bilbao": "Athletic Bilbao",
     "doncaster rovers": "Doncaster",
     "doncaster": "Doncaster",
-    "qpr": "QPR",
 };
 
 
@@ -2287,64 +2286,281 @@ DO NOT REMOVE OR MODIFY EXISTING CODE
 
 
 <script>
-/* ADD-ONLY: SAFE CUP RENDERER (NO NAV IMPACT) */
+/* =====================
+ADD-ONLY: CUP MATCH CLICK GUARD (NON-INTRUSIVE)
+- Does NOT override switchTab, renderStandings, renderStats, or viewTeam
+- Only disables clicks for teams not present in league standings WHEN the click originates from cup fixtures
+===================== */
 (function(){
-  if (window.__SAFE_CUPS__) return;
-  window.__SAFE_CUPS__ = true;
+  if (window.__CUP_CLICK_GUARD__) return;
+  window.__CUP_CLICK_GUARD__ = true;
 
-  const SOURCES=[
-    {flag:'🇬🇧',url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv',mode:'vertical'},
-    {flag:'🇪🇸',url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1160505035&single=true&output=csv',mode:'vertical'},
-    {flag:'🇺🇸',url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv',mode:'mls'}
+  function canon(name){
+    try{
+      if (typeof resolveTeamName === 'function') return resolveTeamName(name);
+    }catch(e){}
+    return name;
+  }
+
+  async function teamExistsInLeague(team){
+    const leagues = ['PREM','LALIGA','MLS'];
+    for (const lg of leagues){
+      try{
+        const rows = await loadStandingsData(lg);
+        if ((rows||[]).some(r => canon(r.team) === canon(team))) return true;
+      }catch(e){}
+    }
+    return false;
+  }
+
+  document.addEventListener('click', async (e)=>{
+    const row = e.target.closest('.cup-match');
+    if (!row) return;
+
+    const team = row.getAttribute('data-team');
+    if (!team) return;
+
+    const ok = await teamExistsInLeague(team);
+    if (!ok){
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+})();
+</script>
+
+<script>
+/* =====================
+ADD-ONLY: DOMESTIC CUPS (COMPETITION-FIRST, SAFE LOAD)
+===================== */
+(function(){
+  if (window.__DOMESTIC_CUPS_SAFE__) return;
+  window.__DOMESTIC_CUPS_SAFE__ = true;
+
+  const CUP_SOURCES = [
+    { flag:'🇬🇧', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv', mode:'vertical' },
+    { flag:'🇪🇸', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1160505035&single=true&output=csv', mode:'vertical' },
+    { flag:'🇺🇸', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv', mode:'mls' }
   ];
 
-  function append(flag,comp,date,games){
-    const list=document.getElementById('league-list');
-    if(!list||!games.length) return;
-    const box=document.createElement('div');
-    box.className='league-container';
-    box.innerHTML=`<div class="league-header"><span>${flag}</span><span>${comp}</span></div><div class="px-4 py-2 text-[11px] font-bold uppercase opacity-80">${date}</div>`;
-    games.forEach(g=>{
-      const r=document.createElement('div');
-      r.className='match-row';
-      r.innerHTML=`<div class="team-box"><img class="team-logo" src="${LOGOS[g.home]||''}"><span class="team-name">${g.home}</span></div><div class="match-info"><div class="match-score">${g.score||'vs'}</div></div><div class="team-box justify-end"><span class="team-name">${g.away}</span><img class="team-logo" src="${LOGOS[g.away]||''}"></div>`;
-      box.appendChild(r);
+  function renderCup(flag, comp, date, matches){
+    const list = document.getElementById('league-list');
+    if (!list || !matches.length) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'league-container';
+
+    wrap.innerHTML = `
+      <div class="league-header">
+        <span>${flag}</span>
+        <span>${comp}</span>
+      </div>
+      <div class="px-4 py-2 text-[11px] font-bold uppercase opacity-80">${date}</div>
+    `;
+
+    matches.forEach(m=>{
+      const row = document.createElement('div');
+      row.className = 'match-row cup-match';
+      row.setAttribute('data-team', m.home);
+
+      row.innerHTML = `
+        <div class="team-box">
+          <img class="team-logo" src="${LOGOS[m.home]||''}">
+          <span class="team-name">${m.home}</span>
+        </div>
+        <div class="match-info">
+          <div class="match-score">${m.score||'vs'}</div>
+        </div>
+        <div class="team-box justify-end">
+          <span class="team-name">${m.away}</span>
+          <img class="team-logo" src="${LOGOS[m.away]||''}">
+        </div>
+      `;
+      wrap.appendChild(row);
     });
-    list.appendChild(box);
+
+    list.appendChild(wrap);
   }
 
-  function parseVertical(rows,flag){
-    for(let i=0;i<rows.length;i++){
-      const comp=rows[i]?.[0]?.trim();
-      const date=rows[i+1]?.[0]?.trim();
-      if(!comp||!date) continue;
-      const games=[];
-      if(rows[i][1]&&rows[i][2]) games.push({home:rows[i][1],away:rows[i][2],score:rows[i][3]||''});
-      let j=i+2;
-      while(rows[j]&&rows[j][1]&&rows[j][2]){games.push({home:rows[j][1],away:rows[j][2],score:rows[j][3]||''});j++;}
-      append(flag,comp,date,games);
-      i=j-1;
+  function parseVertical(rows, flag){
+    for (let i=0;i<rows.length;i++){
+      const comp = rows[i]?.[0]?.trim();
+      const date = rows[i+1]?.[0]?.trim();
+      if (!comp || !date) continue;
+
+      const matches = [];
+
+      // SAME ROW as tournament name
+      if (rows[i][1] && rows[i][2]){
+        matches.push({home:rows[i][1], away:rows[i][2], score:rows[i][3]||''});
+      }
+
+      let j = i+2;
+      while (rows[j] && rows[j][1] && rows[j][2]){
+        matches.push({home:rows[j][1], away:rows[j][2], score:rows[j][3]||''});
+        j++;
+      }
+
+      if (matches.length) renderCup(flag, comp, date, matches);
+      i = j-1;
     }
   }
 
-  function parseMLS(rows,flag){
-    const b={};
+  function parseMLS(rows, flag){
+    const buckets = {};
     rows.forEach(r=>{
-      if(r[5]&&r[6]&&r[7]) (b[r[5]]||=[]).push({home:r[6],away:r[7],score:r[8]||''});
-      if(r[10]&&r[11]&&r[12]) (b[r[10]]||=[]).push({home:r[11],away:r[12],score:r[13]||''});
+      if (r[5] && r[6] && r[7]){
+        buckets[r[5]] ??= [];
+        buckets[r[5]].push({home:r[6], away:r[7], score:r[8]||''});
+      }
+      if (r[10] && r[11] && r[12]){
+        buckets[r[10]] ??= [];
+        buckets[r[10]].push({home:r[11], away:r[12], score:r[13]||''});
+      }
     });
-    Object.entries(b).forEach(([k,v])=>append(flag,k,k,v));
+    Object.entries(buckets).forEach(([k,v])=>renderCup(flag,k,k,v));
   }
 
-  // Delay until everything else is definitely ready
-  setTimeout(async ()=>{
-    if (typeof Papa === 'undefined') return;
-    for(const s of SOURCES){
-      const t=await fetch(s.url).then(r=>r.text());
-      const rows=Papa.parse(t,{skipEmptyLines:true}).data;
-      s.mode==='vertical'?parseVertical(rows,s.flag):parseMLS(rows,s.flag);
+  // Delay load so core fixtures + tabs initialize first
+  window.addEventListener('load', async ()=>{
+    for (const src of CUP_SOURCES){
+      const text = await fetch(src.url).then(r=>r.text());
+      const rows = Papa.parse(text,{skipEmptyLines:true}).data;
+      if (src.mode==='vertical') parseVertical(rows, src.flag);
+      else parseMLS(rows, src.flag);
     }
-  }, 1500);
+  });
+})();
+</script>
+
+
+<script>
+/* ADD-ONLY: DOMESTIC CUPS v2 (does not affect standings/stats/nav) */
+(function(){
+  if (window.__DOMESTIC_CUPS_V2__) return;
+  window.__DOMESTIC_CUPS_V2__ = true;
+
+  const SOURCES = [
+    { flag:'🇬🇧', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv', mode:'vertical' },
+    { flag:'🇪🇸', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1160505035&single=true&output=csv', mode:'vertical' },
+    { flag:'🇺🇸', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv', mode:'mls' }
+  ];
+
+  function safeTrim(x){ return (x==null?'':String(x)).trim(); }
+
+  function renderCupBlock(flag, comp, date, matches){
+    try{
+      const list = document.getElementById('league-list');
+      if (!list || !matches || !matches.length) return;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'league-container';
+
+      wrap.innerHTML =
+        '<div class="league-header"><span>' + flag + '</span><span>' + comp + '</span></div>' +
+        '<div class="px-4 py-2 text-[11px] font-bold uppercase opacity-80">' + date + '</div>';
+
+      for (const m of matches){
+        const row = document.createElement('div');
+        row.className = 'match-row';
+        row.innerHTML =
+          '<div class="team-box">' +
+            '<img class="team-logo" src="' + (LOGOS[m.home] || '') + '">' +
+            '<span class="team-name">' + m.home + '</span>' +
+          '</div>' +
+          '<div class="match-info"><div class="match-score">' + (m.score ? m.score : 'vs') + '</div></div>' +
+          '<div class="team-box justify-end">' +
+            '<span class="team-name">' + m.away + '</span>' +
+            '<img class="team-logo" src="' + (LOGOS[m.away] || '') + '">' +
+          '</div>';
+        wrap.appendChild(row);
+      }
+
+      list.appendChild(wrap);
+    }catch(e){ /* never break the app */ }
+  }
+
+  // England/Spain format:
+  // Column A: tournament name
+  // Row BELOW: date (same column)
+  // Matches START on SAME ROW as tournament name: cols B/C are home/away, D is result
+  function parseVertical(rows, flag){
+    for (let i=0;i<rows.length;i++){
+      const comp = safeTrim(rows[i] && rows[i][0]);
+      const date = safeTrim(rows[i+1] && rows[i+1][0]);
+      if (!comp || !date) continue;
+
+      const matches = [];
+
+      // match on SAME row as comp
+      const h0 = safeTrim(rows[i] && rows[i][1]);
+      const a0 = safeTrim(rows[i] && rows[i][2]);
+      const s0 = safeTrim(rows[i] && rows[i][3]);
+      if (h0 && a0) matches.push({home:h0, away:a0, score:s0});
+
+      // continue after the date row
+      let j = i + 2;
+      while (rows[j] && safeTrim(rows[j][1]) && safeTrim(rows[j][2])){
+        matches.push({
+          home: safeTrim(rows[j][1]),
+          away: safeTrim(rows[j][2]),
+          score: safeTrim(rows[j][3])
+        });
+        j++;
+      }
+
+      renderCupBlock(flag, comp, date, matches);
+      i = j - 1;
+    }
+  }
+
+  // MLS cup format:
+  // USOC: round/date in F (index 5); home/away in G/H; result in I
+  // Continental: round/date in K (index 10); home/away in L/M; result in N
+  function parseMLS(rows, flag){
+    const buckets = {};
+    for (const r of rows){
+      const usocKey = safeTrim(r && r[5]);
+      const usocH = safeTrim(r && r[6]);
+      const usocA = safeTrim(r && r[7]);
+      const usocS = safeTrim(r && r[8]);
+      if (usocKey && usocH && usocA){
+        if (!buckets[usocKey]) buckets[usocKey] = [];
+        buckets[usocKey].push({home:usocH, away:usocA, score:usocS});
+      }
+
+      const contKey = safeTrim(r && r[10]);
+      const contH = safeTrim(r && r[11]);
+      const contA = safeTrim(r && r[12]);
+      const contS = safeTrim(r && r[13]);
+      if (contKey && contH && contA){
+        if (!buckets[contKey]) buckets[contKey] = [];
+        buckets[contKey].push({home:contH, away:contA, score:contS});
+      }
+    }
+
+    for (const key in buckets){
+      renderCupBlock(flag, key, key, buckets[key]);
+    }
+  }
+
+  async function fetchCSV(url){
+    const res = await fetch(url, { cache:'no-store' });
+    const text = await res.text();
+    return Papa.parse(text, { skipEmptyLines:true }).data;
+  }
+
+  // wait until the existing app has had time to load its fixtures
+  setTimeout(async function(){
+    try{
+      if (typeof Papa === 'undefined') return;
+      for (const src of SOURCES){
+        const rows = await fetchCSV(src.url);
+        if (src.mode === 'vertical') parseVertical(rows, src.flag);
+        else parseMLS(rows, src.flag);
+      }
+    }catch(e){ /* never break the app */ }
+  }, 1200);
 })();
 </script>
 
