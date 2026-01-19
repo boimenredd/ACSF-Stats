@@ -2146,5 +2146,112 @@ async function searchPlayer(e) {
 init();
 </script>
 
+
+<!-- =====================
+ADD-ONLY: DOMESTIC TOURNAMENT SUPPORT (COMPETITION-FIRST)
+DO NOT REMOVE OR MODIFY EXISTING CODE
+===================== -->
+<script>
+(function(){
+  if (window.__DOMESTIC_TOURNEYS_LOADED__) return;
+  window.__DOMESTIC_TOURNEYS_LOADED__ = true;
+
+  const CUP_SOURCES = [
+    {
+      flag: "🇬🇧",
+      url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv",
+      mode: "vertical"
+    },
+    {
+      flag: "🇪🇸",
+      url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1160505035&single=true&output=csv",
+      mode: "vertical"
+    },
+    {
+      flag: "🇺🇸",
+      url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv",
+      mode: "mls"
+    }
+  ];
+
+  function renderCompetition(flag, name, date, matches){
+    const list = document.getElementById("league-list");
+    if(!list || !matches.length) return;
+
+    const container = document.createElement("div");
+    container.className = "league-container";
+
+    container.innerHTML = `
+      <div class="league-header">
+        <span>${flag}</span>
+        <span>${name}</span>
+      </div>
+      <div class="px-4 py-2 text-[11px] font-bold uppercase opacity-80">${date}</div>
+    `;
+
+    matches.forEach(m=>{
+      const row = document.createElement("div");
+      row.className = "match-row";
+      row.innerHTML = `
+        <div class="team-box">
+          <img class="team-logo" src="${LOGOS[m.home]||''}">
+          <span class="team-name">${m.home}</span>
+        </div>
+        <div class="match-info">
+          <div class="match-score">${m.score||"vs"}</div>
+        </div>
+        <div class="team-box justify-end">
+          <span class="team-name">${m.away}</span>
+          <img class="team-logo" src="${LOGOS[m.away]||''}">
+        </div>
+      `;
+      container.appendChild(row);
+    });
+
+    list.appendChild(container);
+  }
+
+  function parseVertical(rows, flag){
+    for(let i=0;i<rows.length;i++){
+      const comp = rows[i][0];
+      const date = rows[i+1]?.[0];
+      if(comp && date && isNaN(Date.parse(comp))){
+        const matches=[];
+        i+=2;
+        while(rows[i] && rows[i][0] && rows[i][1]){
+          matches.push({home:rows[i][0],away:rows[i][1],score:rows[i][2]||""});
+          i++;
+        }
+        renderCompetition(flag, comp, date, matches);
+      }
+    }
+  }
+
+  function parseMLS(rows, flag){
+    const buckets = {};
+    rows.forEach(r=>{
+      if(r[5] && r[6] && r[7]){
+        buckets[r[5]] ??= [];
+        buckets[r[5]].push({home:r[6],away:r[7],score:r[8]||""});
+      }
+      if(r[10] && r[11] && r[12]){
+        buckets[r[10]] ??= [];
+        buckets[r[10]].push({home:r[11],away:r[12],score:r[13]||""});
+      }
+    });
+    Object.entries(buckets).forEach(([k,v])=>renderCompetition(flag,k,k,v));
+  }
+
+  document.addEventListener("DOMContentLoaded", async ()=>{
+    for(const src of CUP_SOURCES){
+      const text = await fetch(src.url).then(r=>r.text());
+      const rows = Papa.parse(text,{skipEmptyLines:true}).data;
+      if(src.mode==="vertical") parseVertical(rows,src.flag);
+      else parseMLS(rows,src.flag);
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
