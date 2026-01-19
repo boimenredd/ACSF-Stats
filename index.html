@@ -2541,5 +2541,128 @@ ADD-ONLY PATCH PACK (SAFE)
 })();
 </script>
 
+
+<script>
+(function(){
+  try{
+    if (typeof TEAM_ALIASES === 'object' && TEAM_ALIASES){
+      Object.assign(TEAM_ALIASES, {
+        "cardiff": "Cardiff City",
+        "cardiff city": "Cardiff City"
+      });
+    }
+  }catch(e){}
+})();
+</script>
+
+<script>
+/* =====================
+ADD-ONLY: DATE-GROUPED CUP RENDERER
+- Tournament name (row ABOVE date)
+- Dates split into separate sections under the same tournament
+- Pure append, zero interaction with nav/tabs
+===================== */
+(function(){
+  if (window.__DATE_GROUPED_CUPS__) return;
+  window.__DATE_GROUPED_CUPS__ = true;
+
+  const SOURCES = [
+    { flag:'🇬🇧', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv', mode:'vertical' },
+    { flag:'🇪🇸', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1160505035&single=true&output=csv', mode:'vertical' },
+    { flag:'🇺🇸', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv', mode:'mls' }
+  ];
+
+  const t = x => (x==null?'':String(x)).trim();
+
+  function renderTournament(flag, comp, dateMap){
+    const list = document.getElementById('league-list');
+    if (!list) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'league-container';
+
+    wrap.innerHTML = '<div class="league-header"><span>'+flag+'</span><span>'+comp+'</span></div>';
+
+    for (const date of Object.keys(dateMap)){
+      const dateRow = document.createElement('div');
+      dateRow.className = 'px-4 py-2 text-[11px] font-bold uppercase opacity-80';
+      dateRow.textContent = date;
+      wrap.appendChild(dateRow);
+
+      for (const g of dateMap[date]){
+        const row = document.createElement('div');
+        row.className = 'match-row';
+        row.innerHTML =
+          '<div class="team-box"><img class="team-logo" src="'+(LOGOS[g.home]||'')+'"><span class="team-name">'+g.home+'</span></div>' +
+          '<div class="match-info"><div class="match-score">'+(g.score||'vs')+'</div></div>' +
+          '<div class="team-box justify-end"><span class="team-name">'+g.away+'</span><img class="team-logo" src="'+(LOGOS[g.away]||'')+'"></div>';
+        wrap.appendChild(row);
+      }
+    }
+
+    list.appendChild(wrap);
+  }
+
+  function parseVertical(rows, flag){
+    const tournaments = {};
+    for (let i=0;i<rows.length;i++){
+      const comp = t(rows[i]?.[0]);
+      const date = t(rows[i+1]?.[0]);
+      if (!comp || !date) continue;
+
+      tournaments[comp] ||= {};
+      tournaments[comp][date] ||= [];
+
+      // match on same row as tournament name
+      if (t(rows[i][1]) && t(rows[i][2])){
+        tournaments[comp][date].push({home:t(rows[i][1]), away:t(rows[i][2]), score:t(rows[i][3])});
+      }
+
+      let j = i+2;
+      while (rows[j] && t(rows[j][1]) && t(rows[j][2])){
+        tournaments[comp][date].push({home:t(rows[j][1]), away:t(rows[j][2]), score:t(rows[j][3])});
+        j++;
+      }
+      i = j-1;
+    }
+
+    for (const comp in tournaments){
+      renderTournament(flag, comp, tournaments[comp]);
+    }
+  }
+
+  function parseMLS(rows, flag){
+    const tournaments = {};
+    for (const r of rows){
+      const usKey = t(r?.[5]);
+      if (usKey && t(r?.[6]) && t(r?.[7])){
+        tournaments[usKey] ||= {"": []};
+        tournaments[usKey][""].push({home:t(r[6]), away:t(r[7]), score:t(r[8])});
+      }
+      const ccKey = t(r?.[10]);
+      if (ccKey && t(r?.[11]) && t(r?.[12])){
+        tournaments[ccKey] ||= {"": []};
+        tournaments[ccKey][""].push({home:t(r[11]), away:t(r[12]), score:t(r[13])});
+      }
+    }
+    for (const comp in tournaments){
+      renderTournament(flag, comp, tournaments[comp]);
+    }
+  }
+
+  async function load(){
+    if (typeof Papa === 'undefined') return;
+    for (const s of SOURCES){
+      const txt = await fetch(s.url, {cache:'no-store'}).then(r=>r.text());
+      const rows = Papa.parse(txt,{skipEmptyLines:true}).data;
+      if (s.mode==='vertical') parseVertical(rows, s.flag);
+      else parseMLS(rows, s.flag);
+    }
+  }
+
+  setTimeout(load, 1500);
+})();
+</script>
+
 </body>
 </html>
