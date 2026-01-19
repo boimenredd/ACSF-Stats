@@ -2287,99 +2287,64 @@ DO NOT REMOVE OR MODIFY EXISTING CODE
 
 
 <script>
-/* =====================
-ADD-ONLY: DOMESTIC CUPS (COMPETITION-FIRST, SAFE)
-- Tournament name is in the row ABOVE the date (same column)
-- Matches START on the SAME ROW as the tournament name
-- Does NOT replace or hook league loaders
-===================== */
+/* ADD-ONLY: SAFE CUP RENDERER (NO NAV IMPACT) */
 (function(){
-  if (window.__CUPS_OK__) return;
-  window.__CUPS_OK__ = true;
+  if (window.__SAFE_CUPS__) return;
+  window.__SAFE_CUPS__ = true;
 
-  const SOURCES = [
-    {flag:'🇬🇧', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv', mode:'vertical'},
-    {flag:'🇪🇸', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1160505035&single=true&output=csv', mode:'vertical'},
-    {flag:'🇺🇸', url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv', mode:'mls'}
+  const SOURCES=[
+    {flag:'🇬🇧',url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv',mode:'vertical'},
+    {flag:'🇪🇸',url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1160505035&single=true&output=csv',mode:'vertical'},
+    {flag:'🇺🇸',url:'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv',mode:'mls'}
   ];
 
-  function render(flag, comp, date, games){
-    if (!games.length) return;
-    const list = document.getElementById('league-list');
-    if (!list) return;
-
-    const box = document.createElement('div');
-    box.className = 'league-container';
-    box.innerHTML = `
-      <div class="league-header">
-        <span>${flag}</span>
-        <span>${comp}</span>
-      </div>
-      <div class="px-4 py-2 text-[11px] font-bold uppercase opacity-80">${date}</div>
-    `;
-
+  function append(flag,comp,date,games){
+    const list=document.getElementById('league-list');
+    if(!list||!games.length) return;
+    const box=document.createElement('div');
+    box.className='league-container';
+    box.innerHTML=`<div class="league-header"><span>${flag}</span><span>${comp}</span></div><div class="px-4 py-2 text-[11px] font-bold uppercase opacity-80">${date}</div>`;
     games.forEach(g=>{
-      const row = document.createElement('div');
-      row.className = 'match-row';
-      row.innerHTML = `
-        <div class="team-box">
-          <img class="team-logo" src="${LOGOS[g.home]||''}">
-          <span class="team-name">${g.home}</span>
-        </div>
-        <div class="match-info"><div class="match-score">${g.score||'vs'}</div></div>
-        <div class="team-box justify-end">
-          <span class="team-name">${g.away}</span>
-          <img class="team-logo" src="${LOGOS[g.away]||''}">
-        </div>
-      `;
-      box.appendChild(row);
+      const r=document.createElement('div');
+      r.className='match-row';
+      r.innerHTML=`<div class="team-box"><img class="team-logo" src="${LOGOS[g.home]||''}"><span class="team-name">${g.home}</span></div><div class="match-info"><div class="match-score">${g.score||'vs'}</div></div><div class="team-box justify-end"><span class="team-name">${g.away}</span><img class="team-logo" src="${LOGOS[g.away]||''}"></div>`;
+      box.appendChild(r);
     });
     list.appendChild(box);
   }
 
-  function parseVertical(rows, flag){
-    for (let i=0;i<rows.length;i++){
-      const comp = rows[i]?.[0]?.trim();
-      const date = rows[i+1]?.[0]?.trim(); // DATE IS ROW BELOW TOURNAMENT
-      if (!comp || !date) continue;
-
-      const games = [];
-      // matches START on SAME ROW as tournament name (cols B/C/D)
-      if (rows[i][1] && rows[i][2]){
-        games.push({home:rows[i][1], away:rows[i][2], score:rows[i][3]||''});
-      }
-      // then continue after date row
-      let j = i+2;
-      while (rows[j] && rows[j][1] && rows[j][2]){
-        games.push({home:rows[j][1], away:rows[j][2], score:rows[j][3]||''});
-        j++;
-      }
-      render(flag, comp, date, games);
-      i = j-1;
+  function parseVertical(rows,flag){
+    for(let i=0;i<rows.length;i++){
+      const comp=rows[i]?.[0]?.trim();
+      const date=rows[i+1]?.[0]?.trim();
+      if(!comp||!date) continue;
+      const games=[];
+      if(rows[i][1]&&rows[i][2]) games.push({home:rows[i][1],away:rows[i][2],score:rows[i][3]||''});
+      let j=i+2;
+      while(rows[j]&&rows[j][1]&&rows[j][2]){games.push({home:rows[j][1],away:rows[j][2],score:rows[j][3]||''});j++;}
+      append(flag,comp,date,games);
+      i=j-1;
     }
   }
 
-  function parseMLS(rows, flag){
-    const buckets = {};
+  function parseMLS(rows,flag){
+    const b={};
     rows.forEach(r=>{
-      if (r[5] && r[6] && r[7]){
-        (buckets[r[5]] ||= []).push({home:r[6], away:r[7], score:r[8]||''});
-      }
-      if (r[10] && r[11] && r[12]){
-        (buckets[r[10]] ||= []).push({home:r[11], away:r[12], score:r[13]||''});
-      }
+      if(r[5]&&r[6]&&r[7]) (b[r[5]]||=[]).push({home:r[6],away:r[7],score:r[8]||''});
+      if(r[10]&&r[11]&&r[12]) (b[r[10]]||=[]).push({home:r[11],away:r[12],score:r[13]||''});
     });
-    Object.entries(buckets).forEach(([k,v])=>render(flag, k, k, v));
+    Object.entries(b).forEach(([k,v])=>append(flag,k,k,v));
   }
 
-  window.addEventListener('load', async ()=>{
-    for (const s of SOURCES){
-      const csv = await fetch(s.url).then(r=>r.text());
-      const rows = Papa.parse(csv,{skipEmptyLines:true}).data;
-      if (s.mode==='vertical') parseVertical(rows, s.flag);
-      else parseMLS(rows, s.flag);
+  // Delay until everything else is definitely ready
+  setTimeout(async ()=>{
+    if (typeof Papa === 'undefined') return;
+    for(const s of SOURCES){
+      const t=await fetch(s.url).then(r=>r.text());
+      const rows=Papa.parse(t,{skipEmptyLines:true}).data;
+      s.mode==='vertical'?parseVertical(rows,s.flag):parseMLS(rows,s.flag);
     }
-  });
+  }, 1500);
 })();
 </script>
 
