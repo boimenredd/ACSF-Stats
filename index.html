@@ -2526,5 +2526,41 @@ ADD-ONLY PATCH v2: Domestic cups in core pipeline (new sheet format)
 })();
 </script>
 
+
+<!-- =====================
+ADD-ONLY PATCH v3: Header name + ignore Home/Away header rows
+===================== -->
+<script>
+(function(){
+  if (window.__ACSF_HEADER_FIX__) return;
+  window.__ACSF_HEADER_FIX__ = true;
+
+  // 1) Force header/divider title to use match.competition (row 1 value)
+  try {
+    if (typeof formatLeagueHeader === 'function') {
+      const _orig = formatLeagueHeader;
+      window.formatLeagueHeader = function(match){
+        if (match && match.competition) return match.competition;
+        return _orig(match);
+      };
+    }
+  } catch(e){}
+
+  // 2) Filter out fake "Home v Away" rows that come from sheet headers
+  try {
+    if (typeof addMatch === 'function') {
+      const _add = addMatch;
+      window.addMatch = function(m){
+        if (!m) return;
+        const h = String(m.home||'').toLowerCase();
+        const a = String(m.away||'').toLowerCase();
+        if (h === 'home' && a === 'away') return;
+        return _add(m);
+      };
+    }
+  } catch(e){}
+})();
+</script>
+
 </body>
 </html>
