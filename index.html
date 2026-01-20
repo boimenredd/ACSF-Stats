@@ -2404,279 +2404,114 @@ ADD-ONLY: DOMESTIC CUPS (COMPETITION-FIRST, SAFE LOAD)
 
 
 <!-- =====================
-ADD-ONLY PATCH v2: Domestic cups in core pipeline (new sheet format)
-- Competition names in ROW 1
-- Blocks are side-by-side (A-D, G-J, M-P etc)
-- Matchday column includes round labels + dates; dates below round labels
+FINAL DOMESTIC CUP PIPELINE PATCH (STABLE)
 ===================== -->
 <script>
 (function(){
-  if (window.__ACSF_DOMESTIC_CUP_PATCH_V2__) return;
-  window.__ACSF_DOMESTIC_CUP_PATCH_V2__ = true;
+  if (window.__DOMESTIC_CUPS_FINAL__) return;
+  window.__DOMESTIC_CUPS_FINAL__ = true;
 
-  try {
-    if (typeof LOGOS === 'object' && LOGOS) Object.assign(LOGOS, {"Deportivo La Coruna": "https://upload.wikimedia.org/wikipedia/en/thumb/4/4e/RC_Deportivo_La_Coru%C3%B1a_logo.svg/1280px-RC_Deportivo_La_Coru%C3%B1a_logo.svg.png", "Racing Santander": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Racing_de_Santander_logo.svg/960px-Racing_de_Santander_logo.svg.png", "Cultural Leonesa": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Logo_of_Cultural_y_Deportiva_Leonesa.svg/960px-Logo_of_Cultural_y_Deportiva_Leonesa.svg.png", "Albacete": "https://upload.wikimedia.org/wikipedia/en/thumb/3/37/Albacete_balompie.svg/960px-Albacete_balompie.svg.png", "Burgos": "https://upload.wikimedia.org/wikipedia/en/0/00/Burgos_CF_escudo.png", "Derby County": "https://upload.wikimedia.org/wikipedia/en/thumb/4/4a/Derby_County_crest.svg/250px-Derby_County_crest.svg.png", "Norwich": "https://upload.wikimedia.org/wikipedia/en/thumb/1/17/Norwich_City_FC_logo.svg/250px-Norwich_City_FC_logo.svg.png", "Huddersfield": "https://upload.wikimedia.org/wikipedia/en/4/43/Huddersfield_Town_AFC_crest.svg", "Oxford United": "https://upload.wikimedia.org/wikipedia/en/thumb/3/3e/Oxford_United_FC_logo.svg/250px-Oxford_United_FC_logo.svg.png", "Grimsby Town": "https://upload.wikimedia.org/wikipedia/en/d/db/Grimsby_Town_F.C._logo.svg", "Millwall": "https://upload.wikimedia.org/wikipedia/en/9/98/Millwall_FC_crest.svg", "Swansea": "https://upload.wikimedia.org/wikipedia/en/f/f9/Swansea_City_AFC_logo.svg", "Barnsley": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c9/Barnsley_FC.svg/250px-Barnsley_FC.svg.png", "Cambridge United": "https://upload.wikimedia.org/wikipedia/en/5/57/Cambridge_United_FC_crest.svg", "Lincoln City": "https://upload.wikimedia.org/wikipedia/en/thumb/3/39/Lincoln_City_FC_2024_crest.svg/960px-Lincoln_City_FC_2024_crest.svg.png", "Everton": "https://upload.wikimedia.org/wikipedia/en/thumb/7/7c/Everton_FC_logo.svg/250px-Everton_FC_logo.svg.png", "Bradford City": "https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Bradford_City_AFC_crest.svg/250px-Bradford_City_AFC_crest.svg.png", "Doncaster": "https://upload.wikimedia.org/wikipedia/en/c/c5/Doncaster_Rovers_F.C._logo.svg", "Port Vale": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5f/Port_Vale_logo.svg/250px-Port_Vale_logo.svg.png", "Wycombe": "https://upload.wikimedia.org/wikipedia/en/f/fb/Wycombe_Wanderers_FC_logo.svg", "Shrewsbury": "https://upload.wikimedia.org/wikipedia/en/thumb/1/1b/Shrewsbury_Town_F.C._logo.svg/250px-Shrewsbury_Town_F.C._logo.svg.png", "Charlton Athletic": "https://upload.wikimedia.org/wikipedia/en/f/f5/Charlton_Athletic_FC_crest.svg", "Exeter City": "https://upload.wikimedia.org/wikipedia/en/thumb/7/71/Exeter_City_FC.svg/250px-Exeter_City_FC.svg.png", "QPR": "https://upload.wikimedia.org/wikipedia/en/3/31/Queens_Park_Rangers_crest.svg", "Sheffield Wednesday": "https://upload.wikimedia.org/wikipedia/en/thumb/8/88/Sheffield_Wednesday_badge.svg/960px-Sheffield_Wednesday_badge.svg.png", "Portsmouth": "https://upload.wikimedia.org/wikipedia/en/3/38/Portsmouth_FC_logo.svg", "Cheltenham": "https://upload.wikimedia.org/wikipedia/en/c/c3/Cheltenham_Town_F.C._logo.svg", "Macclesfield": "https://upload.wikimedia.org/wikipedia/en/4/40/Macclesfield_Town_FC.svg"});
-  } catch(e){}
-
-  try {
-    if (typeof TEAM_ALIASES === 'object' && TEAM_ALIASES) Object.assign(TEAM_ALIASES, {
-      "bilbao":"Athletic Bilbao",
-      "athletic bilbao":"Athletic Bilbao",
-      "doncaster":"Doncaster",
-      "doncaster rovers":"Doncaster",
-      "cardiff":"Cardiff City",
-      "cardiff city":"Cardiff City"
-    });
-  } catch(e){}
-
-  function canon(x){ try{ return resolveTeamName(x); }catch(e){ return x; } }
-
-  function pushMatch(m){
-    if (typeof addMatch === 'function') {
-      try { return addMatch(m); } catch(e){}
-    }
-    if (Array.isArray(window.ALL_MATCHES)) {
-      window.ALL_MATCHES.push(m);
-      return true;
-    }
-    return false;
+  function canon(x){
+    try { return resolveTeamName(x); } catch(e){ return x; }
   }
 
-  function isDateLike(s){
-    if (!s) return false;
-    s = String(s).trim();
-    // handles: Aug 9, Sept 22, Nov 1, January 21st, April 1st, Feb 3, Mar 7, May 27th, etc.
-    return /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i.test(s) || /\d/.test(s);
+  function push(m){
+    if (!m || !m.home || !m.away) return;
+    const h = m.home.toLowerCase();
+    const a = m.away.toLowerCase();
+    if (h === 'home' && a === 'away') return;
+    if (typeof addMatch === 'function') addMatch(m);
   }
 
-  function parseBlock(rows, baseCol, flag){
-    const comp = (rows[0] && rows[0][baseCol]) ? String(rows[0][baseCol]).trim() : '';
-    if (!comp) return;
+  function isHeaderRow(row){
+    return row.some(c => typeof c === 'string' && c.toLowerCase() === 'home');
+  }
 
-    let currentRound = '';
-    let currentDate = '';
+  async function loadCSV(url, blocks, flag){
+    const txt = await fetch(url,{cache:'no-store'}).then(r=>r.text());
+    const rows = Papa.parse(txt,{skipEmptyLines:true}).data;
 
-    // row 1 is headers, start at row 2 (index 2)
-    for (let i=2;i<rows.length;i++) {
-      const md = rows[i] ? String(rows[i][baseCol] || '').trim() : '';
-      const home = rows[i] ? String(rows[i][baseCol+1] || '').trim() : '';
-      const away = rows[i] ? String(rows[i][baseCol+2] || '').trim() : '';
-      const score = rows[i] ? String(rows[i][baseCol+3] || '').trim() : '';
+    blocks.forEach(b => {
+      const comp = rows[0]?.[b.baseCol];
+      if (!comp) return;
 
-      // Update round/date state from matchday column even if no teams on that row
-      if (md) {
-        if (isDateLike(md)) {
+      let currentDate = null;
+
+      for (let i=2;i<rows.length;i++){
+        const row = rows[i];
+        if (!row || isHeaderRow(row)) continue;
+
+        const md = row[b.baseCol];
+        if (md && typeof md === 'string' && /[A-Za-z]/.test(md)) {
           currentDate = md;
-        } else {
-          currentRound = md;
-          currentDate = ''; // next date row will set it
+          continue;
         }
-      }
 
-      // Some competitions have date + match on same row (e.g., Aug 9 Tottenham Newcastle)
-      if (home && away) {
-        const date = currentDate || (md && isDateLike(md) ? md : '');
-        if (!date) continue; // don't place under wrong current date
-        pushMatch({
-          date,
+        const home = row[b.baseCol+1];
+        const away = row[b.baseCol+2];
+        const score = row[b.baseCol+3];
+
+        if (!currentDate || !home || !away) continue;
+
+        push({
+          date: currentDate,
           competition: comp,
           league: comp,
+          leagueKey: comp,
           countryFlag: flag,
           home: canon(home),
           away: canon(away),
-          score
+          score: score || ''
         });
       }
-    }
+    });
   }
 
-  async function loadSheet(url, config){
+  async function run(){
     if (typeof Papa === 'undefined') return;
-    const csv = await fetch(url, { cache:'no-store' }).then(r=>r.text());
-    const rows = Papa.parse(csv, { skipEmptyLines:true }).data;
-    for (const b of config.blocks) parseBlock(rows, b.baseCol, config.flag);
+
+    await loadCSV(
+      'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv',
+      [{baseCol:0},{baseCol:6},{baseCol:12}],
+      '🇬🇧'
+    );
+
+    await loadCSV(
+      'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1160505035&single=true&output=csv',
+      [{baseCol:0},{baseCol:6}],
+      '🇪🇸'
+    );
+
+    await loadCSV(
+      'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv',
+      [{baseCol:0},{baseCol:6}],
+      '🇺🇸'
+    );
+
+    if (typeof renderMatches === 'function') renderMatches();
   }
 
-  async function loadAll(){
-    try {
-      // England: Community Shield (A-D), Carabao (G-J), FA Cup (M-P)
-      await loadSheet(
-        'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv',
-        { flag:'🇬🇧', blocks:[{baseCol:0},{baseCol:6},{baseCol:12}] }
-      );
-      // Spain: Supercopa (A-D), Copa del Rey (G-J)
-      await loadSheet(
-        'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1160505035&single=true&output=csv',
-        { flag:'🇪🇸', blocks:[{baseCol:0},{baseCol:6}] }
-      );
-      // USA: US Open Cup (A-D), ACSF Continental Cup (G-J)
-      await loadSheet(
-        'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv',
-        { flag:'🇺🇸', blocks:[{baseCol:0},{baseCol:6}] }
-      );
-
-      // refresh fixtures using existing app functions if available
-      if (typeof renderMatches === 'function') try{ renderMatches(); }catch(e){}
-      if (typeof renderFixtures === 'function') try{ renderFixtures(); }catch(e){}
-      if (typeof updateFixtures === 'function') try{ updateFixtures(); }catch(e){}
-    } catch(e){}
-  }
-
-  setTimeout(loadAll, 900);
+  setTimeout(run, 800);
 })();
 </script>
 
-
-<!-- =====================
-ADD-ONLY PATCH v3: Header name + ignore Home/Away header rows
-===================== -->
 <script>
 (function(){
-  if (window.__ACSF_HEADER_FIX__) return;
-  window.__ACSF_HEADER_FIX__ = true;
-
-  // 1) Force header/divider title to use match.competition (row 1 value)
-  try {
-    if (typeof formatLeagueHeader === 'function') {
-      const _orig = formatLeagueHeader;
-      window.formatLeagueHeader = function(match){
-        if (match && match.competition) return match.competition;
-        return _orig(match);
-      };
-    }
-  } catch(e){}
-
-  // 2) Filter out fake "Home v Away" rows that come from sheet headers
-  try {
-    if (typeof addMatch === 'function') {
-      const _add = addMatch;
-      window.addMatch = function(m){
-        if (!m) return;
-        const h = String(m.home||'').toLowerCase();
-        const a = String(m.away||'').toLowerCase();
-        if (h === 'home' && a === 'away') return;
-        return _add(m);
-      };
-    }
-  } catch(e){}
-})();
-</script>
-
-
-<!-- =====================
-ADD-ONLY PATCH v4:
-- Force header to COUNTRY + competition (NOT league)
-- Remove empty 'Result / Home v Away' cards entirely
-===================== -->
-<script>
-(function(){
-  if (window.__ACSF_HEADER_AND_EMPTY_FIX__) return;
-  window.__ACSF_HEADER_AND_EMPTY_FIX__ = true;
-
-  // 1) Force divider header to use country + competition
-  try {
-    if (typeof formatLeagueHeader === 'function') {
-      const _orig = formatLeagueHeader;
-      window.formatLeagueHeader = function(match){
-        if (match && match.countryFlag && match.competition) {
-          const country =
-            match.countryFlag === '🇪🇸' ? 'Spain' :
-            match.countryFlag === '🇬🇧' ? 'England' :
-            match.countryFlag === '🇺🇸' ? 'USA' : '';
-          return country + ' - ' + match.competition;
-        }
-        return _orig(match);
-      };
-    }
-  } catch(e){}
-
-  // 2) Strip empty "Result / Home v Away" cards after render
-  function removeEmptyResultCards(){
-    document.querySelectorAll('.league-container').forEach(c => {
-      const rows = c.querySelectorAll('.match-row');
-      if (rows.length === 1) {
-        const txt = rows[0].innerText.toLowerCase();
-        if (txt.includes('home') && txt.includes('away')) {
-          c.remove();
-        }
+  if (window.__HEADER_FORCE_COMP__) return;
+  window.__HEADER_FORCE_COMP__ = true;
+  if (typeof formatLeagueHeader === 'function') {
+    const orig = formatLeagueHeader;
+    window.formatLeagueHeader = function(match){
+      if (match && match.countryFlag && match.competition) {
+        const c =
+          match.countryFlag==='🇬🇧'?'England':
+          match.countryFlag==='🇪🇸'?'Spain':
+          match.countryFlag==='🇺🇸'?'USA':'';
+        return c + ' - ' + match.competition;
       }
-    });
+      return orig(match);
+    };
   }
-
-  window.setTimeout(function(){
-    try { removeEmptyResultCards(); } catch(e){}
-  }, 1200);
-
-})();
-</script>
-
-
-<!-- =====================
-ADD-ONLY PATCH v5 (FINAL):
-- Force leagueKey = competition for cups
-- Header ALWAYS shows Country - Competition
-- Remove empty 'Result / Home v Away' blocks
-===================== -->
-<script>
-(function(){
-  if (window.__ACSF_FINAL_FIX__) return;
-  window.__ACSF_FINAL_FIX__ = true;
-
-  /* ---------- 1) FORCE HEADER TEXT ---------- */
-  try {
-    if (typeof formatLeagueHeader === 'function') {
-      const _orig = formatLeagueHeader;
-      window.formatLeagueHeader = function(match){
-        if (match && match.countryFlag && match.competition) {
-          const country =
-            match.countryFlag === '🇬🇧' ? 'England' :
-            match.countryFlag === '🇪🇸' ? 'Spain' :
-            match.countryFlag === '🇺🇸' ? 'USA' : '';
-          return country + ' - ' + match.competition;
-        }
-        return _orig(match);
-      };
-    }
-  } catch(e){}
-
-  /* ---------- 2) ENSURE CUP MATCHES DO NOT COLLIDE WITH LEAGUES ---------- */
-  try {
-    if (typeof addMatch === 'function') {
-      const _add = addMatch;
-      window.addMatch = function(m){
-        if (!m) return;
-        // If it's a domestic/continental cup, force leagueKey = competition
-        if (m.competition && !['Premier League','La Liga','MLS'].includes(m.competition)) {
-          m.league = m.competition;
-          m.leagueKey = m.competition;
-        }
-        // Filter fake header rows
-        const h = String(m.home||'').toLowerCase();
-        const a = String(m.away||'').toLowerCase();
-        if (h === 'home' && a === 'away') return;
-        return _add(m);
-      };
-    }
-  } catch(e){}
-
-  /* ---------- 3) REMOVE EMPTY RESULT CARDS ---------- */
-  function purgeEmptyCards(){
-    document.querySelectorAll('.league-container').forEach(c => {
-      const rows = c.querySelectorAll('.match-row');
-      if (!rows.length) {
-        c.remove();
-        return;
-      }
-      if (rows.length === 1) {
-        const t = rows[0].innerText.toLowerCase();
-        if (t.includes('home') && t.includes('away')) c.remove();
-      }
-    });
-  }
-
-  setTimeout(purgeEmptyCards, 1200);
-  setTimeout(purgeEmptyCards, 2000);
-
 })();
 </script>
 
