@@ -2404,12 +2404,15 @@ ADD-ONLY: DOMESTIC CUPS (COMPETITION-FIRST, SAFE LOAD)
 
 
 <!-- =====================
-ADD-ONLY PATCH: Domestic cups via core pipeline + logos + aliases
+ADD-ONLY PATCH v2: Domestic cups in core pipeline (new sheet format)
+- Competition names in ROW 1
+- Blocks are side-by-side (A-D, G-J, M-P etc)
+- Matchday column includes round labels + dates; dates below round labels
 ===================== -->
 <script>
 (function(){
-  if (window.__ACSF_DOMESTIC_CUP_PATCH__) return;
-  window.__ACSF_DOMESTIC_CUP_PATCH__ = true;
+  if (window.__ACSF_DOMESTIC_CUP_PATCH_V2__) return;
+  window.__ACSF_DOMESTIC_CUP_PATCH_V2__ = true;
 
   try {
     if (typeof LOGOS === 'object' && LOGOS) Object.assign(LOGOS, {"Deportivo La Coruna": "https://upload.wikimedia.org/wikipedia/en/thumb/4/4e/RC_Deportivo_La_Coru%C3%B1a_logo.svg/1280px-RC_Deportivo_La_Coru%C3%B1a_logo.svg.png", "Racing Santander": "https://upload.wikimedia.org/wikipedia/en/thumb/f/f5/Racing_de_Santander_logo.svg/960px-Racing_de_Santander_logo.svg.png", "Cultural Leonesa": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Logo_of_Cultural_y_Deportiva_Leonesa.svg/960px-Logo_of_Cultural_y_Deportiva_Leonesa.svg.png", "Albacete": "https://upload.wikimedia.org/wikipedia/en/thumb/3/37/Albacete_balompie.svg/960px-Albacete_balompie.svg.png", "Burgos": "https://upload.wikimedia.org/wikipedia/en/0/00/Burgos_CF_escudo.png", "Derby County": "https://upload.wikimedia.org/wikipedia/en/thumb/4/4a/Derby_County_crest.svg/250px-Derby_County_crest.svg.png", "Norwich": "https://upload.wikimedia.org/wikipedia/en/thumb/1/17/Norwich_City_FC_logo.svg/250px-Norwich_City_FC_logo.svg.png", "Huddersfield": "https://upload.wikimedia.org/wikipedia/en/4/43/Huddersfield_Town_AFC_crest.svg", "Oxford United": "https://upload.wikimedia.org/wikipedia/en/thumb/3/3e/Oxford_United_FC_logo.svg/250px-Oxford_United_FC_logo.svg.png", "Grimsby Town": "https://upload.wikimedia.org/wikipedia/en/d/db/Grimsby_Town_F.C._logo.svg", "Millwall": "https://upload.wikimedia.org/wikipedia/en/9/98/Millwall_FC_crest.svg", "Swansea": "https://upload.wikimedia.org/wikipedia/en/f/f9/Swansea_City_AFC_logo.svg", "Barnsley": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c9/Barnsley_FC.svg/250px-Barnsley_FC.svg.png", "Cambridge United": "https://upload.wikimedia.org/wikipedia/en/5/57/Cambridge_United_FC_crest.svg", "Lincoln City": "https://upload.wikimedia.org/wikipedia/en/thumb/3/39/Lincoln_City_FC_2024_crest.svg/960px-Lincoln_City_FC_2024_crest.svg.png", "Everton": "https://upload.wikimedia.org/wikipedia/en/thumb/7/7c/Everton_FC_logo.svg/250px-Everton_FC_logo.svg.png", "Bradford City": "https://upload.wikimedia.org/wikipedia/en/thumb/0/04/Bradford_City_AFC_crest.svg/250px-Bradford_City_AFC_crest.svg.png", "Doncaster": "https://upload.wikimedia.org/wikipedia/en/c/c5/Doncaster_Rovers_F.C._logo.svg", "Port Vale": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5f/Port_Vale_logo.svg/250px-Port_Vale_logo.svg.png", "Wycombe": "https://upload.wikimedia.org/wikipedia/en/f/fb/Wycombe_Wanderers_FC_logo.svg", "Shrewsbury": "https://upload.wikimedia.org/wikipedia/en/thumb/1/1b/Shrewsbury_Town_F.C._logo.svg/250px-Shrewsbury_Town_F.C._logo.svg.png", "Charlton Athletic": "https://upload.wikimedia.org/wikipedia/en/f/f5/Charlton_Athletic_FC_crest.svg", "Exeter City": "https://upload.wikimedia.org/wikipedia/en/thumb/7/71/Exeter_City_FC.svg/250px-Exeter_City_FC.svg.png", "QPR": "https://upload.wikimedia.org/wikipedia/en/3/31/Queens_Park_Rangers_crest.svg", "Sheffield Wednesday": "https://upload.wikimedia.org/wikipedia/en/thumb/8/88/Sheffield_Wednesday_badge.svg/960px-Sheffield_Wednesday_badge.svg.png", "Portsmouth": "https://upload.wikimedia.org/wikipedia/en/3/38/Portsmouth_FC_logo.svg", "Cheltenham": "https://upload.wikimedia.org/wikipedia/en/c/c3/Cheltenham_Town_F.C._logo.svg", "Macclesfield": "https://upload.wikimedia.org/wikipedia/en/4/40/Macclesfield_Town_FC.svg"});
@@ -2429,11 +2432,9 @@ ADD-ONLY PATCH: Domestic cups via core pipeline + logos + aliases
   function canon(x){ try{ return resolveTeamName(x); }catch(e){ return x; } }
 
   function pushMatch(m){
-    // Prefer project's existing ingestion function if present
     if (typeof addMatch === 'function') {
       try { return addMatch(m); } catch(e){}
     }
-    // Fallback: common global array
     if (Array.isArray(window.ALL_MATCHES)) {
       window.ALL_MATCHES.push(m);
       return true;
@@ -2441,36 +2442,46 @@ ADD-ONLY PATCH: Domestic cups via core pipeline + logos + aliases
     return false;
   }
 
-  async function loadEnglandCups(){
-    if (typeof Papa === 'undefined') return;
+  function isDateLike(s){
+    if (!s) return false;
+    s = String(s).trim();
+    // handles: Aug 9, Sept 22, Nov 1, January 21st, April 1st, Feb 3, Mar 7, May 27th, etc.
+    return /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i.test(s) || /\d/.test(s);
+  }
 
-    const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv';
-    const csv = await fetch(url, { cache:'no-store' }).then(r=>r.text());
-    const rows = Papa.parse(csv, { skipEmptyLines:true }).data;
+  function parseBlock(rows, baseCol, flag){
+    const comp = (rows[0] && rows[0][baseCol]) ? String(rows[0][baseCol]).trim() : '';
+    if (!comp) return;
 
-    // Row 1 contains competition names in A, G, M (0,6,12)
-    const blocks = [
-      { flag:'🇬🇧', baseCol:0 },
-      { flag:'🇬🇧', baseCol:6 },
-      { flag:'🇬🇧', baseCol:12 }
-    ];
+    let currentRound = '';
+    let currentDate = '';
 
-    for (const b of blocks) {
-      const comp = rows[0] && rows[0][b.baseCol] ? String(rows[0][b.baseCol]).trim() : '';
-      if (!comp) continue;
+    // row 1 is headers, start at row 2 (index 2)
+    for (let i=2;i<rows.length;i++) {
+      const md = rows[i] ? String(rows[i][baseCol] || '').trim() : '';
+      const home = rows[i] ? String(rows[i][baseCol+1] || '').trim() : '';
+      const away = rows[i] ? String(rows[i][baseCol+2] || '').trim() : '';
+      const score = rows[i] ? String(rows[i][baseCol+3] || '').trim() : '';
 
-      for (let i=1;i<rows.length;i++) {
-        const date = rows[i] && rows[i][b.baseCol] ? String(rows[i][b.baseCol]).trim() : '';
-        const home = rows[i] && rows[i][b.baseCol+1] ? String(rows[i][b.baseCol+1]).trim() : '';
-        const away = rows[i] && rows[i][b.baseCol+2] ? String(rows[i][b.baseCol+2]).trim() : '';
-        const score = rows[i] && rows[i][b.baseCol+3] ? String(rows[i][b.baseCol+3]).trim() : '';
-        if (!date || !home || !away) continue;
+      // Update round/date state from matchday column even if no teams on that row
+      if (md) {
+        if (isDateLike(md)) {
+          currentDate = md;
+        } else {
+          currentRound = md;
+          currentDate = ''; // next date row will set it
+        }
+      }
 
+      // Some competitions have date + match on same row (e.g., Aug 9 Tottenham Newcastle)
+      if (home && away) {
+        const date = currentDate || (md && isDateLike(md) ? md : '');
+        if (!date) continue; // don't place under wrong current date
         pushMatch({
           date,
           competition: comp,
           league: comp,
-          countryFlag: b.flag,
+          countryFlag: flag,
           home: canon(home),
           away: canon(away),
           score
@@ -2479,18 +2490,39 @@ ADD-ONLY PATCH: Domestic cups via core pipeline + logos + aliases
     }
   }
 
-  async function loadLater(){
+  async function loadSheet(url, config){
+    if (typeof Papa === 'undefined') return;
+    const csv = await fetch(url, { cache:'no-store' }).then(r=>r.text());
+    const rows = Papa.parse(csv, { skipEmptyLines:true }).data;
+    for (const b of config.blocks) parseBlock(rows, b.baseCol, config.flag);
+  }
+
+  async function loadAll(){
     try {
-      await loadEnglandCups();
-      // trigger a re-render if your app exposes one; safe no-op otherwise
+      // England: Community Shield (A-D), Carabao (G-J), FA Cup (M-P)
+      await loadSheet(
+        'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=944995745&single=true&output=csv',
+        { flag:'🇬🇧', blocks:[{baseCol:0},{baseCol:6},{baseCol:12}] }
+      );
+      // Spain: Supercopa (A-D), Copa del Rey (G-J)
+      await loadSheet(
+        'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1160505035&single=true&output=csv',
+        { flag:'🇪🇸', blocks:[{baseCol:0},{baseCol:6}] }
+      );
+      // USA: US Open Cup (A-D), ACSF Continental Cup (G-J)
+      await loadSheet(
+        'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=2001251008&single=true&output=csv',
+        { flag:'🇺🇸', blocks:[{baseCol:0},{baseCol:6}] }
+      );
+
+      // refresh fixtures using existing app functions if available
       if (typeof renderMatches === 'function') try{ renderMatches(); }catch(e){}
       if (typeof renderFixtures === 'function') try{ renderFixtures(); }catch(e){}
       if (typeof updateFixtures === 'function') try{ updateFixtures(); }catch(e){}
     } catch(e){}
   }
 
-  // wait until the app initializes its normal fixtures and UI first
-  setTimeout(loadLater, 900);
+  setTimeout(loadAll, 900);
 })();
 </script>
 
