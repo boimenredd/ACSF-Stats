@@ -2562,5 +2562,123 @@ ADD-ONLY PATCH v3: Header name + ignore Home/Away header rows
 })();
 </script>
 
+
+<!-- =====================
+ADD-ONLY PATCH v4:
+- Force header to COUNTRY + competition (NOT league)
+- Remove empty 'Result / Home v Away' cards entirely
+===================== -->
+<script>
+(function(){
+  if (window.__ACSF_HEADER_AND_EMPTY_FIX__) return;
+  window.__ACSF_HEADER_AND_EMPTY_FIX__ = true;
+
+  // 1) Force divider header to use country + competition
+  try {
+    if (typeof formatLeagueHeader === 'function') {
+      const _orig = formatLeagueHeader;
+      window.formatLeagueHeader = function(match){
+        if (match && match.countryFlag && match.competition) {
+          const country =
+            match.countryFlag === '🇪🇸' ? 'Spain' :
+            match.countryFlag === '🇬🇧' ? 'England' :
+            match.countryFlag === '🇺🇸' ? 'USA' : '';
+          return country + ' - ' + match.competition;
+        }
+        return _orig(match);
+      };
+    }
+  } catch(e){}
+
+  // 2) Strip empty "Result / Home v Away" cards after render
+  function removeEmptyResultCards(){
+    document.querySelectorAll('.league-container').forEach(c => {
+      const rows = c.querySelectorAll('.match-row');
+      if (rows.length === 1) {
+        const txt = rows[0].innerText.toLowerCase();
+        if (txt.includes('home') && txt.includes('away')) {
+          c.remove();
+        }
+      }
+    });
+  }
+
+  window.setTimeout(function(){
+    try { removeEmptyResultCards(); } catch(e){}
+  }, 1200);
+
+})();
+</script>
+
+
+<!-- =====================
+ADD-ONLY PATCH v5 (FINAL):
+- Force leagueKey = competition for cups
+- Header ALWAYS shows Country - Competition
+- Remove empty 'Result / Home v Away' blocks
+===================== -->
+<script>
+(function(){
+  if (window.__ACSF_FINAL_FIX__) return;
+  window.__ACSF_FINAL_FIX__ = true;
+
+  /* ---------- 1) FORCE HEADER TEXT ---------- */
+  try {
+    if (typeof formatLeagueHeader === 'function') {
+      const _orig = formatLeagueHeader;
+      window.formatLeagueHeader = function(match){
+        if (match && match.countryFlag && match.competition) {
+          const country =
+            match.countryFlag === '🇬🇧' ? 'England' :
+            match.countryFlag === '🇪🇸' ? 'Spain' :
+            match.countryFlag === '🇺🇸' ? 'USA' : '';
+          return country + ' - ' + match.competition;
+        }
+        return _orig(match);
+      };
+    }
+  } catch(e){}
+
+  /* ---------- 2) ENSURE CUP MATCHES DO NOT COLLIDE WITH LEAGUES ---------- */
+  try {
+    if (typeof addMatch === 'function') {
+      const _add = addMatch;
+      window.addMatch = function(m){
+        if (!m) return;
+        // If it's a domestic/continental cup, force leagueKey = competition
+        if (m.competition && !['Premier League','La Liga','MLS'].includes(m.competition)) {
+          m.league = m.competition;
+          m.leagueKey = m.competition;
+        }
+        // Filter fake header rows
+        const h = String(m.home||'').toLowerCase();
+        const a = String(m.away||'').toLowerCase();
+        if (h === 'home' && a === 'away') return;
+        return _add(m);
+      };
+    }
+  } catch(e){}
+
+  /* ---------- 3) REMOVE EMPTY RESULT CARDS ---------- */
+  function purgeEmptyCards(){
+    document.querySelectorAll('.league-container').forEach(c => {
+      const rows = c.querySelectorAll('.match-row');
+      if (!rows.length) {
+        c.remove();
+        return;
+      }
+      if (rows.length === 1) {
+        const t = rows[0].innerText.toLowerCase();
+        if (t.includes('home') && t.includes('away')) c.remove();
+      }
+    });
+  }
+
+  setTimeout(purgeEmptyCards, 1200);
+  setTimeout(purgeEmptyCards, 2000);
+
+})();
+</script>
+
 </body>
 </html>
