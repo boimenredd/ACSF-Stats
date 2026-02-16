@@ -1513,7 +1513,10 @@ function _teamLeaders(players){
 
     const goalsSorted = valid.slice().sort((a,b)=> (b.goals||0)-(a.goals||0));
     const assistsSorted = valid.slice().sort((a,b)=> (b.assists||0)-(a.assists||0));
-    const ratingSorted = valid.slice().sort((a,b)=> (Number(b.avgRating||0))-(Number(a.avgRating||0)));
+    
+    // For ratings: first try players with at least 5 games, fallback to all players if empty
+    const ratingsWith5Plus = valid.filter(p => (p.matches || 0) >= 5).slice().sort((a,b)=> (Number(b.avgRating||0))-(Number(a.avgRating||0)));
+    const ratingSorted = ratingsWith5Plus.length > 0 ? ratingsWith5Plus : valid.slice().sort((a,b)=> (Number(b.avgRating||0))-(Number(a.avgRating||0)));
 
     const goalsLeader = goalsSorted[0] || null;
     const assistsLeader = assistsSorted[0] || null;
