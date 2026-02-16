@@ -1654,11 +1654,13 @@ async function renderStats(lg) {
         const pl = (data.players && data.players[cs.key]) ? data.players[cs.key] : null;
         return _isGoalie(pl);
     });
+    // Fallback: if no goalies identified (e.g., missing position data), show all clean sheets
+    const cleanSheetsToShow = goalieCleanSheets.length > 0 ? goalieCleanSheets : (data.cleanSheets || []);
 
     el.innerHTML = `
         ${makeList('Goals', data.goals, 'GOALS', 'GOALS', lg)}
         ${makeList('Assists', data.assists, 'ASSISTS', 'ASSISTS', lg)}
-        ${makeList('Clean Sheets', goalieCleanSheets, 'CLEAN', 'CLEAN', lg)}
+        ${makeList('Clean Sheets', cleanSheetsToShow, 'CLEAN', 'CLEAN', lg)}
         ${makeList('Average Rating', data.ratings, 'RATING', 'RATING', lg)}
     `;
 }
@@ -1724,10 +1726,12 @@ function openFullLeaderboard(kind, league) {
         title = 'Clean Sheets';
         valueHdr = 'Clean';
         // Only goalies for clean sheets (same logic as the compact view)
-        arr = (data.cleanSheets || []).filter(cs => {
+        const goalieArr = (data.cleanSheets || []).filter(cs => {
             const pl = (data.players && data.players[cs.key]) ? data.players[cs.key] : null;
             return _isGoalie(pl);
         });
+        // Fallback: if no goalies identified (e.g., missing position data), show all clean sheets
+        arr = goalieArr.length > 0 ? goalieArr : (data.cleanSheets || []);
     } else if (kind === 'RATING') {
         title = 'Average Rating';
         valueHdr = 'Rating';
