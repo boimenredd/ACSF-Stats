@@ -1271,6 +1271,7 @@ async function loadStats(league) {
                     const matchesRaw = (r.Matches || r.Games || r.Appearances || r['games'] || r['matches'] || '').toString().trim();
                     const pos = (r.Position || r.Pos || '').toString().trim();
                     const photo = (r.Photo || r.PhotoUrl || r['Photo URL'] || r['photo'] || '').toString().trim();
+                    const cleanSheetsRaw = (r['Clean Sheets'] || r['Clean sheets'] || r['clean sheets'] || r.CS || r['cs'] || '').toString().trim();
 
                     const p = upsertPlayer(name, team);
                     if (!p) return;
@@ -1283,6 +1284,13 @@ async function loadStats(league) {
 
                     if (pos && !p.position) p.position = pos;
                     if (photo && !p.photoUrl) p.photoUrl = photo;
+                    
+                    // Extract clean sheets if present
+                    const cs = parseInt(cleanSheetsRaw, 10);
+                    if (!Number.isNaN(cs) && cs > 0) {
+                        p.cleanSheets = cs;
+                        data.cleanSheets.push({ name: p.name, value: cs, team: p.team, league, key: p.key });
+                    }
 
                     data.ratings.push({ name: p.name, value: (p.avgRating != null ? p.avgRating : 0), team: p.team, league, key: p.key, matches: p.matches || 0 });
                 });
