@@ -839,19 +839,122 @@ function goToStandingsFromTeam(lg) {
 
 // ===== MANUAL TOTM CONFIGURATION =====
 // Configure which rows from the ratings log correspond to each matchday
-// Format: { league: { 'YYYY-MM-DD': { startRow: X, endRow: Y } } }
-// You can update this after each matchday to specify the exact rows
+// Format: { league: { 'Matchday Label': { startRow: X, endRow: Y } } }
 const TOTM_CONFIG = {
     PREM: {
-        '2026-02-11': { startRow: 4644, endRow: 4863 }
+        'Matchday 26': { startRow: 4644, endRow: 4863 }
     },
     LALIGA: {
-        // Example: '2026-02-16': { startRow: 2, endRow: 21 }
+        
     },
     MLS: {
-        '2026-02-21': { startRow: 2, endRow: 221 }
+        'Matchday 1': { startRow: 2, endRow: 221 }
     }
 };
+
+// ===== PLAYER PROFILE & MARKET VALUE DATA =====
+const PLAYER_PROFILES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQx45oCCfdTzFKGbhmn8_p8Fi3NUeWPzjExDv7RAJ-NHHZ1xtopvSaVdZ9kFbAf4LAsrDL2Bx7Mo2FD/pub?gid=1254562161&single=true&output=csv';
+const MARKET_VALUES_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSMfxDU_MQ34V8YoaWHE-AIeiLSIDjdZrbK03C8vPXWTtRJzFHDr4fiZqZ4-mQyRSuDbvxO0bzmRyyw/pub?gid=1989972054&single=true&output=csv';
+const EUR_TO_GBP = 0.855; // approximate conversion rate
+
+// Cache: keyed by normalised player name
+let playerProfilesCache = null;   // Map<normName, { nationality, height, foot, dob, position, playerId }>
+let marketValuesCache   = null;   // Map<playerId, valueEuros>
+
+async function loadPlayerProfiles() {
+    if (playerProfilesCache) return playerProfilesCache;
+    playerProfilesCache = new Map();
+    marketValuesCache = new Map();
+
+    // Load both CSVs in parallel
+    const [profileRows, mvRows] = await Promise.all([
+        new Promise(res => Papa.parse(PLAYER_PROFILES_URL, { download: true, header: true, complete: r => res(r.data || []), error: () => res([]) })),
+        new Promise(res => Papa.parse(MARKET_VALUES_URL,   { download: true, header: true, complete: r => res(r.data || []), error: () => res([]) }))
+    ]);
+
+    // Build market value map: playerId -> euros
+    const mvById = new Map();
+    mvRows.forEach(r => {
+        // Try common column names
+        const id  = (r.player_id || r.Player_ID || r.PlayerID || r.id || r.ID || '').toString().trim();
+        const val = parseFloat((r.market_value || r.MarketValue || r.value || r.Value || r.mv || r.MV || '').toString().replace(/[^0-9.]/g, ''));
+        if (id && !isNaN(val)) mvById.set(id, val);
+    });
+
+    // Build profile map: normName -> profile object
+    profileRows.forEach(r => {
+        const name       = (r.name || r.Name || r.player || r.Player || '').toString().trim();
+        const playerId   = (r.player_id || r.Player_ID || r.PlayerID || r.id || r.ID || '').toString().trim();
+        const nationality = (r.nationality || r.Nationality || r.country || r.Country || '').toString().trim();
+        const height     = (r.height || r.Height || '').toString().trim();
+        const foot       = (r.foot || r.Foot || r.preferred_foot || r.PreferredFoot || '').toString().trim();
+        const dob        = (r.dob || r.DOB || r.date_of_birth || r.DateOfBirth || r.born || r.Born || '').toString().trim();
+        const pos        = (r.position || r.Position || r.pos || r.Pos || '').toString().trim();
+
+        if (!name) return;
+        const key = normalizeName(name);
+        const mvEuros = playerId ? (mvById.get(playerId) || null) : null;
+        const mvGBP   = mvEuros ? Math.round(mvEuros * EUR_TO_GBP) : null;
+
+        playerProfilesCache.set(key, { name, playerId, nationality, height, foot, dob, position: pos, mvEuros, mvGBP });
+    });
+
+    marketValuesCache = mvById;
+    return playerProfilesCache;
+}
+
+function getPlayerProfile(playerName) {
+    if (!playerProfilesCache) return null;
+    const key = normalizeName(playerName);
+    if (playerProfilesCache.has(key)) return playerProfilesCache.get(key);
+
+    // Fuzzy: try just last name or first+last
+    const parts = key.split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+        const firstLast = parts[0] + ' ' + parts[parts.length - 1];
+        if (playerProfilesCache.has(firstLast)) return playerProfilesCache.get(firstLast);
+    }
+    // Try any entry where the stored name contains the lookup name or vice versa
+    for (const [k, v] of playerProfilesCache) {
+        if (k.includes(key) || key.includes(k)) return v;
+    }
+    return null;
+}
+
+function formatMV(gbp) {
+    if (!gbp || isNaN(gbp)) return null;
+    if (gbp >= 1_000_000) return `£${(gbp / 1_000_000).toFixed(gbp % 1_000_000 === 0 ? 0 : 1)}M`;
+    if (gbp >= 1_000)     return `£${Math.round(gbp / 1_000)}K`;
+    return `£${gbp}`;
+}
+
+// Country flag emoji from nationality string (best-effort)
+function countryFlag(nationality) {
+    if (!nationality) return '';
+    const flags = {
+        'england':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','scotland':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','wales':'🏴󠁧󠁢󠁷󠁬󠁳󠁿',
+        'spain':'🇪🇸','france':'🇫🇷','germany':'🇩🇪','portugal':'🇵🇹',
+        'netherlands':'🇳🇱','belgium':'🇧🇪','italy':'🇮🇹','brazil':'🇧🇷',
+        'argentina':'🇦🇷','colombia':'🇨🇴','uruguay':'🇺🇾','chile':'🇨🇱',
+        'nigeria':'🇳🇬','ghana':'🇬🇭','senegal':'🇸🇳','ivory coast':'🇨🇮',
+        'morocco':'🇲🇦','egypt':'🇪🇬','cameroon':'🇨🇲','mali':'🇲🇱',
+        'usa':'🇺🇸','canada':'🇨🇦','mexico':'🇲🇽','jamaica':'🇯🇲',
+        'denmark':'🇩🇰','sweden':'🇸🇪','norway':'🇳🇴','finland':'🇫🇮',
+        'austria':'🇦🇹','switzerland':'🇨🇭','poland':'🇵🇱','czech republic':'🇨🇿',
+        'croatia':'🇭🇷','serbia':'🇷🇸','slovakia':'🇸🇰','hungary':'🇭🇺',
+        'ukraine':'🇺🇦','russia':'🇷🇺','turkey':'🇹🇷','greece':'🇬🇷',
+        'japan':'🇯🇵','south korea':'🇰🇷','australia':'🇦🇺','new zealand':'🇳🇿',
+        'algeria':'🇩🇿','tunisia':'🇹🇳','south africa':'🇿🇦','guinea':'🇬🇳',
+        'republic of ireland':'🇮🇪','ireland':'🇮🇪','ecuador':'🇪🇨','venezuela':'🇻🇪',
+        'paraguay':'🇵🇾','peru':'🇵🇪','costa rica':'🇨🇷','honduras':'🇭🇳',
+        'saudi arabia':'🇸🇦','iran':'🇮🇷','israel':'🇮🇱','albania':'🇦🇱',
+        'montenegro':'🇲🇪','slovenia':'🇸🇮','bolivia':'🇧🇴','gabon':'🇬🇦',
+        'guinea-bissau':'🇬🇼','cape verde':'🇨🇻','congo':'🇨🇬','burkina faso':'🇧🇫',
+        'togo':'🇹🇬','kenya':'🇰🇪','tanzania':'🇹🇿','zimbabwe':'🇿🇼',
+    };
+    const n = nationality.toLowerCase().trim();
+    return flags[n] || '';
+}
 
 const LEAGUE_META = {
     PREM: { name: 'England - Premier League', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/eng.png' },
@@ -1203,7 +1306,6 @@ async function renderTOTMTab(league) {
     const content = document.getElementById('totmContent');
     content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading...</div>';
 
-    // Load stats so we have player data
     await loadStats(league);
 
     const src = STATS_URLS[league];
@@ -1212,11 +1314,25 @@ async function renderTOTMTab(league) {
         return;
     }
 
-    // Fetch the raw ratingsLog CSV as rows (no header parse — we need row numbers)
+    const config = TOTM_CONFIG[league] || {};
+    const configLabels = Object.keys(config).sort().reverse();
+
+    if (!configLabels.length) {
+        content.innerHTML = `
+            <div class="text-center text-zinc-500 py-8">
+                No matchdays configured yet.<br>
+                <small style="font-size:11px;opacity:0.6;line-height:1.8;">
+                    Add entries to TOTM_CONFIG like:<br>
+                    <code style="background:#1a1a1a;padding:2px 6px;border-radius:4px;">'Matchday 26': { startRow: 2, endRow: 23 }</code>
+                </small>
+            </div>`;
+        return;
+    }
+
+    // Fetch raw CSV rows (no header parsing — we use explicit row numbers)
     const allRows = await new Promise((resolve) => {
         Papa.parse(src.ratingsLog, {
-            download: true,
-            header: false,
+            download: true, header: false,
             complete: (r) => resolve(r.data || []),
             error: () => resolve([])
         });
@@ -1227,76 +1343,29 @@ async function renderTOTMTab(league) {
         return;
     }
 
-    // Detect header row (row 0 likely has column names)
-    const headerRow = allRows[0];
-    // Find column indices: Player(B=1), Rating(C=2 or other), Date(D=3), Opponent(E=4)
-    // The CSV format: col A = name, col B = rating, col C = team, col D = date, col E = opponent
-    // (based on how recentRatings are loaded: row[0]=name, row[1]=rating, row[2]=team, row[3]=date, row[4]=opp)
-    const dataRows = allRows.slice(1); // skip header
-
-    // Build matchday groups from TOTM_CONFIG if populated, otherwise auto-detect from dates
-    const config = TOTM_CONFIG[league] || {};
-    const configDates = Object.keys(config).sort().reverse(); // most recent first
-
-    let matchdayGroups = []; // each: { label, players: [{name, rating, team, opp}] }
-
-    if (configDates.length > 0) {
-        // Use manual row ranges
-        configDates.forEach(dateStr => {
-            const { startRow, endRow } = config[dateStr];
-            // Rows are 1-indexed in Google Sheets; dataRows is 0-indexed (after header)
-            const sliceStart = startRow - 2; // -1 for header, -1 for 0-index
-            const sliceEnd = endRow - 1;     // -1 for header, inclusive so +1 cancel
-            const rowSlice = dataRows.slice(Math.max(0, sliceStart), sliceEnd);
-            const players = rowSlice.map(row => ({
-                name: (row[0] || '').toString().trim(),
-                rating: parseFloat((row[1] || '').toString()),
-                team: (row[2] || '').toString().trim(),
-                date: (row[3] || '').toString().trim(),
-                opp: (row[4] || '').toString().trim(),
-            })).filter(p => p.name && !Number.isNaN(p.rating));
-            if (players.length >= 7) matchdayGroups.push({ label: dateStr, players });
-        });
-    } else {
-        // Auto-detect: group rows by date column (col D = index 3)
-        const byDate = {};
-        dataRows.forEach(row => {
-            const name = (row[0] || '').toString().trim();
-            const ratingRaw = (row[1] || '').toString().trim();
-            const team = (row[2] || '').toString().trim();
-            const date = (row[3] || '').toString().trim();
-            const opp = (row[4] || '').toString().trim();
-            if (!name || !date) return;
-            const rating = parseFloat(ratingRaw);
-            if (Number.isNaN(rating)) return;
-            if (!byDate[date]) byDate[date] = [];
-            byDate[date].push({ name, rating, team, opp });
-        });
-
-        // Sort dates descending — try to parse, fallback to string sort
-        const sortedDates = Object.keys(byDate).sort((a, b) => {
-            const da = parseSheetDate(a), db = parseSheetDate(b);
-            if (da && db) return db.getTime() - da.getTime();
-            return b.localeCompare(a);
-        });
-
-        sortedDates.forEach(dateStr => {
-            const players = byDate[dateStr];
-            if (players.length >= 7) matchdayGroups.push({ label: dateStr, players });
-        });
-    }
-
-    if (!matchdayGroups.length) {
-        content.innerHTML = `<div class="text-center text-zinc-500 py-8">No matchday data found.<br><small style="font-size:10px;opacity:0.6;">Populate TOTM_CONFIG with date ranges, or ensure the ratings log has a date column.</small></div>`;
-        return;
-    }
-
+    // Row 1 = header in Google Sheets = allRows[0] in JS; data starts at allRows[1]
     let html = '';
-    for (const group of matchdayGroups) {
-        html += generateTOTMFromGroup(group, league);
+    for (const label of configLabels) {
+        const { startRow, endRow } = config[label];
+        // Google Sheets rows are 1-indexed; allRows is 0-indexed
+        // Row 1 = header → allRows[0], Row 2 → allRows[1], etc.
+        const sliceStart = startRow - 1; // startRow 2 → index 1
+        const sliceEnd   = endRow;        // endRow 23 → slice up to index 23 (exclusive = rows 1..22 → sheets rows 2..23) ✓
+        const rowSlice = allRows.slice(sliceStart, sliceEnd);
+
+        const players = rowSlice.map(row => ({
+            name:   (row[0] || '').toString().trim(),
+            rating: parseFloat((row[1] || '').toString()),
+            team:   (row[2] || '').toString().trim(),
+            opp:    (row[3] || '').toString().trim(),
+        })).filter(p => p.name && !isNaN(p.rating) && p.rating > 0);
+
+        if (players.length >= 7) {
+            html += generateTOTMFromGroup({ label, players }, league);
+        }
     }
 
-    content.innerHTML = html || '<div class="text-center text-zinc-500 py-8">No team data available</div>';
+    content.innerHTML = html || '<div class="text-center text-zinc-500 py-8">No qualifying matchday data found in the configured rows</div>';
 }
 
 function generateTOTMFromGroup(group, league) {
@@ -2419,13 +2488,15 @@ async function viewPlayer(playerKeyOrName) {
     if (parts.league) await loadStats(parts.league);
     await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
 
+    // Also load player profiles (nationality, height, foot, market value)
+    await loadPlayerProfiles();
+
     let playerData = null;
 
     if (parts.league) {
         const pool = statsData[parts.league].players || {};
         const exactKey = _makePlayerKey(parts.league, parts.team, parts.name);
         playerData = pool[exactKey] || null;
-
         if (!playerData) {
             const candidates = Object.values(pool).map(p => ({ key: p.key, name: p.name, team: p.team }));
             const m = _bestFuzzyPlayerMatch(parts.name, candidates);
@@ -2441,10 +2512,8 @@ async function viewPlayer(playerKeyOrName) {
     if (!playerData) {
         const candidates = [];
         ['PREM','LALIGA','MLS'].forEach(lg => {
-            const pool = statsData[lg].players || {};
-            Object.values(pool).forEach(p => candidates.push({ key: p.key, name: p.name, team: p.team }));
+            Object.values(statsData[lg].players || {}).forEach(p => candidates.push({ key: p.key, name: p.name, team: p.team }));
         });
-
         const m = _bestFuzzyPlayerMatch(playerKeyOrName, candidates);
         if (m) {
             for (const lg of ['PREM','LALIGA','MLS']) {
@@ -2460,16 +2529,32 @@ async function viewPlayer(playerKeyOrName) {
     }
 
     const isGK = _isGoalie(playerData);
+    const profile = getPlayerProfile(playerData.name);
+
+    const nationality  = profile?.nationality || '';
+    const height       = profile?.height || '';
+    const foot         = profile?.foot || '';
+    const dob          = profile?.dob || '';
+    const mvGBP        = profile?.mvGBP || null;
+    const mvStr        = formatMV(mvGBP);
+    const flag         = countryFlag(nationality);
+
+    // Info grid items — only show if we have data
+    const infoItems = [
+        height       ? { value: height,      label: 'Height'         } : null,
+        foot         ? { value: foot,         label: 'Preferred foot' } : null,
+        nationality  ? { value: `${flag} ${nationality}`.trim(), label: 'Country' } : null,
+        mvStr        ? { value: mvStr,        label: 'Transfer value' } : null,
+        dob          ? { value: formatDOB(dob), label: 'Date of birth' } : null,
+    ].filter(Boolean);
 
     content.innerHTML = `
         <div class="stat-card">
             <div class="flex items-center gap-4">
                 ${renderPlayerAvatarHTML(playerData.name, playerData.team)}
-                <div class="flex-1">
-                    <div class="flex items-center justify-center gap-2">
-                        <h2 class="text-2xl font-black">${playerData.name}</h2>
-                    </div>
-                    <p class="text-zinc-500 text-sm flex items-center justify-center gap-2">
+                <div>
+                    <h2 class="text-2xl font-black">${playerData.name}</h2>
+                    <p class="text-zinc-400 text-sm flex items-center gap-2 mt-1">
                         <img src="${getLogo(playerData.team)}" class="w-4 h-4 object-contain">
                         <span class="cursor-pointer hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(playerData.team)}', '${playerData.league}')">${playerData.team}</span>
                     </p>
@@ -2481,9 +2566,7 @@ async function viewPlayer(playerKeyOrName) {
             <div class="text-[10px] font-black text-zinc-500 uppercase mb-2">Last 5 Match Ratings</div>
             <div class="flex gap-2 flex-wrap">
                 ${(playerData.recentRatings && playerData.recentRatings.length ? playerData.recentRatings.slice(-5) : []).map(r => `
-                    <div class="${_ratingClass(r.rating)}">
-                        ${(r.rating != null ? Number(r.rating).toFixed(1) : '-')}
-                    </div>
+                    <div class="${_ratingClass(r.rating)}">${r.rating != null ? Number(r.rating).toFixed(1) : '-'}</div>
                 `).join('') || '<div class="text-zinc-500 text-sm">No ratings yet</div>'}
             </div>
         </div>
@@ -2504,8 +2587,7 @@ async function viewPlayer(playerKeyOrName) {
                 <div class="text-[10px] font-black text-zinc-500 uppercase">Clean Sheets</div>
                 <div class="text-2xl font-black text-[#00ff85] mt-1">${playerData.cleanSheets || 0}</div>
                 <img src="${getLogo(playerData.team)}" class="absolute right-2 bottom-2 w-12 h-12 object-contain opacity-10 pointer-events-none player-logo-dup">
-            </div>
-            ` : ``}
+            </div>` : ''}
             <div class="stat-card text-center relative overflow-hidden">
                 <div class="text-[10px] font-black text-zinc-500 uppercase">Games</div>
                 <div class="text-2xl font-black text-[#00ff85] mt-1">${playerData.matches || 0}</div>
@@ -2523,7 +2605,31 @@ async function viewPlayer(playerKeyOrName) {
                 <div class="text-xl font-black mt-2">${(playerData.league || '').toUpperCase()}</div>
             </div>
         </div>
+
+        ${infoItems.length ? `
+        <div class="mt-6 stat-card">
+            <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Player Info</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+                ${infoItems.map((item, i) => `
+                    <div style="padding:14px 0;${i < infoItems.length - (infoItems.length % 2 === 0 ? 2 : 1) ? 'border-bottom:1px solid #1e1e1e;' : ''}${i % 2 === 0 ? 'padding-right:24px;border-right:1px solid #1e1e1e;' : 'padding-left:24px;'}">
+                        <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${item.value}</div>
+                        <div style="font-size:11px;color:#666;font-weight:600;">${item.label}</div>
+                    </div>`).join('')}
+            </div>
+        </div>` : ''}
     `;
+}
+
+function formatDOB(dob) {
+    if (!dob) return '';
+    // If already formatted nicely, return as-is
+    if (/[a-zA-Z]/.test(dob)) return dob;
+    // Try to parse numeric date
+    const d = new Date(dob);
+    if (isNaN(d.getTime())) return dob;
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const age = Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+    return `${age} yrs (${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()})`;
 }
 
 async function searchPlayer(e) {
