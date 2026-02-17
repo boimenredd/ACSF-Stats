@@ -9,18 +9,54 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #00ff85; --bg: #0b0e11; --card: #161b22; --border: #30363d; }
-        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; overflow-x: hidden; }
-        header { background: rgba(11, 14, 17, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: fixed; top: 0; width: 100%; max-width: 448px; z-index: 100; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; overflow-x: hidden; margin: 0; padding: 0; }
+        
+        /* Full-width header */
+        header { background: rgba(11, 14, 17, 0.97); backdrop-filter: blur(12px); border-bottom: 1px solid #1a1a1a; position: fixed; top: 0; left: 0; right: 0; height: 60px; z-index: 100; display: flex; align-items: center; }
+        .header-inner { width: 100%; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .header-search-input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 9px 14px; color: #fff; width: 280px; font-size: 13px; }
+        .header-search-input:focus { outline: none; border-color: var(--accent); }
+        
+        /* Page wrapper: fixed, sits between header and bottom nav */
+        .app-layout { position: fixed; top: 60px; left: 0; right: 0; bottom: 60px; display: flex; overflow: hidden; }
+        
+        /* Left sidebar */
+        .leagues-sidebar { width: 220px; flex-shrink: 0; background: #0a0a0a; border-right: 1px solid #1a1a1a; padding: 24px 16px; overflow-y: auto; height: 100%; }
+        .leagues-title { font-size: 11px; font-weight: 900; text-transform: uppercase; margin-bottom: 12px; color: #666; letter-spacing: 0.8px; }
+        .league-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 2px; transition: background 0.15s; }
+        .league-item:hover { background: #141414; }
+        .league-item-logo { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
+        .league-item-name { font-size: 13px; font-weight: 600; }
+        
+        /* Center — fills all remaining space, scrollable */
+        .center-content { flex: 1; overflow-y: auto; min-width: 0; height: 100%; }
+        
+        /* Right sidebar */
+        .right-sidebar { width: 300px; flex-shrink: 0; background: #0a0a0a; border-left: 1px solid #1a1a1a; padding: 24px 16px; overflow-y: auto; height: 100%; }
+        
+        /* Lineup trigger card */
+        .lineup-builder-trigger { background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 16px; cursor: pointer; transition: border-color 0.2s; }
+        .lineup-builder-trigger:hover { border-color: #00ff85; }
+        .lineup-builder-trigger-title { font-size: 14px; font-weight: 900; margin-bottom: 4px; }
+        .lineup-builder-trigger-subtitle { font-size: 11px; color: #777; font-weight: 600; margin-bottom: 14px; }
+        .lineup-trigger-preview { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+        .lineup-trigger-dot { width: 100%; aspect-ratio: 1; background: #232323; border-radius: 50%; }
+        
+        /* Bottom nav */
+        .nav-bottom { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #0a0a0a; border-top: 1px solid #1a1a1a; display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .nav-bottom-inner { display: flex; width: 100%; max-width: 600px; justify-content: space-around; }
+        .nav-item { color: #555; font-size: 10px; font-weight: 800; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 20px; }
+        .nav-item.active { color: var(--accent); }
 
-        .date-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px; margin-top: 70px; }
+        .date-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 8px; }
         .date-display { font-weight: 900; font-size: 14px; text-transform: uppercase; text-align: center; flex: 1; }
-        .nav-arrow { width: 36px; height: 36px; background: #222; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; font-weight: bold; }
+        .nav-arrow { width: 36px; height: 36px; background: #222; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; font-weight: bold; flex-shrink: 0; }
         .today-btn { background: var(--accent); color: #000; font-size: 10px; font-weight: 900; padding: 6px 14px; border-radius: 6px; cursor: pointer; margin-top: 4px; }
 
-        .league-container { background: #121212; border-radius: 16px; margin: 12px; overflow: hidden; border: 1px solid #222; }
+        .league-container { background: #121212; border-radius: 16px; margin: 8px 12px; overflow: hidden; border: 1px solid #222; }
         .league-header { background: #1a1a1a; padding: 12px 16px; display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; color: #fff; border-bottom: 1px solid #222; }
         .league-logo { width: 20px; height: 20px; object-fit: contain; }
-        .match-row { display: flex; align-items: center; padding: 16px; border-bottom: 1px solid #1a1a1a; }
+        .match-row { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid #1a1a1a; }
         .team-box { display: flex; align-items: center; gap: 10px; flex: 1; }
         .team-logo { width: 24px; height: 24px; object-fit: contain; }
         .team-name { font-size: 13px; font-weight: 700; }
@@ -30,56 +66,27 @@
         .qualify-indicator { width: 4px; height: 24px; border-radius: 2px; margin-right: 10px; }
         .active-league { background: var(--accent) !important; color: #000 !important; }
 
-        .nav-bottom { position: fixed; bottom: 0; width: 100%; max-width: 448px; background: #111; border-top: 1px solid #222; display: flex; justify-content: space-around; padding: 12px 0; z-index: 100; }
-        .nav-item { color: #555; font-size: 10px; font-weight: 800; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-        .nav-item.active { color: var(--accent); }
         .player-avatar { width: 80px; height: 80px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 900; color: #666; }
         .player-avatar-img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; background: #222; border: 1px solid #2a2a2a; }
         .stat-card { background: #1a1a1a; border-radius: 12px; padding: 16px; border: 1px solid #222; }
         .search-input { background: #1a1a1a; border: 1px solid #333; border-radius: 8px; padding: 12px 16px; color: #fff; width: 100%; font-size: 14px; }
         .search-input:focus { outline: none; border-color: var(--accent); }
-        .header-search-input { background: #1a1a1a; border: 1px solid #333; border-radius: 10px; padding: 8px 10px; color: #fff; width: 170px; font-size: 12px; }
-        .header-search-input:focus { outline: none; border-color: var(--accent); }
 
         .player-logo-dup { display:none !important; }
 
-        .search-suggestions{
-            position:absolute;
-            right:16px;
-            top:64px;
-            background:#1a1a1a;
-            border:1px solid #333;
-            border-radius:10px;
-            width:300px;
-            max-height:320px;
-            overflow-y:auto;
-            z-index:200;
-        }
-        .search-suggestion{
-            padding:10px 12px;
-            cursor:pointer;
-            font-size:12px;
-            display:flex;
-            align-items:center;
-            gap:10px;
-        }
-        .search-suggestion:hover{ background:#222; }
+        .search-suggestions { position: fixed; background: #1a1a1a; border: 1px solid #333; border-radius: 10px; width: 300px; max-height: 320px; overflow-y: auto; z-index: 200; }
+        .search-suggestion { padding: 10px 12px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 10px; }
+        .search-suggestion:hover { background: #222; }
 
-        .leader-pill{
-            background:#111;
-            border:1px solid #2a2a2a;
-            border-radius:12px;
-            padding:12px;
-            cursor:pointer;
-        }
-        .rating-badge{font-family:'Roboto Mono',monospace;font-weight:900;font-size:12px;min-width:42px;text-align:center;border-radius:10px;padding:6px 8px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #2a2a2a;}
-        .rating-elite{background:rgba(34,197,94,.18);color:#22c55e;border-color:rgba(34,197,94,.35);}
-        .rating-good{background:rgba(134,239,172,.16);color:#86efac;border-color:rgba(134,239,172,.35);}
-        .rating-ok{background:rgba(250,204,21,.16);color:#facc15;border-color:rgba(250,204,21,.35);}
-        .rating-bad{background:rgba(239,68,68,.16);color:#ef4444;border-color:rgba(239,68,68,.35);}
-.leader-pill:hover{ border-color:#00ff85; }
+        .leader-pill { background: #111; border: 1px solid #2a2a2a; border-radius: 12px; padding: 12px; cursor: pointer; }
+        .rating-badge { font-family: 'Roboto Mono', monospace; font-weight: 900; font-size: 12px; min-width: 42px; text-align: center; border-radius: 10px; padding: 6px 8px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #2a2a2a; }
+        .rating-elite { background: rgba(34,197,94,.18); color: #22c55e; border-color: rgba(34,197,94,.35); }
+        .rating-good { background: rgba(134,239,172,.16); color: #86efac; border-color: rgba(134,239,172,.35); }
+        .rating-ok { background: rgba(250,204,21,.16); color: #facc15; border-color: rgba(250,204,21,.35); }
+        .rating-bad { background: rgba(239,68,68,.16); color: #ef4444; border-color: rgba(239,68,68,.35); }
+        .leader-pill:hover { border-color: #00ff85; }
 
-        /* Team of the Matchday Styles */
+        /* Team of the Matchday */
         .totm-container { background: #0f0f0f; border-radius: 16px; margin: 12px; padding: 20px 16px; border: 1px solid #2a2a2a; }
         .totm-header { text-align: center; margin-bottom: 24px; }
         .totm-title { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -88,31 +95,12 @@
         .formation-line { display: flex; justify-content: space-around; align-items: center; position: absolute; width: 100%; padding: 0 12px; }
         .formation-player { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; transition: transform 0.2s; }
         .formation-player:hover { transform: scale(1.05); }
-        .formation-avatar { width: 48px; height: 48px; border-radius: 50%; background: #1a1a1a; border: 2px solid #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #555; position: relative; }
+        .formation-avatar { width: 48px; height: 48px; border-radius: 50%; background: #1a1a1a; border: 2px solid #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #555; position: relative; overflow: visible; }
         .formation-avatar-img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
         .formation-rating { position: absolute; top: -4px; right: -6px; background: rgba(34,197,94,.95); color: #fff; font-size: 10px; font-weight: 900; padding: 3px 6px; border-radius: 8px; border: 2px solid #0f0f0f; font-family: 'Roboto Mono', monospace; }
         .formation-rating-top { background: rgba(59,130,246,.95); }
         .formation-name { font-size: 10px; font-weight: 800; text-align: center; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        
-        /* Leagues Sidebar */
-        .leagues-sidebar { position: fixed; left: 0; top: 70px; width: 200px; height: calc(100vh - 70px - 60px); background: #0a0a0a; border-right: 1px solid #1a1a1a; padding: 20px 16px; overflow-y: auto; z-index: 50; }
-        .leagues-title { font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 16px; color: #888; letter-spacing: 0.5px; }
-        .league-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; background: #0f0f0f; transition: all 0.2s; }
-        .league-item:hover { background: #151515; }
-        .league-item-logo { width: 24px; height: 24px; object-fit: contain; }
-        .league-item-name { font-size: 12px; font-weight: 700; }
-        
-        /* Lineup Builder Trigger Button */
-        .lineup-builder-trigger { position: fixed; right: 16px; top: 80px; width: 280px; background: #0f0f0f; border: 1px solid #1a1a1a; border-radius: 12px; padding: 16px; cursor: pointer; z-index: 50; transition: all 0.2s; }
-        .lineup-builder-trigger:hover { border-color: #00ff85; background: #121212; }
-        .lineup-builder-trigger-title { font-size: 13px; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; }
-        .lineup-builder-trigger-subtitle { font-size: 11px; color: #888; font-weight: 600; }
-        .lineup-builder-trigger-preview { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 12px; }
-        .lineup-trigger-dot { width: 100%; aspect-ratio: 1; background: #1a1a1a; border-radius: 50%; border: 1px solid #2a2a2a; }
-        
-        /* Main Hub Layout */
-        .hub-with-sidebar { margin-left: 200px; margin-right: 312px; }
-        
+
         /* League Overview */
         .league-overview-header { display: flex; align-items: center; gap: 16px; padding: 20px; background: #0f0f0f; border-radius: 12px; margin-bottom: 20px; border: 1px solid #1a1a1a; }
         .league-overview-logo { width: 48px; height: 48px; object-fit: contain; }
@@ -122,173 +110,186 @@
         .league-tab { background: #1a1a1a; border: 1px solid #2a2a2a; padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
         .league-tab:hover { background: #1f1f1f; }
         .league-tab.active { background: #00ff85; color: #000; border-color: #00ff85; }
-        
+
         /* Lineup Builder Page */
-        .lineup-builder-page { margin-left: 0 !important; margin-right: 0 !important; }
-        .lineup-builder-container { max-width: 500px; margin: 0 auto; padding: 20px; }
+        .lineup-builder-container { max-width: 480px; margin: 0 auto; padding: 24px 20px; }
         .lineup-builder-header { text-align: center; margin-bottom: 24px; }
         .lineup-builder-header h2 { font-size: 20px; font-weight: 900; text-transform: uppercase; }
         .lineup-builder-header p { font-size: 12px; color: #888; margin-top: 4px; }
-        .lineup-field { position: relative; width: 100%; aspect-ratio: 0.65; background: linear-gradient(180deg, #0d1f0d 0%, #0a1a0a 100%); border-radius: 16px; border: 2px solid #1a4d1a; margin-bottom: 20px; }
-        .lineup-line { display: flex; justify-content: space-around; align-items: center; position: absolute; width: 100%; padding: 0 12px; }
-        .lineup-slot { width: 60px; height: 60px; border-radius: 50%; background: #1a1a1a; border: 2px solid #2a2a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: all 0.2s; }
+        .lineup-field { position: relative; width: 100%; aspect-ratio: 0.65; background: linear-gradient(180deg, #0d1f0d 0%, #0a1a0a 100%); border-radius: 16px; border: 2px solid #1a4d1a; margin-bottom: 24px; }
+        .lineup-line { display: flex; justify-content: space-around; align-items: center; position: absolute; width: 100%; padding: 0 10px; }
+        .lineup-slot { width: 60px; height: 60px; border-radius: 50%; background: #1a2a1a; border: 2px solid #2a3a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: all 0.2s; flex-shrink: 0; }
         .lineup-slot:hover { border-color: #00ff85; transform: scale(1.05); }
-        .lineup-slot.filled { background: #0f0f0f; border-color: #00ff85; }
+        .lineup-slot.filled { border-color: #00ff85; }
         .lineup-slot-avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; }
-        .lineup-slot-add { font-size: 28px; color: #555; font-weight: 700; }
-        .lineup-slot-name { position: absolute; bottom: -22px; font-size: 10px; font-weight: 800; text-align: center; white-space: nowrap; }
+        .lineup-slot-add { font-size: 26px; color: #556655; font-weight: 700; line-height: 1; }
+        .lineup-slot-name { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 800; text-align: center; white-space: nowrap; color: #ddd; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
         .lineup-actions { display: flex; gap: 10px; }
         .lineup-btn { flex: 1; background: #1a1a1a; border: 1px solid #2a2a2a; padding: 12px; border-radius: 10px; font-size: 12px; font-weight: 900; cursor: pointer; text-align: center; transition: all 0.2s; }
-        .lineup-btn:hover { border-color: #00ff85; background: #1f1f1f; }
+        .lineup-btn:hover { border-color: #00ff85; }
         .lineup-btn-primary { background: #00ff85; color: #000; border-color: #00ff85; }
         .lineup-btn-primary:hover { background: #00e577; }
-        
+
         /* Player Picker Modal */
         .player-picker-modal { position: fixed; inset: 0; z-index: 9999; display: none; }
         .player-picker-modal.active { display: block; }
         .player-picker-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.85); }
-        .player-picker-content { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 450px; max-height: 80vh; background: #0f0f0f; border-radius: 16px; border: 1px solid #2a2a2a; overflow: hidden; }
-        .player-picker-header { padding: 16px; border-bottom: 1px solid #1a1a1a; }
-        .player-picker-search { width: 100%; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 14px; }
+        .player-picker-content { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 460px; max-height: 80vh; background: #0f0f0f; border-radius: 16px; border: 1px solid #2a2a2a; overflow: hidden; display: flex; flex-direction: column; }
+        .player-picker-header { padding: 16px; border-bottom: 1px solid #1a1a1a; flex-shrink: 0; }
+        .player-picker-search { width: 100%; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 14px; box-sizing: border-box; }
         .player-picker-search:focus { outline: none; border-color: #00ff85; }
-        .player-picker-list { max-height: 500px; overflow-y: auto; padding: 12px; }
-        .player-picker-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; cursor: pointer; margin-bottom: 6px; transition: all 0.2s; }
+        .player-picker-list { overflow-y: auto; padding: 10px; flex: 1; }
+        .player-picker-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; cursor: pointer; transition: background 0.15s; }
         .player-picker-item:hover { background: #1a1a1a; }
-        .player-picker-avatar { width: 48px; height: 48px; border-radius: 50%; background: #1a1a1a; object-fit: cover; border: 2px solid #2a2a2a; flex-shrink: 0; }
+        .player-picker-avatar { width: 44px; height: 44px; border-radius: 50%; background: #222; object-fit: cover; border: 1px solid #2a2a2a; flex-shrink: 0; }
+        .player-picker-initials { width: 44px; height: 44px; border-radius: 50%; background: #222; border: 1px solid #2a2a2a; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; color: #666; }
         .player-picker-info { flex: 1; min-width: 0; }
-        .player-picker-name { font-size: 14px; font-weight: 700; }
-        .player-picker-team { font-size: 11px; color: #888; margin-top: 3px; font-weight: 600; }
+        .player-picker-name { font-size: 13px; font-weight: 700; }
+        .player-picker-team { font-size: 11px; color: #888; margin-top: 2px; }
+
+        /* Tab content areas */
+        .tab-content { padding: 0; }
+        .tab-content.with-padding { padding: 16px; }
     </style>
 </head>
-<body class="max-w-md mx-auto pb-24">
+<body>
 
-    <!-- Leagues Sidebar -->
-    <div class="leagues-sidebar">
-        <div class="leagues-title">Top Leagues</div>
-        <div class="league-item" onclick="viewLeague('PREM')">
-            <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/47.png" class="league-item-logo">
-            <div class="league-item-name">Premier League</div>
-        </div>
-        <div class="league-item" onclick="viewLeague('LALIGA')">
-            <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/87.png" class="league-item-logo">
-            <div class="league-item-name">LaLiga</div>
-        </div>
-        <div class="league-item" onclick="viewLeague('MLS')">
-            <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/130.png" class="league-item-logo">
-            <div class="league-item-name">MLS</div>
-        </div>
-    </div>
-
-    <header class="p-4">
-        <div class="flex items-center justify-between gap-3 relative">
-            <h1 class="text-xl font-black italic uppercase cursor-pointer select-none" onclick="switchTab('hub'); jumpToToday();">Score<span class="text-[#00ff85]">Hub</span></h1>
-            <input type="text" id="globalSearch" class="header-search-input" placeholder="Search teams or players..." onkeyup="searchPlayer(event)" oninput="queueSuggestions('globalSearch', 'globalSearchSuggestions')" onfocus="queueSuggestions('globalSearch', 'globalSearchSuggestions')">
-            <div id="globalSearchSuggestions" class="search-suggestions hidden"></div>
+    <!-- Fixed Header -->
+    <header>
+        <div class="header-inner">
+            <h1 class="text-xl font-black italic uppercase cursor-pointer select-none" onclick="switchTab('hub'); jumpToToday();" style="white-space:nowrap;">Score<span class="text-[#00ff85]">Hub</span></h1>
+            <div style="position:relative;">
+                <input type="text" id="globalSearch" class="header-search-input" placeholder="Search teams or players..." onkeyup="searchPlayer(event)" oninput="queueSuggestions('globalSearch', 'globalSearchSuggestions')" onfocus="queueSuggestions('globalSearch', 'globalSearchSuggestions')">
+                <div id="globalSearchSuggestions" class="search-suggestions hidden" style="top:44px; left:0;"></div>
+            </div>
         </div>
     </header>
 
-    <main id="hub-tab" class="hub-with-sidebar">
-        <!-- Lineup Builder Trigger -->
-        <div class="lineup-builder-trigger" onclick="openLineupBuilder()">
-            <div class="lineup-builder-trigger-title">Build your own XI</div>
-            <div class="lineup-builder-trigger-subtitle">Try our lineup builder</div>
-            <div class="lineup-builder-trigger-preview">
-                <div class="lineup-trigger-dot"></div>
-                <div class="lineup-trigger-dot"></div>
-                <div class="lineup-trigger-dot"></div>
-                <div class="lineup-trigger-dot"></div>
-                <div class="lineup-trigger-dot"></div>
-                <div class="lineup-trigger-dot"></div>
-                <div class="lineup-trigger-dot"></div>
-                <div class="lineup-trigger-dot"></div>
-                <div class="lineup-trigger-dot"></div>
-                <div class="lineup-trigger-dot"></div>
-                <div class="lineup-trigger-dot"></div>
-            </div>
-        </div>
-        
-        <div class="date-nav">
-            <div class="nav-arrow" onclick="changeDate(-1)">‹</div>
-            <div class="flex flex-col items-center">
-                <div class="date-display" id="dateText">Loading...</div>
-                <div class="today-btn" onclick="jumpToToday()">JUMP TO TODAY</div>
-            </div>
-            <div class="nav-arrow" onclick="changeDate(1)">›</div>
-        </div>
-        <div id="league-list"></div>
-    </main>
+    <!-- Three-column layout -->
+    <div class="app-layout">
 
-    <div id="standings-tab" class="hidden pt-20">
-        <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
-            <button id="btn-PREM" onclick="renderStandings('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
-            <button id="btn-LALIGA" onclick="renderStandings('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
-            <button id="btn-MLS" onclick="renderStandings('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
-        </div>
-
-        <div class="px-2 overflow-x-auto">
-            <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 min-w-[600px]">
-                <table class="w-full text-left text-[11px]">
-                    <thead><tr id="standingsHead" class="uppercase bg-zinc-800/50"></tr></thead>
-                    <tbody id="standingsBody"></tbody>
-                </table>
+        <!-- LEFT: Leagues Sidebar -->
+        <div class="leagues-sidebar">
+            <div class="leagues-title">Top Leagues</div>
+            <div class="league-item" onclick="viewLeague('PREM')">
+                <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/47.png" class="league-item-logo">
+                <div class="league-item-name">Premier League</div>
+            </div>
+            <div class="league-item" onclick="viewLeague('LALIGA')">
+                <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/87.png" class="league-item-logo">
+                <div class="league-item-name">LaLiga</div>
+            </div>
+            <div class="league-item" onclick="viewLeague('MLS')">
+                <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/130.png" class="league-item-logo">
+                <div class="league-item-name">MLS</div>
             </div>
         </div>
 
-        <div id="legend" class="mt-6 px-4 flex flex-wrap gap-4"></div>
-    </div>
+        <!-- CENTER: All tab content -->
+        <div class="center-content">
 
-    <div id="stats-tab" class="hidden pt-20 pb-6">
-        <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
-            <button id="stat-btn-PREM" onclick="renderStats('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
-            <button id="stat-btn-LALIGA" onclick="renderStats('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
-            <button id="stat-btn-MLS" onclick="renderStats('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
-            <button id="stat-btn-COMBINED" onclick="renderStats('COMBINED')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">COMBINED</button>
-        </div>
-        <div id="statsContent" class="px-4"></div>
-    </div>
+            <main id="hub-tab">
+                <div class="date-nav">
+                    <div class="nav-arrow" onclick="changeDate(-1)">‹</div>
+                    <div class="flex flex-col items-center">
+                        <div class="date-display" id="dateText">Loading...</div>
+                        <div class="today-btn" onclick="jumpToToday()">JUMP TO TODAY</div>
+                    </div>
+                    <div class="nav-arrow" onclick="changeDate(1)">›</div>
+                </div>
+                <div id="league-list"></div>
+            </main>
 
-    <div id="totm-tab" class="hidden pt-20 pb-6">
-        <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
-            <button id="totm-btn-PREM" onclick="renderTOTMTab('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
-            <button id="totm-btn-LALIGA" onclick="renderTOTMTab('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
-            <button id="totm-btn-MLS" onclick="renderTOTMTab('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
-        </div>
-        <div id="totmContent" class="px-4"></div>
-    </div>
-
-    <div id="league-overview-tab" class="hidden pt-20 pb-6 px-4">
-        <button onclick="backToHub()" class="text-[10px] font-black text-[#00ff85] mb-4">← BACK TO HUB</button>
-        <div id="leagueOverviewContent"></div>
-    </div>
-
-    <div id="team-tab" class="hidden pt-20 pb-6">
-        <div class="px-4">
-            <button onclick="backToView()" class="text-[10px] font-black text-[#00ff85] mb-4">← BACK</button>
-            <div id="teamContent"></div>
-        </div>
-    </div>
-
-    <div id="player-tab" class="hidden pt-20 pb-6">
-        <div class="px-4">
-            <button onclick="backToView()" class="text-[10px] font-black text-[#00ff85] mb-4">← BACK</button>
-            <div id="playerContent"></div>
-        </div>
-    </div>
-
-    <div id="lineup-builder-tab" class="hidden pt-20 pb-6 lineup-builder-page">
-        <div class="lineup-builder-container">
-            <button onclick="closeLineupBuilder()" class="text-[10px] font-black text-[#00ff85] mb-4">← BACK TO HUB</button>
-            <div class="lineup-builder-header">
-                <h2>FotMob Lineup Builder</h2>
-                <p>Build your dream team</p>
+            <div id="standings-tab" class="hidden" style="padding-top:16px;">
+                <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
+                    <button id="btn-PREM" onclick="renderStandings('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
+                    <button id="btn-LALIGA" onclick="renderStandings('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
+                    <button id="btn-MLS" onclick="renderStandings('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
+                </div>
+                <div class="px-4 overflow-x-auto">
+                    <div class="bg-zinc-900/50 rounded-xl border border-zinc-800">
+                        <table class="w-full text-left text-[11px]">
+                            <thead><tr id="standingsHead" class="uppercase bg-zinc-800/50"></tr></thead>
+                            <tbody id="standingsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="legend" class="mt-6 px-4 flex flex-wrap gap-4"></div>
             </div>
-            <div class="lineup-field" id="lineupField"></div>
-            <div class="lineup-actions">
-                <div class="lineup-btn" onclick="clearLineup()">Clear</div>
-                <div class="lineup-btn lineup-btn-primary" onclick="saveLineup()">Save</div>
+
+            <div id="stats-tab" class="hidden" style="padding-top:16px; padding-bottom:24px;">
+                <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
+                    <button id="stat-btn-PREM" onclick="renderStats('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
+                    <button id="stat-btn-LALIGA" onclick="renderStats('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
+                    <button id="stat-btn-MLS" onclick="renderStats('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
+                    <button id="stat-btn-COMBINED" onclick="renderStats('COMBINED')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">COMBINED</button>
+                </div>
+                <div id="statsContent" class="px-4"></div>
+            </div>
+
+            <div id="totm-tab" class="hidden" style="padding-top:16px; padding-bottom:24px;">
+                <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
+                    <button id="totm-btn-PREM" onclick="renderTOTMTab('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
+                    <button id="totm-btn-LALIGA" onclick="renderTOTMTab('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
+                    <button id="totm-btn-MLS" onclick="renderTOTMTab('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
+                </div>
+                <div id="totmContent" class="px-4"></div>
+            </div>
+
+            <div id="league-overview-tab" class="hidden" style="padding:16px;">
+                <button onclick="backToHub()" class="text-[10px] font-black text-[#00ff85] mb-4 block">← BACK TO HUB</button>
+                <div id="leagueOverviewContent"></div>
+            </div>
+
+            <div id="team-tab" class="hidden" style="padding:16px;">
+                <button onclick="backToView()" class="text-[10px] font-black text-[#00ff85] mb-4 block">← BACK</button>
+                <div id="teamContent"></div>
+            </div>
+
+            <div id="player-tab" class="hidden" style="padding:16px;">
+                <button onclick="backToView()" class="text-[10px] font-black text-[#00ff85] mb-4 block">← BACK</button>
+                <div id="playerContent"></div>
+            </div>
+
+            <div id="lineup-builder-tab" class="hidden">
+                <div class="lineup-builder-container">
+                    <button onclick="closeLineupBuilder()" class="text-[10px] font-black text-[#00ff85] mb-4 block">← BACK TO HUB</button>
+                    <div class="lineup-builder-header">
+                        <h2>Lineup Builder</h2>
+                        <p>Build your dream XI</p>
+                    </div>
+                    <div class="lineup-field" id="lineupField"></div>
+                    <div class="lineup-actions">
+                        <div class="lineup-btn" onclick="clearLineup()">Clear</div>
+                        <div class="lineup-btn lineup-btn-primary" onclick="saveLineup()">Save</div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /center-content -->
+
+        <!-- RIGHT: Lineup Builder Trigger -->
+        <div class="right-sidebar">
+            <div class="lineup-builder-trigger" onclick="openLineupBuilder()">
+                <div class="lineup-builder-trigger-title">Build your own XI</div>
+                <div class="lineup-builder-trigger-subtitle">Try our lineup builder</div>
+                <div class="lineup-trigger-preview">
+                    <div class="lineup-trigger-dot"></div>
+                    <div class="lineup-trigger-dot"></div>
+                    <div class="lineup-trigger-dot"></div>
+                    <div class="lineup-trigger-dot"></div>
+                    <div class="lineup-trigger-dot"></div>
+                    <div class="lineup-trigger-dot"></div>
+                    <div class="lineup-trigger-dot"></div>
+                    <div class="lineup-trigger-dot"></div>
+                    <div class="lineup-trigger-dot"></div>
+                    <div class="lineup-trigger-dot"></div>
+                    <div class="lineup-trigger-dot"></div>
+                </div>
             </div>
         </div>
-    </div>
+
+    </div><!-- /app-layout -->
 
     <!-- Player Picker Modal -->
     <div class="player-picker-modal" id="playerPickerModal">
@@ -301,22 +302,25 @@
         </div>
     </div>
 
+    <!-- Bottom Nav -->
     <nav class="nav-bottom">
-        <div class="nav-item active" onclick="switchTab('hub')">
-            <span class="text-lg">⚽</span>
-            <span>MAIN HUB</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('standings')">
-            <span class="text-lg">🏆</span>
-            <span>STANDINGS</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('stats')">
-            <span class="text-lg">📊</span>
-            <span>STATS</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('totm')">
-            <span class="text-lg">⭐</span>
-            <span>TEAM OF MD</span>
+        <div class="nav-bottom-inner">
+            <div class="nav-item active" onclick="switchTab('hub')">
+                <span class="text-lg">⚽</span>
+                <span>MAIN HUB</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('standings')">
+                <span class="text-lg">🏆</span>
+                <span>STANDINGS</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('stats')">
+                <span class="text-lg">📊</span>
+                <span>STATS</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('totm')">
+                <span class="text-lg">⭐</span>
+                <span>TEAM OF MD</span>
+            </div>
         </div>
     </nav>
 
@@ -824,6 +828,7 @@ const TOTM_CONFIG = {
     MLS: {
         '2026-02-21': { startRow: 2, endRow: 221 }
     }
+    
 };
 
 const LEAGUE_META = {
@@ -1391,20 +1396,24 @@ function changeDate(step) {
 
 function switchTab(t) {
     currentView = t;
-    document.getElementById('hub-tab').classList.toggle('hidden', t !== 'hub');
-    document.getElementById('standings-tab').classList.toggle('hidden', t !== 'standings');
-    document.getElementById('stats-tab').classList.toggle('hidden', t !== 'stats');
-    document.getElementById('totm-tab').classList.toggle('hidden', t !== 'totm');
-    document.getElementById('team-tab').classList.add('hidden');
-    document.getElementById('player-tab').classList.add('hidden');
+    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
+    allTabs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+
+    const tabMap = { hub: 'hub-tab', standings: 'standings-tab', stats: 'stats-tab', totm: 'totm-tab' };
+    const showId = tabMap[t] || 'hub-tab';
+    const show = document.getElementById(showId);
+    if (show) show.classList.remove('hidden');
 
     document.querySelectorAll('.nav-item').forEach(el => {
-        const spanText = el.querySelector('span:last-child').textContent;
-        if (t === 'hub' && spanText === 'MAIN HUB') el.classList.add('active');
-        else if (t === 'standings' && spanText === 'STANDINGS') el.classList.add('active');
-        else if (t === 'stats' && spanText === 'STATS') el.classList.add('active');
-        else if (t === 'totm' && spanText === 'TEAM OF MD') el.classList.add('active');
-        else el.classList.remove('active');
+        const spanText = el.querySelector('span:last-child')?.textContent || '';
+        const isActive = (t === 'hub' && spanText === 'MAIN HUB') ||
+                         (t === 'standings' && spanText === 'STANDINGS') ||
+                         (t === 'stats' && spanText === 'STATS') ||
+                         (t === 'totm' && spanText === 'TEAM OF MD');
+        el.classList.toggle('active', isActive);
     });
 
     if (t === 'standings') renderStandings('PREM');
@@ -2245,11 +2254,9 @@ function _matchRowClickable(m, highlightWinner = false) {
 
 async function viewTeam(teamName, league) {
     currentTeam = { name: teamName, league };
+    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','league-overview-tab','player-tab','lineup-builder-tab'];
+    allTabs.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
     document.getElementById('team-tab').classList.remove('hidden');
-    document.getElementById('hub-tab').classList.add('hidden');
-    document.getElementById('standings-tab').classList.add('hidden');
-    document.getElementById('stats-tab').classList.add('hidden');
-    document.getElementById('player-tab').classList.add('hidden');
 
     const content = document.getElementById('teamContent');
     content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading team...</div>';
@@ -2405,11 +2412,9 @@ async function viewTeam(teamName, league) {
 }
 
 async function viewPlayer(playerKeyOrName) {
+    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','league-overview-tab','team-tab','lineup-builder-tab'];
+    allTabs.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
     document.getElementById('player-tab').classList.remove('hidden');
-    document.getElementById('hub-tab').classList.add('hidden');
-    document.getElementById('standings-tab').classList.add('hidden');
-    document.getElementById('stats-tab').classList.add('hidden');
-    document.getElementById('team-tab').classList.add('hidden');
 
     const content = document.getElementById('playerContent');
     content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading player...</div>';
@@ -2565,15 +2570,9 @@ let currentLineup = Array(11).fill(null);
 let currentPickerSlot = null;
 
 function openLineupBuilder() {
-    document.getElementById('hub-tab').classList.add('hidden');
-    document.getElementById('standings-tab').classList.add('hidden');
-    document.getElementById('stats-tab').classList.add('hidden');
-    document.getElementById('totm-tab').classList.add('hidden');
-    document.getElementById('team-tab').classList.add('hidden');
-    document.getElementById('player-tab').classList.add('hidden');
-    document.getElementById('league-overview-tab').classList.add('hidden');
+    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','league-overview-tab','team-tab','player-tab'];
+    allTabs.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
     document.getElementById('lineup-builder-tab').classList.remove('hidden');
-    
     renderLineupField();
 }
 
@@ -2588,42 +2587,43 @@ function initLineupBuilder() {
 
 function renderLineupField() {
     const field = document.getElementById('lineupField');
+    if (!field) return;
     const formation = [
-        { line: 0, count: 3, label: 'FWD' }, // forwards
-        { line: 1, count: 3, label: 'MID' }, // midfielders
-        { line: 2, count: 4, label: 'DEF' }, // defenders
-        { line: 3, count: 1, label: 'GK' }   // goalkeeper
+        { count: 3 }, // forwards
+        { count: 3 }, // midfielders
+        { count: 4 }, // defenders
+        { count: 1 }  // goalkeeper
     ];
     
     let slotIndex = 0;
     let html = '';
+    const positions = ['8%', '35%', '65%', '88%'];
     
     formation.forEach((line, lineIdx) => {
-        const positions = ['8%', '35%', '65%', '88%'];
         html += `<div class="lineup-line" style="top: ${positions[lineIdx]};">`;
-        
         for (let i = 0; i < line.count; i++) {
             const player = currentLineup[slotIndex];
             const slotIdx = slotIndex;
-            
             if (player) {
-                const initials = player.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                const avatarHTML = renderPlayerAvatarHTML(player.name, player.team)
+                    .replace('player-avatar-img', 'lineup-slot-avatar')
+                    .replace('player-avatar', 'lineup-slot-initials')
+                    .replace('width: 80px', 'width: 60px')
+                    .replace('height: 80px', 'height: 60px');
+                const shortName = player.name.split(' ').pop();
                 html += `
                     <div class="lineup-slot filled" onclick="openPlayerPicker(${slotIdx})">
-                        ${player.photoUrl ? `<img src="${player.photoUrl}" class="lineup-slot-avatar" onerror="this.style.display='none'">` : `<div style="font-size: 18px; font-weight: 900; color: #666;">${initials}</div>`}
-                        <div class="lineup-slot-name">${player.name.split(' ').pop()}</div>
-                    </div>
-                `;
+                        ${avatarHTML}
+                        <div class="lineup-slot-name">${shortName}</div>
+                    </div>`;
             } else {
                 html += `
                     <div class="lineup-slot" onclick="openPlayerPicker(${slotIdx})">
                         <div class="lineup-slot-add">+</div>
-                    </div>
-                `;
+                    </div>`;
             }
             slotIndex++;
         }
-        
         html += '</div>';
     });
     
@@ -2672,26 +2672,28 @@ async function openPlayerPicker(slotIndex) {
 
 function renderPlayerPickerList(players) {
     const list = document.getElementById('playerPickerList');
-    
+    if (!list) return;
     if (players.length === 0) {
-        list.innerHTML = '<div class="text-center text-zinc-500 py-8">No players found</div>';
+        list.innerHTML = '<div style="text-align:center;color:#555;padding:32px 0;">No players found</div>';
         return;
     }
-    
-    list.innerHTML = players.slice(0, 50).map(p => {
-        const initials = p.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    list.innerHTML = players.slice(0, 60).map(p => {
+        // Use the same photo system as player profile pages
+        const avatarHTML = renderPlayerAvatarHTML(p.name, p.team)
+            .replace('player-avatar-img', 'player-picker-avatar')
+            .replace(/width:\s*80px/g, 'width:44px')
+            .replace(/height:\s*80px/g, 'height:44px')
+            .replace('class="player-avatar"', 'class="player-picker-initials"')
+            .replace(/font-size:\s*32px/, 'font-size:15px');
+        const dataStr = JSON.stringify(p).replace(/"/g, '&quot;');
         return `
-            <div class="player-picker-item" onclick='selectPlayerForLineup(${JSON.stringify(p).replace(/'/g, "&apos;")})'>
-                ${p.photoUrl ? 
-                    `<img src="${p.photoUrl}" class="player-picker-avatar" onerror="this.outerHTML='<div class=player-picker-avatar style=display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#555;>${initials}</div>'">` : 
-                    `<div class="player-picker-avatar" style="display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:#555;">${initials}</div>`
-                }
+            <div class="player-picker-item" onclick='selectPlayerForLineupFromData(this)' data-player="${dataStr}">
+                ${avatarHTML}
                 <div class="player-picker-info">
                     <div class="player-picker-name">${p.name}</div>
-                    <div class="player-picker-team">${p.team} • ${p.league}</div>
+                    <div class="player-picker-team">${p.team} · ${p.league}</div>
                 </div>
-            </div>
-        `;
+            </div>`;
     }).join('');
 }
 
@@ -2708,6 +2710,13 @@ function selectPlayerForLineup(player) {
     currentLineup[currentPickerSlot] = player;
     closePlayerPicker();
     renderLineupField();
+}
+
+function selectPlayerForLineupFromData(el) {
+    try {
+        const p = JSON.parse(el.getAttribute('data-player'));
+        selectPlayerForLineup(p);
+    } catch(e) { closePlayerPicker(); }
 }
 
 function closePlayerPicker() {
@@ -2740,14 +2749,9 @@ if (localStorage.getItem('savedLineup')) {
 
 // ===== LEAGUE OVERVIEW =====
 async function viewLeague(league) {
-    document.getElementById('hub-tab').classList.add('hidden');
-    document.getElementById('standings-tab').classList.add('hidden');
-    document.getElementById('stats-tab').classList.add('hidden');
-    document.getElementById('totm-tab').classList.add('hidden');
-    document.getElementById('team-tab').classList.add('hidden');
-    document.getElementById('player-tab').classList.add('hidden');
+    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','team-tab','player-tab','lineup-builder-tab'];
+    allTabs.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
     document.getElementById('league-overview-tab').classList.remove('hidden');
-    
     await renderLeagueOverview(league);
 }
 
