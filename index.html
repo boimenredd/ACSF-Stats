@@ -89,7 +89,7 @@
         .leader-pill:hover { border-color: #00ff85; }
 
         /* Team of the Matchday */
-        .totm-container { background: #0f0f0f; border-radius: 16px; margin: 12px; padding: 20px 16px; border: 1px solid #2a2a2a; }
+        .totm-container { background: #0f0f0f; border-radius: 16px; margin: 12px auto; padding: 20px 16px; border: 1px solid #2a2a2a; max-width: 600px; }
         .totm-header { text-align: center; margin-bottom: 24px; }
         .totm-title { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
         .totm-subtitle { font-size: 11px; color: #888; margin-top: 4px; font-weight: 700; }
@@ -101,6 +101,7 @@
         .formation-avatar-img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
         .formation-rating { position: absolute; top: -4px; right: -6px; background: rgba(34,197,94,.95); color: #fff; font-size: 10px; font-weight: 900; padding: 3px 6px; border-radius: 8px; border: 2px solid #0f0f0f; font-family: 'Roboto Mono', monospace; }
         .formation-rating-top { background: rgba(59,130,246,.95); }
+        .formation-rating-top::before { content: '⭐ '; }
         .formation-name { font-size: 10px; font-weight: 800; text-align: center; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         /* League Overview */
@@ -120,11 +121,11 @@
         .lineup-builder-header p { font-size: 12px; color: #888; margin-top: 4px; }
         .lineup-field { position: relative; width: 100%; aspect-ratio: 0.65; background: linear-gradient(180deg, #0d1f0d 0%, #0a1a0a 100%); border-radius: 16px; border: 2px solid #1a4d1a; margin-bottom: 24px; }
         .lineup-line { display: flex; justify-content: space-around; align-items: center; position: absolute; width: 100%; padding: 0 10px; }
-        .lineup-slot { width: 64px; height: 64px; border-radius: 50%; background: #1a2a1a; border: 2px solid #2a3a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: all 0.2s; flex-shrink: 0; overflow: hidden; }
+        .lineup-slot { width: 56px; height: 56px; border-radius: 50%; background: #1a2a1a; border: 2px solid #2a3a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: all 0.2s; flex-shrink: 0; overflow: hidden; }
         .lineup-slot:hover { border-color: #00ff85; transform: scale(1.05); }
         .lineup-slot.filled { border-color: #00ff85; }
-        .lineup-slot-avatar { width: 85px; height: 85px; border-radius: 50%; object-fit: cover; object-position: center 20%; }
-        .lineup-slot-initials { width: 64px; height: 64px; border-radius: 50%; background: #1a2a1a; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #4a6a4a; }
+        .lineup-slot-avatar { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; object-position: center 25%; }
+        .lineup-slot-initials { width: 56px; height: 56px; border-radius: 50%; background: #1a2a1a; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; color: #4a6a4a; }
         .lineup-slot-add { font-size: 26px; color: #556655; font-weight: 700; line-height: 1; }
         .lineup-slot-name { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 800; text-align: center; white-space: nowrap; color: #ddd; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
         .lineup-actions { display: flex; gap: 10px; }
@@ -887,20 +888,32 @@ async function loadPlayerProfiles() {
         new Promise(res => Papa.parse(MARKET_VALUES_URL,   { download: true, header: true, complete: r => res(r.data || []), error: () => res([]) }))
     ]);
 
+    console.log('Player profiles CSV sample (first 3 rows):', profileRows.slice(0, 3));
+    console.log('Market values CSV sample (first 3 rows):', mvRows.slice(0, 3));
+    
     // Build market value map: playerId -> euros
     const mvById = new Map();
-    mvRows.forEach(r => {
-        // Try common column names
-        const id  = (r.player_id || r.Player_ID || r.PlayerID || r.id || r.ID || '').toString().trim();
-        const val = parseFloat((r.market_value || r.MarketValue || r.value || r.Value || r.mv || r.MV || '').toString().replace(/[^0-9.]/g, ''));
-        if (id && !isNaN(val)) mvById.set(id, val);
+    mvRows.forEach((r, idx) => {
+        // Column A = player_id, Column C = market_value (0-indexed: A=0, C=2)
+        // Also try all common header variations
+        const id  = (r.player_id || r.Player_ID || r.PlayerID || r.id || r.ID || Object.values(r)[0] || '').toString().trim();
+        const val = parseFloat((r.market_value || r.MarketValue || r.value || r.Value || r.mv || r.MV || Object.values(r)[2] || '').toString().replace(/[^0-9.]/g, ''));
+        if (id && !isNaN(val)) {
+            mvById.set(id, val);
+            if (idx < 3) console.log(`MV debug row ${idx}: id=${id}, value=${val}`);
+        }
     });
+    console.log(`Loaded ${mvById.size} market values`);
 
     // Build profile map: normName -> profile object
-    profileRows.forEach(r => {
-        const name       = (r.name || r.Name || r.player || r.Player || '').toString().trim();
-        const playerId   = (r.player_id || r.Player_ID || r.PlayerID || r.id || r.ID || '').toString().trim();
-        const nationality = (r.nationality || r.Nationality || r.country || r.Country || '').toString().trim();
+    profileRows.forEach((r, idx) => {
+        // Try all common column name variations
+        const name       = (r.name || r.Name || r.player || r.Player || r.player_name || r.Player_Name || Object.values(r)[0] || Object.values(r)[1] || '').toString().trim();
+        const playerId   = (r.player_id || r.Player_ID || r.PlayerID || r.id || r.ID || Object.values(r)[0] || '').toString().trim();
+        
+        // Column J is index 9 (0-indexed) - try that plus all header variations
+        const allVals = Object.values(r);
+        const nationality = (r.nationality || r.Nationality || r.country || r.Country || r.nat || r.Nat || allVals[9] || '').toString().trim();
         const height     = (r.height || r.Height || '').toString().trim();
         const foot       = (r.foot || r.Foot || r.preferred_foot || r.PreferredFoot || '').toString().trim();
         const dob        = (r.dob || r.DOB || r.date_of_birth || r.DateOfBirth || r.born || r.Born || '').toString().trim();
@@ -912,7 +925,11 @@ async function loadPlayerProfiles() {
         const mvGBP   = mvEuros ? Math.round(mvEuros * EUR_TO_GBP) : null;
 
         playerProfilesCache.set(key, { name, playerId, nationality, height, foot, dob, position: pos, mvEuros, mvGBP });
+        
+        if (idx < 3) console.log(`Profile debug row ${idx}: name=${name}, id=${playerId}, nat=${nationality}, mv=${mvGBP ? '£'+mvGBP : 'none'}`);
     });
+    
+    console.log(`Loaded ${playerProfilesCache.size} player profiles`);
 
     marketValuesCache = mvById;
     playerProfilesLoaded = true;
@@ -1398,8 +1415,10 @@ function generateTOTMFromGroup(group, league) {
         labelStr = `${months[parsedDate.getMonth()]} ${parsedDate.getDate()}, ${parsedDate.getFullYear()}`;
     }
 
-    // Categorise by position from the ratings log data
+    // Categorise by position from the ratings log data (strict matching)
     const byPos = { gk: [], def: [], mid: [], fwd: [] };
+    const used = new Set(); // Track which players we've already placed to prevent duplicates
+    
     top11.forEach(p => {
         // Try to match player in statsData to get key and photoUrl
         const playerData = data && data.players ? Object.values(data.players).find(pl =>
@@ -1407,17 +1426,32 @@ function generateTOTMFromGroup(group, league) {
             _normMatch(pl.name) === _normMatch(p.name)
         ) : null;
         
-        // Use position from the CSV row (column B)
-        const pos = (p.position || '').toLowerCase();
+        // Use position from the CSV row (column B) - must be exact match
+        const pos = (p.position || '').trim().toUpperCase();
         const key = playerData ? playerData.key : null;
         const photoUrl = playerData ? (playerData.photoUrl || '') : '';
         const entry = { ...p, pos, key, photoUrl };
 
-        if (pos.includes('gk') || pos.includes('goalkeeper') || pos.includes('keeper')) byPos.gk.push(entry);
-        else if (pos.includes('def') || pos.includes('cb') || pos.includes('lb') || pos.includes('rb') || pos.includes('back') || pos.includes('wing back')) byPos.def.push(entry);
-        else if (pos.includes('mid') || pos.includes('cm') || pos.includes('cdm') || pos.includes('cam') || pos.includes('dm')) byPos.mid.push(entry);
-        else if (pos.includes('fwd') || pos.includes('fw') || pos.includes('st') || pos.includes('cf') || pos.includes('lw') || pos.includes('rw') || pos.includes('attack') || pos.includes('striker') || pos.includes('wing')) byPos.fwd.push(entry);
-        else byPos.fwd.push(entry); // unknown → forward
+        if (used.has(p.name)) return; // Prevent duplicates
+        used.add(p.name);
+
+        // Strict position matching
+        if (pos === 'GK') {
+            byPos.gk.push(entry);
+        } else if (pos === 'CB') {
+            byPos.def.push(entry);
+        } else if (pos === 'LB' || pos === 'RB') {
+            byPos.def.push(entry);
+        } else if (pos === 'CDM' || pos === 'CM' || pos === 'CAM') {
+            byPos.mid.push(entry);
+        } else if (pos === 'LW' || pos === 'LM' || pos === 'RM' || pos === 'RW') {
+            byPos.fwd.push(entry);
+        } else if (pos === 'ST') {
+            byPos.fwd.push(entry);
+        } else {
+            // Unknown position — put in forwards as fallback
+            byPos.fwd.push(entry);
+        }
     });
 
     // Fill to 1-4-3-3 shape
