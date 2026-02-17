@@ -3114,7 +3114,7 @@ async function renderLeagueTabContent(tab, league) {
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
                 <div>${makeStatCard('Top Scorer', data.goals || [], false, 'GOALS')}</div>
                 <div>${makeStatCard('Assists', data.assists || [], false, 'ASSISTS')}</div>
-                <div>${makeStatCard('FotMob Rating', data.ratings || [], true, 'RATING')}</div>
+                <div>${makeStatCard('ScoreHub Rating', data.ratings || [], true, 'RATING')}</div>
             </div>
         `;
     }
