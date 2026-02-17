@@ -99,9 +99,9 @@
         .formation-player:hover { transform: scale(1.05); }
         .formation-avatar { width: 48px; height: 48px; border-radius: 50%; background: #1a1a1a; border: 2px solid #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #555; position: relative; overflow: visible; }
         .formation-avatar-img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
-        .formation-rating { position: absolute; top: -4px; right: -6px; background: rgba(34,197,94,.95); color: #fff; font-size: 10px; font-weight: 900; padding: 3px 6px; border-radius: 8px; border: 2px solid #0f0f0f; font-family: 'Roboto Mono', monospace; }
+        .formation-rating { position: absolute; bottom: -2px; right: -4px; background: rgba(34,197,94,.95); color: #fff; font-size: 9px; font-weight: 900; padding: 2px 5px; border-radius: 6px; border: 2px solid #0f0f0f; font-family: 'Roboto Mono', monospace; }
         .formation-rating-top { background: rgba(59,130,246,.95); }
-        .formation-rating-top::before { content: '⭐ '; }
+        .formation-rating-top::before { content: '⭐ '; font-size: 8px; }
         .formation-name { font-size: 10px; font-weight: 800; text-align: center; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
         /* League Overview */
@@ -124,8 +124,8 @@
         .lineup-slot { width: 56px; height: 56px; border-radius: 50%; background: #1a2a1a; border: 2px solid #2a3a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: all 0.2s; flex-shrink: 0; overflow: hidden; }
         .lineup-slot:hover { border-color: #00ff85; transform: scale(1.05); }
         .lineup-slot.filled { border-color: #00ff85; }
-        .lineup-slot-avatar { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; object-position: center 25%; }
-        .lineup-slot-initials { width: 56px; height: 56px; border-radius: 50%; background: #1a2a1a; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; color: #4a6a4a; }
+        .lineup-slot-avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; object-position: center 28%; }
+        .lineup-slot-initials { width: 56px; height: 56px; border-radius: 50%; background: #1a2a1a; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; color: #4a6a4a; }
         .lineup-slot-add { font-size: 26px; color: #556655; font-weight: 700; line-height: 1; }
         .lineup-slot-name { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 800; text-align: center; white-space: nowrap; color: #ddd; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
         .lineup-actions { display: flex; gap: 10px; }
@@ -891,19 +891,17 @@ async function loadPlayerProfiles() {
     console.log('Player profiles CSV sample (first 3 rows):', profileRows.slice(0, 3));
     console.log('Market values CSV sample (first 3 rows):', mvRows.slice(0, 3));
     
-    // Build market value map: playerId -> euros
+    // Build market value map: playerId -> euros (use LAST entry for each ID)
     const mvById = new Map();
     mvRows.forEach((r, idx) => {
-        // Column A = player_id, Column C = market_value (0-indexed: A=0, C=2)
-        // Also try all common header variations
         const id  = (r.player_id || r.Player_ID || r.PlayerID || r.id || r.ID || Object.values(r)[0] || '').toString().trim();
         const val = parseFloat((r.market_value || r.MarketValue || r.value || r.Value || r.mv || r.MV || Object.values(r)[2] || '').toString().replace(/[^0-9.]/g, ''));
         if (id && !isNaN(val)) {
-            mvById.set(id, val);
+            mvById.set(id, val); // Overwrite each time = last entry wins
             if (idx < 3) console.log(`MV debug row ${idx}: id=${id}, value=${val}`);
         }
     });
-    console.log(`Loaded ${mvById.size} market values`);
+    console.log(`Loaded ${mvById.size} market values (latest for each player_id)`);
 
     // Build profile map: normName -> profile object
     profileRows.forEach((r, idx) => {
@@ -1377,15 +1375,16 @@ async function renderTOTMTab(league) {
     }
 
     // Row 1 = header in Google Sheets = allRows[0] in JS; data starts at allRows[1]
+    console.log(`TOTM ${league}: ${configLabels.length} matchday(s)`);
     let html = '';
     for (const label of configLabels) {
         const { startRow, endRow } = config[label];
-        // Google Sheets rows are 1-indexed; allRows is 0-indexed
-        // Row 1 = header → allRows[0], Row 2 → allRows[1], etc.
-        const sliceStart = startRow - 1; // startRow 2 → index 1
-        const sliceEnd   = endRow;        // endRow 23 → slice up to index 23 (exclusive = rows 1..22 → sheets rows 2..23) ✓
+        const sliceStart = startRow - 1;
+        const sliceEnd   = endRow;
         const rowSlice = allRows.slice(sliceStart, sliceEnd);
 
+        console.log(`${league} ${label}: rows ${startRow}-${endRow}, sliced ${rowSlice.length} rows`);
+        
         // Column structure: A=name B=position C=rating D=team
         const players = rowSlice.map(row => ({
             name:     (row[0] || '').toString().trim(),
@@ -1393,6 +1392,9 @@ async function renderTOTMTab(league) {
             rating:   parseFloat((row[2] || '').toString()),
             team:     (row[3] || '').toString().trim(),
         })).filter(p => p.name && !isNaN(p.rating) && p.rating > 0);
+
+        console.log(`${league} ${label}: ${players.length} valid players`);
+        if (players.length > 0) console.log('Sample:', players.slice(0, 3).map(p => `${p.name}(${p.position}):${p.rating}`));
 
         if (players.length >= 7) {
             html += generateTOTMFromGroup({ label, players }, league);
@@ -1408,6 +1410,9 @@ function generateTOTMFromGroup(group, league) {
     const topRating = top11[0].rating;
     const data = statsData[league];
 
+    console.log(`Building TOTM for ${group.label}: ${top11.length} players, top rating ${topRating}`);
+    console.log('Top 11:', top11.map(p => `${p.name}(${p.position}):${p.rating}`).join(', '));
+
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     let labelStr = group.label;
     const parsedDate = parseSheetDate(group.label);
@@ -1415,59 +1420,65 @@ function generateTOTMFromGroup(group, league) {
         labelStr = `${months[parsedDate.getMonth()]} ${parsedDate.getDate()}, ${parsedDate.getFullYear()}`;
     }
 
-    // Categorise by position from the ratings log data (strict matching)
-    const byPos = { gk: [], def: [], mid: [], fwd: [] };
-    const used = new Set(); // Track which players we've already placed to prevent duplicates
+    // Build a strict 4-3-3 formation: 1 GK, 2 CB + 2 FB, 3 MID, 3 FWD
+    // Categorize all top 11 by position, ensuring no duplicates
+    const categorized = { gk: [], cb: [], fb: [], mid: [], fwd: [] };
+    const used = new Set();
     
     top11.forEach(p => {
-        // Try to match player in statsData to get key and photoUrl
+        if (used.has(p.name)) {
+            console.warn(`Duplicate player in top11: ${p.name}`);
+            return;
+        }
+        
         const playerData = data && data.players ? Object.values(data.players).find(pl =>
-            pl.name.toLowerCase() === p.name.toLowerCase() ||
-            _normMatch(pl.name) === _normMatch(p.name)
+            pl.name.toLowerCase() === p.name.toLowerCase() || _normMatch(pl.name) === _normMatch(p.name)
         ) : null;
         
-        // Use position from the CSV row (column B) - must be exact match
         const pos = (p.position || '').trim().toUpperCase();
         const key = playerData ? playerData.key : null;
         const photoUrl = playerData ? (playerData.photoUrl || '') : '';
         const entry = { ...p, pos, key, photoUrl };
-
-        if (used.has(p.name)) return; // Prevent duplicates
+        
         used.add(p.name);
-
-        // Strict position matching
-        if (pos === 'GK') {
-            byPos.gk.push(entry);
-        } else if (pos === 'CB') {
-            byPos.def.push(entry);
-        } else if (pos === 'LB' || pos === 'RB') {
-            byPos.def.push(entry);
-        } else if (pos === 'CDM' || pos === 'CM' || pos === 'CAM') {
-            byPos.mid.push(entry);
-        } else if (pos === 'LW' || pos === 'LM' || pos === 'RM' || pos === 'RW') {
-            byPos.fwd.push(entry);
-        } else if (pos === 'ST') {
-            byPos.fwd.push(entry);
-        } else {
-            // Unknown position — put in forwards as fallback
-            byPos.fwd.push(entry);
+        
+        if (pos === 'GK') categorized.gk.push(entry);
+        else if (pos === 'CB') categorized.cb.push(entry);
+        else if (pos === 'LB' || pos === 'RB') categorized.fb.push(entry);
+        else if (pos === 'CDM' || pos === 'CM' || pos === 'CAM') categorized.mid.push(entry);
+        else if (pos === 'LW' || pos === 'LM' || pos === 'RM' || pos === 'RW' || pos === 'ST') categorized.fwd.push(entry);
+        else {
+            console.log(`Unknown position for ${p.name}: "${pos}" → FWD`);
+            categorized.fwd.push(entry);
         }
     });
 
-    // Fill to 1-4-3-3 shape
-    const fill = (arr, needed, pool) => {
-        const out = arr.slice(0, needed);
-        for (const p of pool) {
-            if (out.length >= needed) break;
-            if (!out.includes(p)) out.push(p);
-        }
-        return out;
-    };
-    const pool = top11.filter(p => !byPos.gk.includes(p) && !byPos.def.includes(p) && !byPos.mid.includes(p) && !byPos.fwd.includes(p));
-    const gk  = fill(byPos.gk,  1, [...byPos.def, ...pool]);
-    const def = fill(byPos.def, 4, [...byPos.mid, ...pool]);
-    const mid = fill(byPos.mid, 3, [...byPos.fwd, ...pool]);
-    const fwd = fill(byPos.fwd, 3, pool);
+    console.log(`Categorized: GK=${categorized.gk.length} CB=${categorized.cb.length} FB=${categorized.fb.length} MID=${categorized.mid.length} FWD=${categorized.fwd.length}`);
+
+    // Build 4-3-3: pick best players by rating for each position
+    const pickBest = (arr, count) => arr.sort((a, b) => b.rating - a.rating).slice(0, count);
+    
+    let gk  = pickBest(categorized.gk, 1);
+    let cb  = pickBest(categorized.cb, 2);
+    let fb  = pickBest(categorized.fb, 2);
+    let mid = pickBest(categorized.mid, 3);
+    let fwd = pickBest(categorized.fwd, 3);
+    
+    // If we don't have enough in a position, fill from unused players by rating
+    const allUsedInFormation = new Set([...gk, ...cb, ...fb, ...mid, ...fwd].map(p => p.name));
+    const unused = top11.filter(p => !allUsedInFormation.has(p.name)).sort((a, b) => b.rating - a.rating);
+    
+    let unusedIdx = 0;
+    while (gk.length < 1 && unusedIdx < unused.length) gk.push(unused[unusedIdx++]);
+    while ((cb.length + fb.length) < 4 && unusedIdx < unused.length) {
+        if (cb.length < 2) cb.push(unused[unusedIdx++]);
+        else fb.push(unused[unusedIdx++]);
+    }
+    while (mid.length < 3 && unusedIdx < unused.length) mid.push(unused[unusedIdx++]);
+    while (fwd.length < 3 && unusedIdx < unused.length) fwd.push(unused[unusedIdx++]);
+    
+    // Combine CB + FB for the defensive line (4 players)
+    const def = [...cb, ...fb];
 
     const renderPlayer = (p) => {
         const isTop = p.rating === topRating;
