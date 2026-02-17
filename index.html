@@ -78,6 +78,21 @@
         .rating-ok{background:rgba(250,204,21,.16);color:#facc15;border-color:rgba(250,204,21,.35);}
         .rating-bad{background:rgba(239,68,68,.16);color:#ef4444;border-color:rgba(239,68,68,.35);}
 .leader-pill:hover{ border-color:#00ff85; }
+
+        /* Team of the Matchday Styles */
+        .totm-container { background: #0f0f0f; border-radius: 16px; margin: 12px; padding: 20px 16px; border: 1px solid #2a2a2a; }
+        .totm-header { text-align: center; margin-bottom: 24px; }
+        .totm-title { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+        .totm-subtitle { font-size: 11px; color: #888; margin-top: 4px; font-weight: 700; }
+        .formation { position: relative; width: 100%; aspect-ratio: 0.7; background: linear-gradient(180deg, #0a0a0a 0%, #121212 100%); border-radius: 12px; border: 1px solid #1a1a1a; }
+        .formation-line { display: flex; justify-content: space-around; align-items: center; position: absolute; width: 100%; padding: 0 12px; }
+        .formation-player { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; transition: transform 0.2s; }
+        .formation-player:hover { transform: scale(1.05); }
+        .formation-avatar { width: 48px; height: 48px; border-radius: 50%; background: #1a1a1a; border: 2px solid #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #555; position: relative; }
+        .formation-avatar-img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+        .formation-rating { position: absolute; top: -4px; right: -6px; background: rgba(34,197,94,.95); color: #fff; font-size: 10px; font-weight: 900; padding: 3px 6px; border-radius: 8px; border: 2px solid #0f0f0f; font-family: 'Roboto Mono', monospace; }
+        .formation-rating-top { background: rgba(59,130,246,.95); }
+        .formation-name { font-size: 10px; font-weight: 800; text-align: center; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     </style>
 </head>
 <body class="max-w-md mx-auto pb-24">
@@ -986,6 +1001,166 @@ function renderMatches() {
     });
 
     container.innerHTML = html;
+    
+    // Add Team of the Matchday for completed matchdays
+    renderTeamOfMatchday(filtered, target);
+}
+
+async function renderTeamOfMatchday(filtered, targetDate) {
+    // Only show TOTM for dates with at least one completed match
+    const hasCompletedMatch = filtered.some(m => {
+        const s = (m.score || '').toString().trim();
+        return s !== '' && s !== 'v' && /\d/.test(s);
+    });
+    
+    if (!hasCompletedMatch) return;
+    
+    // Ensure stats are loaded
+    await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
+    
+    const container = document.getElementById('league-list');
+    const leagueOrder = ['PREM', 'LALIGA', 'MLS'];
+    
+    leagueOrder.forEach(lg => {
+        const leagueMatches = filtered.filter(m => m.league === lg);
+        if (!leagueMatches.length) return;
+        
+        // Check if all matches for this league on this date are completed
+        const allCompleted = leagueMatches.every(m => {
+            const s = (m.score || '').toString().trim();
+            return s !== '' && s !== 'v' && /\d/.test(s);
+        });
+        
+        if (!allCompleted) return;
+        
+        // Get all player ratings from this matchday
+        const matchdayRatings = [];
+        const data = statsData[lg];
+        if (!data || !data.players) return;
+        
+        Object.values(data.players).forEach(player => {
+            if (!player.recentRatings || !player.recentRatings.length) return;
+            
+            // Find ratings from this specific date
+            player.recentRatings.forEach(ratingEntry => {
+                const ratingDate = parseSheetDate(ratingEntry.date);
+                if (ratingDate && ratingDate.getTime() === targetDate) {
+                    matchdayRatings.push({
+                        player: player.name,
+                        team: player.team,
+                        rating: ratingEntry.rating,
+                        position: player.position || '',
+                        key: player.key,
+                        photoUrl: player.photoUrl || ''
+                    });
+                }
+            });
+        });
+        
+        if (matchdayRatings.length < 11) return; // Need at least 11 players
+        
+        // Sort by rating and pick top 11
+        matchdayRatings.sort((a, b) => b.rating - a.rating);
+        const top11 = matchdayRatings.slice(0, 11);
+        const topRating = top11[0].rating;
+        
+        // Generate formation HTML
+        const totmHTML = generateTOTMHTML(top11, topRating, lg, targetDate);
+        container.insertAdjacentHTML('beforeend', totmHTML);
+    });
+}
+
+function generateTOTMHTML(players, topRating, league, date) {
+    const leagueName = LEAGUE_META[league].name;
+    
+    // Categorize players by their actual positions
+    const byPosition = {
+        gk: [],
+        def: [],
+        mid: [],
+        fwd: []
+    };
+    
+    players.forEach(p => {
+        const pos = (p.position || '').toLowerCase();
+        if (pos.includes('gk') || pos.includes('goalkeeper')) {
+            byPosition.gk.push(p);
+        } else if (pos.includes('def') || pos.includes('cb') || pos.includes('lb') || pos.includes('rb') || pos.includes('back')) {
+            byPosition.def.push(p);
+        } else if (pos.includes('mid') || pos.includes('cm') || pos.includes('cdm') || pos.includes('cam') || pos.includes('lm') || pos.includes('rm')) {
+            byPosition.mid.push(p);
+        } else if (pos.includes('fwd') || pos.includes('fw') || pos.includes('st') || pos.includes('cf') || pos.includes('lw') || pos.includes('rw') || pos.includes('attack') || pos.includes('striker') || pos.includes('wing')) {
+            byPosition.fwd.push(p);
+        } else {
+            // Default: if unknown position, try to distribute evenly
+            if (byPosition.fwd.length < 3) byPosition.fwd.push(p);
+            else if (byPosition.mid.length < 3) byPosition.mid.push(p);
+            else if (byPosition.def.length < 4) byPosition.def.push(p);
+            else byPosition.mid.push(p);
+        }
+    });
+    
+    // Sort each position by rating to get best players in each line
+    Object.keys(byPosition).forEach(key => {
+        byPosition[key].sort((a, b) => b.rating - a.rating);
+    });
+    
+    // Build formation with available players (1 GK, 4 DEF, 3 MID, 3 FWD)
+    const formation = {
+        gk: byPosition.gk.slice(0, 1),
+        def: byPosition.def.slice(0, 4),
+        mid: byPosition.mid.slice(0, 3),
+        fwd: byPosition.fwd.slice(0, 3)
+    };
+    
+    // Fill in missing positions with remaining players by rating
+    const allRemaining = [...byPosition.gk.slice(1), ...byPosition.def.slice(4), ...byPosition.mid.slice(3), ...byPosition.fwd.slice(3)]
+        .sort((a, b) => b.rating - a.rating);
+    
+    let remainingIdx = 0;
+    if (formation.gk.length === 0 && allRemaining[remainingIdx]) formation.gk.push(allRemaining[remainingIdx++]);
+    while (formation.def.length < 4 && allRemaining[remainingIdx]) formation.def.push(allRemaining[remainingIdx++]);
+    while (formation.mid.length < 3 && allRemaining[remainingIdx]) formation.mid.push(allRemaining[remainingIdx++]);
+    while (formation.fwd.length < 3 && allRemaining[remainingIdx]) formation.fwd.push(allRemaining[remainingIdx++]);
+    
+    const renderPlayer = (p) => {
+        const isTop = p.rating === topRating;
+        const ratingClass = isTop ? 'formation-rating formation-rating-top' : 'formation-rating';
+        const initials = p.player.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+        
+        return `
+            <div class="formation-player" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">
+                <div class="formation-avatar">
+                    ${p.photoUrl ? `<img src="${p.photoUrl}" class="formation-avatar-img" onerror="this.style.display='none'">` : initials}
+                    <div class="${ratingClass}">${p.rating.toFixed(1)}</div>
+                </div>
+                <div class="formation-name">${p.player}</div>
+            </div>
+        `;
+    };
+    
+    return `
+        <div class="totm-container">
+            <div class="totm-header">
+                <div class="totm-title">⭐ Team of the Matchday</div>
+                <div class="totm-subtitle">${leagueName}</div>
+            </div>
+            <div class="formation">
+                <div class="formation-line" style="top: 8%;">
+                    ${formation.fwd.map(renderPlayer).join('')}
+                </div>
+                <div class="formation-line" style="top: 35%;">
+                    ${formation.mid.map(renderPlayer).join('')}
+                </div>
+                <div class="formation-line" style="top: 65%;">
+                    ${formation.def.map(renderPlayer).join('')}
+                </div>
+                <div class="formation-line" style="top: 88%;">
+                    ${formation.gk.map(renderPlayer).join('')}
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 function changeDate(step) {
