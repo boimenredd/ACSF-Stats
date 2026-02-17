@@ -843,13 +843,13 @@ function goToStandingsFromTeam(lg) {
 // You can update this after each matchday to specify the exact rows
 const TOTM_CONFIG = {
     PREM: {
-        '2026-02-11': { startRow: 4644, endRow: 4863 }
+        // Example: '2026-02-15': { startRow: 2, endRow: 23 }  // Rows 2-23 are matchday 26
     },
     LALIGA: {
         // Example: '2026-02-16': { startRow: 2, endRow: 21 }
     },
     MLS: {
-        '2026-02-21': { startRow: 2, endRow: 221 }
+        // Example: '2026-02-14': { startRow: 2, endRow: 15 }
     }
 };
 
@@ -1196,223 +1196,197 @@ function renderMatches() {
 }
 
 async function renderTOTMTab(league) {
-    // Update button states
     document.querySelectorAll('[id^="totm-btn-"]').forEach(b => b.classList.remove('active-league'));
     const btn = document.getElementById(`totm-btn-${league}`);
     if (btn) btn.classList.add('active-league');
-    
+
     const content = document.getElementById('totmContent');
     content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading...</div>';
-    
+
+    // Load stats so we have player data
     await loadStats(league);
-    
-    // Find all dates with completed matchdays for this league
-    const matchdayDates = new Map(); // date -> matches
-    
-    allMatches.forEach(m => {
-        if (m.league !== league) return;
-        const dateKey = m.date.getTime();
-        if (!matchdayDates.has(dateKey)) {
-            matchdayDates.set(dateKey, []);
-        }
-        matchdayDates.get(dateKey).push(m);
-    });
-    
-    // Filter to only completed matchdays (all matches have scores)
-    const completedMatchdays = [];
-    matchdayDates.forEach((matches, dateKey) => {
-        const allCompleted = matches.every(m => {
-            const s = (m.score || '').toString().trim();
-            return s !== '' && s !== 'v' && /\d/.test(s);
-        });
-        
-        if (allCompleted) {
-            completedMatchdays.push({ date: new Date(dateKey), matches });
-        }
-    });
-    
-    // Sort by date descending (most recent first)
-    completedMatchdays.sort((a, b) => b.date.getTime() - a.date.getTime());
-    
-    if (completedMatchdays.length === 0) {
-        content.innerHTML = '<div class="text-center text-zinc-500 py-8">No completed matchdays yet</div>';
+
+    const src = STATS_URLS[league];
+    if (!src || !src.ratingsLog) {
+        content.innerHTML = '<div class="text-center text-zinc-500 py-8">No ratings log configured</div>';
         return;
     }
-    
-    // Generate TOTM for each completed matchday
-    let html = '';
-    for (const md of completedMatchdays) {
-        const totmHTML = await generateTOTMForDate(league, md.date);
-        if (totmHTML) html += totmHTML;
+
+    // Fetch the raw ratingsLog CSV as rows (no header parse — we need row numbers)
+    const allRows = await new Promise((resolve) => {
+        Papa.parse(src.ratingsLog, {
+            download: true,
+            header: false,
+            complete: (r) => resolve(r.data || []),
+            error: () => resolve([])
+        });
+    });
+
+    if (!allRows.length) {
+        content.innerHTML = '<div class="text-center text-zinc-500 py-8">Could not load ratings log</div>';
+        return;
     }
-    
+
+    // Detect header row (row 0 likely has column names)
+    const headerRow = allRows[0];
+    // Find column indices: Player(B=1), Rating(C=2 or other), Date(D=3), Opponent(E=4)
+    // The CSV format: col A = name, col B = rating, col C = team, col D = date, col E = opponent
+    // (based on how recentRatings are loaded: row[0]=name, row[1]=rating, row[2]=team, row[3]=date, row[4]=opp)
+    const dataRows = allRows.slice(1); // skip header
+
+    // Build matchday groups from TOTM_CONFIG if populated, otherwise auto-detect from dates
+    const config = TOTM_CONFIG[league] || {};
+    const configDates = Object.keys(config).sort().reverse(); // most recent first
+
+    let matchdayGroups = []; // each: { label, players: [{name, rating, team, opp}] }
+
+    if (configDates.length > 0) {
+        // Use manual row ranges
+        configDates.forEach(dateStr => {
+            const { startRow, endRow } = config[dateStr];
+            // Rows are 1-indexed in Google Sheets; dataRows is 0-indexed (after header)
+            const sliceStart = startRow - 2; // -1 for header, -1 for 0-index
+            const sliceEnd = endRow - 1;     // -1 for header, inclusive so +1 cancel
+            const rowSlice = dataRows.slice(Math.max(0, sliceStart), sliceEnd);
+            const players = rowSlice.map(row => ({
+                name: (row[0] || '').toString().trim(),
+                rating: parseFloat((row[1] || '').toString()),
+                team: (row[2] || '').toString().trim(),
+                date: (row[3] || '').toString().trim(),
+                opp: (row[4] || '').toString().trim(),
+            })).filter(p => p.name && !Number.isNaN(p.rating));
+            if (players.length >= 7) matchdayGroups.push({ label: dateStr, players });
+        });
+    } else {
+        // Auto-detect: group rows by date column (col D = index 3)
+        const byDate = {};
+        dataRows.forEach(row => {
+            const name = (row[0] || '').toString().trim();
+            const ratingRaw = (row[1] || '').toString().trim();
+            const team = (row[2] || '').toString().trim();
+            const date = (row[3] || '').toString().trim();
+            const opp = (row[4] || '').toString().trim();
+            if (!name || !date) return;
+            const rating = parseFloat(ratingRaw);
+            if (Number.isNaN(rating)) return;
+            if (!byDate[date]) byDate[date] = [];
+            byDate[date].push({ name, rating, team, opp });
+        });
+
+        // Sort dates descending — try to parse, fallback to string sort
+        const sortedDates = Object.keys(byDate).sort((a, b) => {
+            const da = parseSheetDate(a), db = parseSheetDate(b);
+            if (da && db) return db.getTime() - da.getTime();
+            return b.localeCompare(a);
+        });
+
+        sortedDates.forEach(dateStr => {
+            const players = byDate[dateStr];
+            if (players.length >= 7) matchdayGroups.push({ label: dateStr, players });
+        });
+    }
+
+    if (!matchdayGroups.length) {
+        content.innerHTML = `<div class="text-center text-zinc-500 py-8">No matchday data found.<br><small style="font-size:10px;opacity:0.6;">Populate TOTM_CONFIG with date ranges, or ensure the ratings log has a date column.</small></div>`;
+        return;
+    }
+
+    let html = '';
+    for (const group of matchdayGroups) {
+        html += generateTOTMFromGroup(group, league);
+    }
+
     content.innerHTML = html || '<div class="text-center text-zinc-500 py-8">No team data available</div>';
 }
 
-async function generateTOTMForDate(league, targetDate) {
+function generateTOTMFromGroup(group, league) {
+    const players = group.players.slice().sort((a, b) => b.rating - a.rating);
+    const top11 = players.slice(0, 11);
+    const topRating = top11[0].rating;
     const data = statsData[league];
-    if (!data || !data.players) return null;
-    
-    // Get all player ratings from this matchday
-    const matchdayRatings = [];
-    
-    // Format target date for comparison
-    const targetMonth = targetDate.getMonth();
-    const targetDay = targetDate.getDate();
-    const targetYear = targetDate.getFullYear();
-    
-    Object.values(data.players).forEach(player => {
-        if (!player.recentRatings || !player.recentRatings.length) return;
-        
-        // Find ratings from this specific date
-        player.recentRatings.forEach(ratingEntry => {
-            const ratingDate = parseSheetDate(ratingEntry.date);
-            
-            // Try multiple matching approaches
-            let isMatch = false;
-            
-            if (ratingDate) {
-                // Exact timestamp match
-                if (ratingDate.getTime() === targetDate.getTime()) {
-                    isMatch = true;
-                }
-                // Date component match (ignore time)
-                else if (ratingDate.getMonth() === targetMonth && 
-                         ratingDate.getDate() === targetDay && 
-                         ratingDate.getFullYear() === targetYear) {
-                    isMatch = true;
-                }
-            }
-            
-            if (isMatch) {
-                matchdayRatings.push({
-                    player: player.name,
-                    team: player.team,
-                    rating: ratingEntry.rating,
-                    position: player.position || '',
-                    key: player.key,
-                    photoUrl: player.photoUrl || ''
-                });
-            }
-        });
-    });
-    
-    // More lenient: allow 7+ players instead of requiring 11
-    if (matchdayRatings.length < 7) {
-        console.log(`TOTM Debug - ${league} on ${targetDate.toDateString()}: Only ${matchdayRatings.length} players found`);
-        return null;
-    }
-    
-    // Sort by rating and pick top players (up to 11)
-    matchdayRatings.sort((a, b) => b.rating - a.rating);
-    const topPlayers = matchdayRatings.slice(0, Math.min(11, matchdayRatings.length));
-    const topRating = topPlayers[0].rating;
-    
-    // Generate formation HTML
-    return generateTOTMHTML(topPlayers, topRating, league, targetDate);
-}
 
-function generateTOTMHTML(players, topRating, league, date) {
-    const leagueName = LEAGUE_META[league].name;
-    
-    // Format date
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const dateStr = `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
-    
-    // Categorize players by their actual positions
-    const byPosition = {
-        gk: [],
-        def: [],
-        mid: [],
-        fwd: []
-    };
-    
-    players.forEach(p => {
-        const pos = (p.position || '').toLowerCase();
-        if (pos.includes('gk') || pos.includes('goalkeeper')) {
-            byPosition.gk.push(p);
-        } else if (pos.includes('def') || pos.includes('cb') || pos.includes('lb') || pos.includes('rb') || pos.includes('back')) {
-            byPosition.def.push(p);
-        } else if (pos.includes('mid') || pos.includes('cm') || pos.includes('cdm') || pos.includes('cam') || pos.includes('lm') || pos.includes('rm')) {
-            byPosition.mid.push(p);
-        } else if (pos.includes('fwd') || pos.includes('fw') || pos.includes('st') || pos.includes('cf') || pos.includes('lw') || pos.includes('rw') || pos.includes('attack') || pos.includes('striker') || pos.includes('wing')) {
-            byPosition.fwd.push(p);
-        } else {
-            // If no position data, distribute by rating - best players forward
-            byPosition.fwd.push(p);
+    let labelStr = group.label;
+    const parsedDate = parseSheetDate(group.label);
+    if (parsedDate && parsedDate !== 'MATCHDAY_MARKER') {
+        labelStr = `${months[parsedDate.getMonth()]} ${parsedDate.getDate()}, ${parsedDate.getFullYear()}`;
+    }
+
+    // Categorise by position using statsData if available
+    const byPos = { gk: [], def: [], mid: [], fwd: [] };
+    top11.forEach(p => {
+        const playerData = data && data.players ? Object.values(data.players).find(pl =>
+            pl.name.toLowerCase() === p.name.toLowerCase() ||
+            _normMatch(pl.name) === _normMatch(p.name)
+        ) : null;
+        const pos = ((playerData && playerData.position) || '').toLowerCase();
+        const key = playerData ? playerData.key : null;
+        const photoUrl = playerData ? (playerData.photoUrl || '') : '';
+        const entry = { ...p, pos, key, photoUrl };
+
+        if (pos.includes('gk') || pos.includes('goalkeeper') || pos.includes('keeper')) byPos.gk.push(entry);
+        else if (pos.includes('def') || pos.includes('cb') || pos.includes('lb') || pos.includes('rb') || pos.includes('back') || pos.includes('wing back')) byPos.def.push(entry);
+        else if (pos.includes('mid') || pos.includes('cm') || pos.includes('cdm') || pos.includes('cam') || pos.includes('dm')) byPos.mid.push(entry);
+        else if (pos.includes('fwd') || pos.includes('fw') || pos.includes('st') || pos.includes('cf') || pos.includes('lw') || pos.includes('rw') || pos.includes('attack') || pos.includes('striker') || pos.includes('wing')) byPos.fwd.push(entry);
+        else byPos.fwd.push(entry); // unknown → forward
+    });
+
+    // Fill to 1-4-3-3 shape
+    const fill = (arr, needed, pool) => {
+        const out = arr.slice(0, needed);
+        for (const p of pool) {
+            if (out.length >= needed) break;
+            if (!out.includes(p)) out.push(p);
         }
-    });
-    
-    // Sort each position by rating to get best players in each line
-    Object.keys(byPosition).forEach(key => {
-        byPosition[key].sort((a, b) => b.rating - a.rating);
-    });
-    
-    // Calculate ideal formation based on available players
-    const totalPlayers = players.length;
-    let fwdCount = 3, midCount = 3, defCount = 4, gkCount = 1;
-    
-    if (totalPlayers === 10) { fwdCount = 3; midCount = 3; defCount = 3; gkCount = 1; }
-    else if (totalPlayers === 9) { fwdCount = 3; midCount = 3; defCount = 2; gkCount = 1; }
-    else if (totalPlayers === 8) { fwdCount = 3; midCount = 2; defCount = 2; gkCount = 1; }
-    else if (totalPlayers === 7) { fwdCount = 2; midCount = 2; defCount = 2; gkCount = 1; }
-    
-    // Build formation with available players
-    const formation = {
-        gk: byPosition.gk.slice(0, gkCount),
-        def: byPosition.def.slice(0, defCount),
-        mid: byPosition.mid.slice(0, midCount),
-        fwd: byPosition.fwd.slice(0, fwdCount)
+        return out;
     };
-    
-    // Fill in missing positions with remaining players by rating
-    const allRemaining = [...byPosition.gk.slice(gkCount), ...byPosition.def.slice(defCount), ...byPosition.mid.slice(midCount), ...byPosition.fwd.slice(fwdCount)]
-        .sort((a, b) => b.rating - a.rating);
-    
-    let remainingIdx = 0;
-    if (formation.gk.length === 0 && allRemaining[remainingIdx]) formation.gk.push(allRemaining[remainingIdx++]);
-    while (formation.def.length < defCount && allRemaining[remainingIdx]) formation.def.push(allRemaining[remainingIdx++]);
-    while (formation.mid.length < midCount && allRemaining[remainingIdx]) formation.mid.push(allRemaining[remainingIdx++]);
-    while (formation.fwd.length < fwdCount && allRemaining[remainingIdx]) formation.fwd.push(allRemaining[remainingIdx++]);
-    
+    const pool = top11.filter(p => !byPos.gk.includes(p) && !byPos.def.includes(p) && !byPos.mid.includes(p) && !byPos.fwd.includes(p));
+    const gk  = fill(byPos.gk,  1, [...byPos.def, ...pool]);
+    const def = fill(byPos.def, 4, [...byPos.mid, ...pool]);
+    const mid = fill(byPos.mid, 3, [...byPos.fwd, ...pool]);
+    const fwd = fill(byPos.fwd, 3, pool);
+
     const renderPlayer = (p) => {
         const isTop = p.rating === topRating;
         const ratingClass = isTop ? 'formation-rating formation-rating-top' : 'formation-rating';
-        const initials = p.player.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-        
+        const photoUrl = getPlayerPhotoUrl(p.name, p.team) || p.photoUrl || '';
+        const initials = getInitials(p.name);
+        const clickFn = p.key ? `viewPlayer('${_jsEscapeSingle(p.key)}')` : '';
+        const shortName = p.name.split(' ').pop();
         return `
-            <div class="formation-player" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">
+            <div class="formation-player" ${clickFn ? `onclick="${clickFn}"` : ''}>
                 <div class="formation-avatar">
-                    ${p.photoUrl ? `<img src="${p.photoUrl}" class="formation-avatar-img" onerror="this.style.display='none'">` : initials}
+                    ${photoUrl
+                        ? `<img src="${photoUrl}" class="formation-avatar-img" onerror="this.outerHTML='<span style=font-size:14px;font-weight:900;color:#666;>${initials}</span>'">`
+                        : `<span style="font-size:14px;font-weight:900;color:#666;">${initials}</span>`}
                     <div class="${ratingClass}">${p.rating.toFixed(1)}</div>
                 </div>
-                <div class="formation-name">${p.player}</div>
-            </div>
-        `;
+                <div class="formation-name">${shortName}</div>
+            </div>`;
     };
-    
+
+    const lineHTML = (arr) => arr.length
+        ? `<div class="formation-line">${arr.map(renderPlayer).join('')}</div>`
+        : '';
+
+    // Positions from top (fwd) to bottom (gk)
+    const positions = ['8%', '30%', '57%', '82%'];
+    const lines = [fwd, mid, def, gk];
+
+    let formationHTML = '';
+    lines.forEach((line, i) => {
+        if (!line.length) return;
+        formationHTML += `<div class="formation-line" style="top:${positions[i]};">${line.map(renderPlayer).join('')}</div>`;
+    });
+
     return `
         <div class="totm-container">
             <div class="totm-header">
-                <div class="totm-title">⭐ Team of the Matchday</div>
-                <div class="totm-subtitle">${leagueName} • ${dateStr}</div>
+                <div class="totm-title">Team of the Matchday</div>
+                <div class="totm-subtitle">${LEAGUE_META[league].name} · ${labelStr}</div>
             </div>
-            <div class="formation">
-                ${formation.fwd.length > 0 ? `<div class="formation-line" style="top: 8%;">
-                    ${formation.fwd.map(renderPlayer).join('')}
-                </div>` : ''}
-                ${formation.mid.length > 0 ? `<div class="formation-line" style="top: 35%;">
-                    ${formation.mid.map(renderPlayer).join('')}
-                </div>` : ''}
-                ${formation.def.length > 0 ? `<div class="formation-line" style="top: 65%;">
-                    ${formation.def.map(renderPlayer).join('')}
-                </div>` : ''}
-                ${formation.gk.length > 0 ? `<div class="formation-line" style="top: 88%;">
-                    ${formation.gk.map(renderPlayer).join('')}
-                </div>` : ''}
-            </div>
-        </div>
-    `;
+            <div class="formation">${formationHTML}</div>
+        </div>`;
 }
 
 function changeDate(step) {
@@ -2242,10 +2216,9 @@ function openFullLeaderboard(kind, league) {
 
 /* UPDATED: clickable team names in last/next lists */
 function _matchRowClickable(m, highlightWinner = false) {
-    const homeLg = _leagueForTeamFast(m.home);
-    const awayLg = _leagueForTeamFast(m.away);
+    const homeLg = _leagueForTeamFast(m.home) || m.league || 'PREM';
+    const awayLg = _leagueForTeamFast(m.away) || m.league || 'PREM';
 
-    // Winner highlighting (optional)
     let homeWin = false, awayWin = false;
     if (highlightWinner) {
         const s = (m.score || '').toString();
@@ -2264,16 +2237,13 @@ function _matchRowClickable(m, highlightWinner = false) {
         <div class="flex items-center justify-between py-2 border-b border-zinc-800/40 last:border-b-0">
             <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-[10px] font-black text-zinc-500 w-12">${_formatShortDate(m.date)}</span>
-
                 <img src="${getLogo(m.home)}" class="w-4 h-4 object-contain">
-                <button class="text-[11px] ${homeWin ? 'font-black' : 'font-normal'} hover:text-...am('${_jsEscapeSingle(m.home)}','${homeLg}')">${m.home}</button>
-
+                <span class="text-[11px] ${homeWin ? 'font-black text-white' : 'font-normal text-zinc-300'} cursor-pointer hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(m.home)}','${homeLg}')">${m.home}</span>
                 <span class="text-zinc-500 text-[10px] font-black">vs</span>
-
-                <button class="text-[11px] ${awayWin ? 'font-black' : 'font-normal'} hover:text-...am('${_jsEscapeSingle(m.away)}','${awayLg}')">${m.away}</button>
+                <span class="text-[11px] ${awayWin ? 'font-black text-white' : 'font-normal text-zinc-300'} cursor-pointer hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(m.away)}','${awayLg}')">${m.away}</span>
                 <img src="${getLogo(m.away)}" class="w-4 h-4 object-contain">
             </div>
-            <div class="font-mono text-[#00ff85] font-black">${m.score}</div>
+            <div class="font-mono text-[#00ff85] font-black text-[12px]">${m.score}</div>
         </div>
     `;
 }
