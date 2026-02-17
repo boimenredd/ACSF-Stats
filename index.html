@@ -146,6 +146,15 @@
         <div id="statsContent" class="px-4"></div>
     </div>
 
+    <div id="totm-tab" class="hidden pt-20 pb-6">
+        <div class="flex gap-2 px-4 py-4 overflow-x-auto no-scrollbar">
+            <button id="totm-btn-PREM" onclick="renderTOTMTab('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
+            <button id="totm-btn-LALIGA" onclick="renderTOTMTab('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
+            <button id="totm-btn-MLS" onclick="renderTOTMTab('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
+        </div>
+        <div id="totmContent" class="px-4"></div>
+    </div>
+
     <div id="team-tab" class="hidden pt-20 pb-6">
         <div class="px-4">
             <button onclick="backToView()" class="text-[10px] font-black text-[#00ff85] mb-4">← BACK</button>
@@ -172,6 +181,10 @@
         <div class="nav-item" onclick="switchTab('stats')">
             <span class="text-lg">📊</span>
             <span>STATS</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('totm')">
+            <span class="text-lg">⭐</span>
+            <span>TEAM OF MD</span>
         </div>
     </nav>
 
@@ -1001,77 +1014,105 @@ function renderMatches() {
     });
 
     container.innerHTML = html;
-    
-    // Add Team of the Matchday for completed matchdays
-    renderTeamOfMatchday(filtered, target);
 }
 
-async function renderTeamOfMatchday(filtered, targetDate) {
-    // Only show TOTM for dates with at least one completed match
-    const hasCompletedMatch = filtered.some(m => {
-        const s = (m.score || '').toString().trim();
-        return s !== '' && s !== 'v' && /\d/.test(s);
+async function renderTOTMTab(league) {
+    // Update button states
+    document.querySelectorAll('[id^="totm-btn-"]').forEach(b => b.classList.remove('active-league'));
+    const btn = document.getElementById(`totm-btn-${league}`);
+    if (btn) btn.classList.add('active-league');
+    
+    const content = document.getElementById('totmContent');
+    content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading...</div>';
+    
+    await loadStats(league);
+    
+    // Find all dates with completed matchdays for this league
+    const matchdayDates = new Map(); // date -> matches
+    
+    allMatches.forEach(m => {
+        if (m.league !== league) return;
+        const dateKey = m.date.getTime();
+        if (!matchdayDates.has(dateKey)) {
+            matchdayDates.set(dateKey, []);
+        }
+        matchdayDates.get(dateKey).push(m);
     });
     
-    if (!hasCompletedMatch) return;
-    
-    // Ensure stats are loaded
-    await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
-    
-    const container = document.getElementById('league-list');
-    const leagueOrder = ['PREM', 'LALIGA', 'MLS'];
-    
-    leagueOrder.forEach(lg => {
-        const leagueMatches = filtered.filter(m => m.league === lg);
-        if (!leagueMatches.length) return;
-        
-        // Check if all matches for this league on this date are completed
-        const allCompleted = leagueMatches.every(m => {
+    // Filter to only completed matchdays (all matches have scores)
+    const completedMatchdays = [];
+    matchdayDates.forEach((matches, dateKey) => {
+        const allCompleted = matches.every(m => {
             const s = (m.score || '').toString().trim();
             return s !== '' && s !== 'v' && /\d/.test(s);
         });
         
-        if (!allCompleted) return;
-        
-        // Get all player ratings from this matchday
-        const matchdayRatings = [];
-        const data = statsData[lg];
-        if (!data || !data.players) return;
-        
-        Object.values(data.players).forEach(player => {
-            if (!player.recentRatings || !player.recentRatings.length) return;
-            
-            // Find ratings from this specific date
-            player.recentRatings.forEach(ratingEntry => {
-                const ratingDate = parseSheetDate(ratingEntry.date);
-                if (ratingDate && ratingDate.getTime() === targetDate) {
-                    matchdayRatings.push({
-                        player: player.name,
-                        team: player.team,
-                        rating: ratingEntry.rating,
-                        position: player.position || '',
-                        key: player.key,
-                        photoUrl: player.photoUrl || ''
-                    });
-                }
-            });
-        });
-        
-        if (matchdayRatings.length < 11) return; // Need at least 11 players
-        
-        // Sort by rating and pick top 11
-        matchdayRatings.sort((a, b) => b.rating - a.rating);
-        const top11 = matchdayRatings.slice(0, 11);
-        const topRating = top11[0].rating;
-        
-        // Generate formation HTML
-        const totmHTML = generateTOTMHTML(top11, topRating, lg, targetDate);
-        container.insertAdjacentHTML('beforeend', totmHTML);
+        if (allCompleted) {
+            completedMatchdays.push({ date: new Date(dateKey), matches });
+        }
     });
+    
+    // Sort by date descending (most recent first)
+    completedMatchdays.sort((a, b) => b.date.getTime() - a.date.getTime());
+    
+    if (completedMatchdays.length === 0) {
+        content.innerHTML = '<div class="text-center text-zinc-500 py-8">No completed matchdays yet</div>';
+        return;
+    }
+    
+    // Generate TOTM for each completed matchday
+    let html = '';
+    for (const md of completedMatchdays) {
+        const totmHTML = await generateTOTMForDate(league, md.date);
+        if (totmHTML) html += totmHTML;
+    }
+    
+    content.innerHTML = html || '<div class="text-center text-zinc-500 py-8">No team data available</div>';
+}
+
+async function generateTOTMForDate(league, targetDate) {
+    const data = statsData[league];
+    if (!data || !data.players) return null;
+    
+    // Get all player ratings from this matchday
+    const matchdayRatings = [];
+    
+    Object.values(data.players).forEach(player => {
+        if (!player.recentRatings || !player.recentRatings.length) return;
+        
+        // Find ratings from this specific date
+        player.recentRatings.forEach(ratingEntry => {
+            const ratingDate = parseSheetDate(ratingEntry.date);
+            if (ratingDate && ratingDate.getTime() === targetDate.getTime()) {
+                matchdayRatings.push({
+                    player: player.name,
+                    team: player.team,
+                    rating: ratingEntry.rating,
+                    position: player.position || '',
+                    key: player.key,
+                    photoUrl: player.photoUrl || ''
+                });
+            }
+        });
+    });
+    
+    if (matchdayRatings.length < 11) return null; // Need at least 11 players
+    
+    // Sort by rating and pick top 11
+    matchdayRatings.sort((a, b) => b.rating - a.rating);
+    const top11 = matchdayRatings.slice(0, 11);
+    const topRating = top11[0].rating;
+    
+    // Generate formation HTML
+    return generateTOTMHTML(top11, topRating, league, targetDate);
 }
 
 function generateTOTMHTML(players, topRating, league, date) {
     const leagueName = LEAGUE_META[league].name;
+    
+    // Format date
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const dateStr = `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
     
     // Categorize players by their actual positions
     const byPosition = {
@@ -1143,7 +1184,7 @@ function generateTOTMHTML(players, topRating, league, date) {
         <div class="totm-container">
             <div class="totm-header">
                 <div class="totm-title">⭐ Team of the Matchday</div>
-                <div class="totm-subtitle">${leagueName}</div>
+                <div class="totm-subtitle">${leagueName} • ${dateStr}</div>
             </div>
             <div class="formation">
                 <div class="formation-line" style="top: 8%;">
@@ -1173,6 +1214,7 @@ function switchTab(t) {
     document.getElementById('hub-tab').classList.toggle('hidden', t !== 'hub');
     document.getElementById('standings-tab').classList.toggle('hidden', t !== 'standings');
     document.getElementById('stats-tab').classList.toggle('hidden', t !== 'stats');
+    document.getElementById('totm-tab').classList.toggle('hidden', t !== 'totm');
     document.getElementById('team-tab').classList.add('hidden');
     document.getElementById('player-tab').classList.add('hidden');
 
@@ -1181,17 +1223,20 @@ function switchTab(t) {
         if (t === 'hub' && spanText === 'MAIN HUB') el.classList.add('active');
         else if (t === 'standings' && spanText === 'STANDINGS') el.classList.add('active');
         else if (t === 'stats' && spanText === 'STATS') el.classList.add('active');
+        else if (t === 'totm' && spanText === 'TEAM OF MD') el.classList.add('active');
         else el.classList.remove('active');
     });
 
     if (t === 'standings') renderStandings('PREM');
     if (t === 'stats') renderStats('PREM');
+    if (t === 'totm') renderTOTMTab('PREM');
 }
 
 function backToView() {
     if (currentView === 'hub') switchTab('hub');
     else if (currentView === 'standings') switchTab('standings');
     else if (currentView === 'stats') switchTab('stats');
+    else if (currentView === 'totm') switchTab('totm');
 }
 
 function getQualifyColor(lg, pos) {
