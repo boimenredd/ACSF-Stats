@@ -95,55 +95,69 @@
         .formation-name { font-size: 10px; font-weight: 800; text-align: center; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         
         /* Leagues Sidebar */
-        .leagues-sidebar { position: fixed; left: 0; top: 70px; width: 280px; height: calc(100vh - 70px - 60px); background: #0a0a0a; border-right: 1px solid #1a1a1a; padding: 20px 16px; overflow-y: auto; z-index: 50; }
-        .leagues-title { font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 16px; color: #888; }
-        .league-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; cursor: pointer; margin-bottom: 6px; background: #111; border: 1px solid #1a1a1a; transition: all 0.2s; }
-        .league-item:hover { border-color: #00ff85; background: #121212; }
-        .league-item-logo { width: 28px; height: 28px; object-fit: contain; }
-        .league-item-name { font-size: 13px; font-weight: 700; }
-        .hub-with-sidebar { margin-left: 280px; }
+        .leagues-sidebar { position: fixed; left: 0; top: 70px; width: 200px; height: calc(100vh - 70px - 60px); background: #0a0a0a; border-right: 1px solid #1a1a1a; padding: 20px 16px; overflow-y: auto; z-index: 50; }
+        .leagues-title { font-size: 12px; font-weight: 900; text-transform: uppercase; margin-bottom: 16px; color: #888; letter-spacing: 0.5px; }
+        .league-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; background: #0f0f0f; transition: all 0.2s; }
+        .league-item:hover { background: #151515; }
+        .league-item-logo { width: 24px; height: 24px; object-fit: contain; }
+        .league-item-name { font-size: 12px; font-weight: 700; }
+        
+        /* Lineup Builder Trigger Button */
+        .lineup-builder-trigger { position: fixed; right: 16px; top: 80px; width: 280px; background: #0f0f0f; border: 1px solid #1a1a1a; border-radius: 12px; padding: 16px; cursor: pointer; z-index: 50; transition: all 0.2s; }
+        .lineup-builder-trigger:hover { border-color: #00ff85; background: #121212; }
+        .lineup-builder-trigger-title { font-size: 13px; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; }
+        .lineup-builder-trigger-subtitle { font-size: 11px; color: #888; font-weight: 600; }
+        .lineup-builder-trigger-preview { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 12px; }
+        .lineup-trigger-dot { width: 100%; aspect-ratio: 1; background: #1a1a1a; border-radius: 50%; border: 1px solid #2a2a2a; }
+        
+        /* Main Hub Layout */
+        .hub-with-sidebar { margin-left: 200px; margin-right: 312px; }
         
         /* League Overview */
-        .league-overview-header { display: flex; align-items: center; gap: 16px; padding: 20px; background: #0f0f0f; border-radius: 12px; margin-bottom: 20px; }
-        .league-overview-logo { width: 60px; height: 60px; object-fit: contain; }
-        .league-overview-info h2 { font-size: 24px; font-weight: 900; }
-        .league-overview-info p { font-size: 12px; color: #888; margin-top: 4px; }
-        .league-tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; }
-        .league-tab { background: #1a1a1a; border: 1px solid #2a2a2a; padding: 10px 20px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+        .league-overview-header { display: flex; align-items: center; gap: 16px; padding: 20px; background: #0f0f0f; border-radius: 12px; margin-bottom: 20px; border: 1px solid #1a1a1a; }
+        .league-overview-logo { width: 48px; height: 48px; object-fit: contain; }
+        .league-overview-info h2 { font-size: 20px; font-weight: 900; }
+        .league-overview-info p { font-size: 11px; color: #888; margin-top: 4px; font-weight: 600; }
+        .league-tabs { display: flex; gap: 6px; margin-bottom: 20px; }
+        .league-tab { background: #1a1a1a; border: 1px solid #2a2a2a; padding: 8px 16px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+        .league-tab:hover { background: #1f1f1f; }
         .league-tab.active { background: #00ff85; color: #000; border-color: #00ff85; }
-        .league-content { display: grid; grid-template-columns: 1fr 320px; gap: 20px; }
         
-        /* Lineup Builder */
-        .lineup-builder { position: fixed; right: 0; top: 70px; width: 340px; height: calc(100vh - 70px - 60px); background: #0a0a0a; border-left: 1px solid #1a1a1a; padding: 20px 16px; overflow-y: auto; z-index: 50; }
-        .lineup-builder-title { font-size: 14px; font-weight: 900; text-transform: uppercase; margin-bottom: 16px; }
-        .lineup-field { position: relative; width: 100%; aspect-ratio: 0.65; background: linear-gradient(180deg, #0d1f0d 0%, #0a1a0a 100%); border-radius: 12px; border: 2px solid #1a4d1a; margin-bottom: 16px; }
-        .lineup-line { display: flex; justify-content: space-around; align-items: center; position: absolute; width: 100%; padding: 0 8px; }
-        .lineup-slot { width: 50px; height: 50px; border-radius: 50%; background: #1a1a1a; border: 2px solid #2a2a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: all 0.2s; }
+        /* Lineup Builder Page */
+        .lineup-builder-page { margin-left: 0 !important; margin-right: 0 !important; }
+        .lineup-builder-container { max-width: 500px; margin: 0 auto; padding: 20px; }
+        .lineup-builder-header { text-align: center; margin-bottom: 24px; }
+        .lineup-builder-header h2 { font-size: 20px; font-weight: 900; text-transform: uppercase; }
+        .lineup-builder-header p { font-size: 12px; color: #888; margin-top: 4px; }
+        .lineup-field { position: relative; width: 100%; aspect-ratio: 0.65; background: linear-gradient(180deg, #0d1f0d 0%, #0a1a0a 100%); border-radius: 16px; border: 2px solid #1a4d1a; margin-bottom: 20px; }
+        .lineup-line { display: flex; justify-content: space-around; align-items: center; position: absolute; width: 100%; padding: 0 12px; }
+        .lineup-slot { width: 60px; height: 60px; border-radius: 50%; background: #1a1a1a; border: 2px solid #2a2a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: all 0.2s; }
         .lineup-slot:hover { border-color: #00ff85; transform: scale(1.05); }
-        .lineup-slot.filled { background: #0f0f0f; }
-        .lineup-slot-avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
-        .lineup-slot-add { font-size: 24px; color: #555; }
-        .lineup-slot-name { position: absolute; bottom: -20px; font-size: 9px; font-weight: 800; text-align: center; white-space: nowrap; }
-        .lineup-actions { display: flex; gap: 8px; }
-        .lineup-btn { flex: 1; background: #1a1a1a; border: 1px solid #2a2a2a; padding: 10px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; text-align: center; }
-        .lineup-btn:hover { border-color: #00ff85; }
+        .lineup-slot.filled { background: #0f0f0f; border-color: #00ff85; }
+        .lineup-slot-avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; }
+        .lineup-slot-add { font-size: 28px; color: #555; font-weight: 700; }
+        .lineup-slot-name { position: absolute; bottom: -22px; font-size: 10px; font-weight: 800; text-align: center; white-space: nowrap; }
+        .lineup-actions { display: flex; gap: 10px; }
+        .lineup-btn { flex: 1; background: #1a1a1a; border: 1px solid #2a2a2a; padding: 12px; border-radius: 10px; font-size: 12px; font-weight: 900; cursor: pointer; text-align: center; transition: all 0.2s; }
+        .lineup-btn:hover { border-color: #00ff85; background: #1f1f1f; }
         .lineup-btn-primary { background: #00ff85; color: #000; border-color: #00ff85; }
+        .lineup-btn-primary:hover { background: #00e577; }
         
         /* Player Picker Modal */
         .player-picker-modal { position: fixed; inset: 0; z-index: 9999; display: none; }
         .player-picker-modal.active { display: block; }
-        .player-picker-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.8); }
-        .player-picker-content { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 400px; max-height: 80vh; background: #0f0f0f; border-radius: 16px; border: 1px solid #2a2a2a; overflow: hidden; }
+        .player-picker-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.85); }
+        .player-picker-content { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 450px; max-height: 80vh; background: #0f0f0f; border-radius: 16px; border: 1px solid #2a2a2a; overflow: hidden; }
         .player-picker-header { padding: 16px; border-bottom: 1px solid #1a1a1a; }
-        .player-picker-search { width: 100%; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 13px; }
+        .player-picker-search { width: 100%; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 12px 14px; color: #fff; font-size: 14px; }
         .player-picker-search:focus { outline: none; border-color: #00ff85; }
-        .player-picker-list { max-height: 400px; overflow-y: auto; padding: 8px; }
-        .player-picker-item { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; }
+        .player-picker-list { max-height: 500px; overflow-y: auto; padding: 12px; }
+        .player-picker-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; cursor: pointer; margin-bottom: 6px; transition: all 0.2s; }
         .player-picker-item:hover { background: #1a1a1a; }
-        .player-picker-avatar { width: 40px; height: 40px; border-radius: 50%; background: #1a1a1a; object-fit: cover; }
-        .player-picker-info { flex: 1; }
-        .player-picker-name { font-size: 13px; font-weight: 700; }
-        .player-picker-team { font-size: 11px; color: #888; margin-top: 2px; }
+        .player-picker-avatar { width: 48px; height: 48px; border-radius: 50%; background: #1a1a1a; object-fit: cover; border: 2px solid #2a2a2a; flex-shrink: 0; }
+        .player-picker-info { flex: 1; min-width: 0; }
+        .player-picker-name { font-size: 14px; font-weight: 700; }
+        .player-picker-team { font-size: 11px; color: #888; margin-top: 3px; font-weight: 600; }
     </style>
 </head>
 <body class="max-w-md mx-auto pb-24">
@@ -165,27 +179,6 @@
         </div>
     </div>
 
-    <!-- Lineup Builder -->
-    <div class="lineup-builder">
-        <div class="lineup-builder-title">Build Your XI</div>
-        <div class="lineup-field" id="lineupField"></div>
-        <div class="lineup-actions">
-            <div class="lineup-btn" onclick="clearLineup()">Clear</div>
-            <div class="lineup-btn lineup-btn-primary" onclick="saveLineup()">Save</div>
-        </div>
-    </div>
-
-    <!-- Player Picker Modal -->
-    <div class="player-picker-modal" id="playerPickerModal">
-        <div class="player-picker-backdrop" onclick="closePlayerPicker()"></div>
-        <div class="player-picker-content">
-            <div class="player-picker-header">
-                <input type="text" class="player-picker-search" id="playerPickerSearch" placeholder="Search players..." oninput="filterPlayerPicker()">
-            </div>
-            <div class="player-picker-list" id="playerPickerList"></div>
-        </div>
-    </div>
-
     <header class="p-4">
         <div class="flex items-center justify-between gap-3 relative">
             <h1 class="text-xl font-black italic uppercase cursor-pointer select-none" onclick="switchTab('hub'); jumpToToday();">Score<span class="text-[#00ff85]">Hub</span></h1>
@@ -195,6 +188,25 @@
     </header>
 
     <main id="hub-tab" class="hub-with-sidebar">
+        <!-- Lineup Builder Trigger -->
+        <div class="lineup-builder-trigger" onclick="openLineupBuilder()">
+            <div class="lineup-builder-trigger-title">Build your own XI</div>
+            <div class="lineup-builder-trigger-subtitle">Try our lineup builder</div>
+            <div class="lineup-builder-trigger-preview">
+                <div class="lineup-trigger-dot"></div>
+                <div class="lineup-trigger-dot"></div>
+                <div class="lineup-trigger-dot"></div>
+                <div class="lineup-trigger-dot"></div>
+                <div class="lineup-trigger-dot"></div>
+                <div class="lineup-trigger-dot"></div>
+                <div class="lineup-trigger-dot"></div>
+                <div class="lineup-trigger-dot"></div>
+                <div class="lineup-trigger-dot"></div>
+                <div class="lineup-trigger-dot"></div>
+                <div class="lineup-trigger-dot"></div>
+            </div>
+        </div>
+        
         <div class="date-nav">
             <div class="nav-arrow" onclick="changeDate(-1)">‹</div>
             <div class="flex flex-col items-center">
@@ -260,6 +272,32 @@
         <div class="px-4">
             <button onclick="backToView()" class="text-[10px] font-black text-[#00ff85] mb-4">← BACK</button>
             <div id="playerContent"></div>
+        </div>
+    </div>
+
+    <div id="lineup-builder-tab" class="hidden pt-20 pb-6 lineup-builder-page">
+        <div class="lineup-builder-container">
+            <button onclick="closeLineupBuilder()" class="text-[10px] font-black text-[#00ff85] mb-4">← BACK TO HUB</button>
+            <div class="lineup-builder-header">
+                <h2>FotMob Lineup Builder</h2>
+                <p>Build your dream team</p>
+            </div>
+            <div class="lineup-field" id="lineupField"></div>
+            <div class="lineup-actions">
+                <div class="lineup-btn" onclick="clearLineup()">Clear</div>
+                <div class="lineup-btn lineup-btn-primary" onclick="saveLineup()">Save</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Player Picker Modal -->
+    <div class="player-picker-modal" id="playerPickerModal">
+        <div class="player-picker-backdrop" onclick="closePlayerPicker()"></div>
+        <div class="player-picker-content">
+            <div class="player-picker-header">
+                <input type="text" class="player-picker-search" id="playerPickerSearch" placeholder="Search players..." oninput="filterPlayerPicker()">
+            </div>
+            <div class="player-picker-list" id="playerPickerList"></div>
         </div>
     </div>
 
@@ -2525,6 +2563,24 @@ init();
 // ===== LINEUP BUILDER =====
 let currentLineup = Array(11).fill(null);
 let currentPickerSlot = null;
+
+function openLineupBuilder() {
+    document.getElementById('hub-tab').classList.add('hidden');
+    document.getElementById('standings-tab').classList.add('hidden');
+    document.getElementById('stats-tab').classList.add('hidden');
+    document.getElementById('totm-tab').classList.add('hidden');
+    document.getElementById('team-tab').classList.add('hidden');
+    document.getElementById('player-tab').classList.add('hidden');
+    document.getElementById('league-overview-tab').classList.add('hidden');
+    document.getElementById('lineup-builder-tab').classList.remove('hidden');
+    
+    renderLineupField();
+}
+
+function closeLineupBuilder() {
+    document.getElementById('lineup-builder-tab').classList.add('hidden');
+    document.getElementById('hub-tab').classList.remove('hidden');
+}
 
 function initLineupBuilder() {
     renderLineupField();
