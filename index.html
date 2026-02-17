@@ -1077,13 +1077,35 @@ async function generateTOTMForDate(league, targetDate) {
     // Get all player ratings from this matchday
     const matchdayRatings = [];
     
+    // Format target date for comparison
+    const targetMonth = targetDate.getMonth();
+    const targetDay = targetDate.getDate();
+    const targetYear = targetDate.getFullYear();
+    
     Object.values(data.players).forEach(player => {
         if (!player.recentRatings || !player.recentRatings.length) return;
         
         // Find ratings from this specific date
         player.recentRatings.forEach(ratingEntry => {
             const ratingDate = parseSheetDate(ratingEntry.date);
-            if (ratingDate && ratingDate.getTime() === targetDate.getTime()) {
+            
+            // Try multiple matching approaches
+            let isMatch = false;
+            
+            if (ratingDate) {
+                // Exact timestamp match
+                if (ratingDate.getTime() === targetDate.getTime()) {
+                    isMatch = true;
+                }
+                // Date component match (ignore time)
+                else if (ratingDate.getMonth() === targetMonth && 
+                         ratingDate.getDate() === targetDay && 
+                         ratingDate.getFullYear() === targetYear) {
+                    isMatch = true;
+                }
+            }
+            
+            if (isMatch) {
                 matchdayRatings.push({
                     player: player.name,
                     team: player.team,
@@ -1096,15 +1118,19 @@ async function generateTOTMForDate(league, targetDate) {
         });
     });
     
-    if (matchdayRatings.length < 11) return null; // Need at least 11 players
+    // More lenient: allow 7+ players instead of requiring 11
+    if (matchdayRatings.length < 7) {
+        console.log(`TOTM Debug - ${league} on ${targetDate.toDateString()}: Only ${matchdayRatings.length} players found`);
+        return null;
+    }
     
-    // Sort by rating and pick top 11
+    // Sort by rating and pick top players (up to 11)
     matchdayRatings.sort((a, b) => b.rating - a.rating);
-    const top11 = matchdayRatings.slice(0, 11);
-    const topRating = top11[0].rating;
+    const topPlayers = matchdayRatings.slice(0, Math.min(11, matchdayRatings.length));
+    const topRating = topPlayers[0].rating;
     
     // Generate formation HTML
-    return generateTOTMHTML(top11, topRating, league, targetDate);
+    return generateTOTMHTML(topPlayers, topRating, league, targetDate);
 }
 
 function generateTOTMHTML(players, topRating, league, date) {
@@ -1133,11 +1159,8 @@ function generateTOTMHTML(players, topRating, league, date) {
         } else if (pos.includes('fwd') || pos.includes('fw') || pos.includes('st') || pos.includes('cf') || pos.includes('lw') || pos.includes('rw') || pos.includes('attack') || pos.includes('striker') || pos.includes('wing')) {
             byPosition.fwd.push(p);
         } else {
-            // Default: if unknown position, try to distribute evenly
-            if (byPosition.fwd.length < 3) byPosition.fwd.push(p);
-            else if (byPosition.mid.length < 3) byPosition.mid.push(p);
-            else if (byPosition.def.length < 4) byPosition.def.push(p);
-            else byPosition.mid.push(p);
+            // If no position data, distribute by rating - best players forward
+            byPosition.fwd.push(p);
         }
     });
     
@@ -1146,23 +1169,32 @@ function generateTOTMHTML(players, topRating, league, date) {
         byPosition[key].sort((a, b) => b.rating - a.rating);
     });
     
-    // Build formation with available players (1 GK, 4 DEF, 3 MID, 3 FWD)
+    // Calculate ideal formation based on available players
+    const totalPlayers = players.length;
+    let fwdCount = 3, midCount = 3, defCount = 4, gkCount = 1;
+    
+    if (totalPlayers === 10) { fwdCount = 3; midCount = 3; defCount = 3; gkCount = 1; }
+    else if (totalPlayers === 9) { fwdCount = 3; midCount = 3; defCount = 2; gkCount = 1; }
+    else if (totalPlayers === 8) { fwdCount = 3; midCount = 2; defCount = 2; gkCount = 1; }
+    else if (totalPlayers === 7) { fwdCount = 2; midCount = 2; defCount = 2; gkCount = 1; }
+    
+    // Build formation with available players
     const formation = {
-        gk: byPosition.gk.slice(0, 1),
-        def: byPosition.def.slice(0, 4),
-        mid: byPosition.mid.slice(0, 3),
-        fwd: byPosition.fwd.slice(0, 3)
+        gk: byPosition.gk.slice(0, gkCount),
+        def: byPosition.def.slice(0, defCount),
+        mid: byPosition.mid.slice(0, midCount),
+        fwd: byPosition.fwd.slice(0, fwdCount)
     };
     
     // Fill in missing positions with remaining players by rating
-    const allRemaining = [...byPosition.gk.slice(1), ...byPosition.def.slice(4), ...byPosition.mid.slice(3), ...byPosition.fwd.slice(3)]
+    const allRemaining = [...byPosition.gk.slice(gkCount), ...byPosition.def.slice(defCount), ...byPosition.mid.slice(midCount), ...byPosition.fwd.slice(fwdCount)]
         .sort((a, b) => b.rating - a.rating);
     
     let remainingIdx = 0;
     if (formation.gk.length === 0 && allRemaining[remainingIdx]) formation.gk.push(allRemaining[remainingIdx++]);
-    while (formation.def.length < 4 && allRemaining[remainingIdx]) formation.def.push(allRemaining[remainingIdx++]);
-    while (formation.mid.length < 3 && allRemaining[remainingIdx]) formation.mid.push(allRemaining[remainingIdx++]);
-    while (formation.fwd.length < 3 && allRemaining[remainingIdx]) formation.fwd.push(allRemaining[remainingIdx++]);
+    while (formation.def.length < defCount && allRemaining[remainingIdx]) formation.def.push(allRemaining[remainingIdx++]);
+    while (formation.mid.length < midCount && allRemaining[remainingIdx]) formation.mid.push(allRemaining[remainingIdx++]);
+    while (formation.fwd.length < fwdCount && allRemaining[remainingIdx]) formation.fwd.push(allRemaining[remainingIdx++]);
     
     const renderPlayer = (p) => {
         const isTop = p.rating === topRating;
@@ -1187,18 +1219,18 @@ function generateTOTMHTML(players, topRating, league, date) {
                 <div class="totm-subtitle">${leagueName} • ${dateStr}</div>
             </div>
             <div class="formation">
-                <div class="formation-line" style="top: 8%;">
+                ${formation.fwd.length > 0 ? `<div class="formation-line" style="top: 8%;">
                     ${formation.fwd.map(renderPlayer).join('')}
-                </div>
-                <div class="formation-line" style="top: 35%;">
+                </div>` : ''}
+                ${formation.mid.length > 0 ? `<div class="formation-line" style="top: 35%;">
                     ${formation.mid.map(renderPlayer).join('')}
-                </div>
-                <div class="formation-line" style="top: 65%;">
+                </div>` : ''}
+                ${formation.def.length > 0 ? `<div class="formation-line" style="top: 65%;">
                     ${formation.def.map(renderPlayer).join('')}
-                </div>
-                <div class="formation-line" style="top: 88%;">
+                </div>` : ''}
+                ${formation.gk.length > 0 ? `<div class="formation-line" style="top: 88%;">
                     ${formation.gk.map(renderPlayer).join('')}
-                </div>
+                </div>` : ''}
             </div>
         </div>
     `;
