@@ -120,10 +120,11 @@
         .lineup-builder-header p { font-size: 12px; color: #888; margin-top: 4px; }
         .lineup-field { position: relative; width: 100%; aspect-ratio: 0.65; background: linear-gradient(180deg, #0d1f0d 0%, #0a1a0a 100%); border-radius: 16px; border: 2px solid #1a4d1a; margin-bottom: 24px; }
         .lineup-line { display: flex; justify-content: space-around; align-items: center; position: absolute; width: 100%; padding: 0 10px; }
-        .lineup-slot { width: 60px; height: 60px; border-radius: 50%; background: #1a2a1a; border: 2px solid #2a3a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: all 0.2s; flex-shrink: 0; }
+        .lineup-slot { width: 64px; height: 64px; border-radius: 50%; background: #1a2a1a; border: 2px solid #2a3a2a; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; transition: all 0.2s; flex-shrink: 0; overflow: hidden; }
         .lineup-slot:hover { border-color: #00ff85; transform: scale(1.05); }
         .lineup-slot.filled { border-color: #00ff85; }
-        .lineup-slot-avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; }
+        .lineup-slot-avatar { width: 85px; height: 85px; border-radius: 50%; object-fit: cover; object-position: center 20%; }
+        .lineup-slot-initials { width: 64px; height: 64px; border-radius: 50%; background: #1a2a1a; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #4a6a4a; }
         .lineup-slot-add { font-size: 26px; color: #556655; font-weight: 700; line-height: 1; }
         .lineup-slot-name { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: 800; text-align: center; white-space: nowrap; color: #ddd; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
         .lineup-actions { display: flex; gap: 10px; }
@@ -152,6 +153,20 @@
         /* Tab content areas */
         .tab-content { padding: 0; }
         .tab-content.with-padding { padding: 16px; }
+
+        /* Mobile responsive layout */
+        @media (max-width: 768px) {
+            /* Hide sidebars on mobile */
+            .leagues-sidebar { display: none; }
+            .right-sidebar { display: none; }
+            
+            /* Center content takes full width */
+            .center-content { width: 100%; }
+            
+            /* Header adjustments */
+            .header-inner { padding: 0 16px; }
+            .header-search-input { width: 180px; font-size: 12px; }
+        }
     </style>
 </head>
 <body>
@@ -844,9 +859,7 @@ const TOTM_CONFIG = {
     PREM: {
         'Matchday 26': { startRow: 4644, endRow: 4863 }
     },
-    LALIGA: {
-        
-    },
+    LALIGA: {},
     MLS: {
         'Matchday 1': { startRow: 2, endRow: 221 }
     }
@@ -858,11 +871,13 @@ const MARKET_VALUES_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSM
 const EUR_TO_GBP = 0.855; // approximate conversion rate
 
 // Cache: keyed by normalised player name
-let playerProfilesCache = null;   // Map<normName, { nationality, height, foot, dob, position, playerId }>
+let playerProfilesCache = null;   // Map<normName, { nationality, height, foot, dob, position, playerId, mvGBP }>
 let marketValuesCache   = null;   // Map<playerId, valueEuros>
+let playerProfilesLoaded = false; // Flag to track if profiles have been loaded
 
 async function loadPlayerProfiles() {
-    if (playerProfilesCache) return playerProfilesCache;
+    if (playerProfilesLoaded) return playerProfilesCache;
+    
     playerProfilesCache = new Map();
     marketValuesCache = new Map();
 
@@ -900,6 +915,7 @@ async function loadPlayerProfiles() {
     });
 
     marketValuesCache = mvById;
+    playerProfilesLoaded = true;
     return playerProfilesCache;
 }
 
@@ -1353,11 +1369,12 @@ async function renderTOTMTab(league) {
         const sliceEnd   = endRow;        // endRow 23 → slice up to index 23 (exclusive = rows 1..22 → sheets rows 2..23) ✓
         const rowSlice = allRows.slice(sliceStart, sliceEnd);
 
+        // Column structure: A=name B=position C=rating D=team
         const players = rowSlice.map(row => ({
-            name:   (row[0] || '').toString().trim(),
-            rating: parseFloat((row[1] || '').toString()),
-            team:   (row[2] || '').toString().trim(),
-            opp:    (row[3] || '').toString().trim(),
+            name:     (row[0] || '').toString().trim(),
+            position: (row[1] || '').toString().trim(),
+            rating:   parseFloat((row[2] || '').toString()),
+            team:     (row[3] || '').toString().trim(),
         })).filter(p => p.name && !isNaN(p.rating) && p.rating > 0);
 
         if (players.length >= 7) {
@@ -1381,14 +1398,17 @@ function generateTOTMFromGroup(group, league) {
         labelStr = `${months[parsedDate.getMonth()]} ${parsedDate.getDate()}, ${parsedDate.getFullYear()}`;
     }
 
-    // Categorise by position using statsData if available
+    // Categorise by position from the ratings log data
     const byPos = { gk: [], def: [], mid: [], fwd: [] };
     top11.forEach(p => {
+        // Try to match player in statsData to get key and photoUrl
         const playerData = data && data.players ? Object.values(data.players).find(pl =>
             pl.name.toLowerCase() === p.name.toLowerCase() ||
             _normMatch(pl.name) === _normMatch(p.name)
         ) : null;
-        const pos = ((playerData && playerData.position) || '').toLowerCase();
+        
+        // Use position from the CSV row (column B)
+        const pos = (p.position || '').toLowerCase();
         const key = playerData ? playerData.key : null;
         const photoUrl = playerData ? (playerData.photoUrl || '') : '';
         const entry = { ...p, pos, key, photoUrl };
