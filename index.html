@@ -783,14 +783,35 @@ function loadStandingsData(lg) {
                     const mp = parseInt((r.MP || r.mp || 0), 10);
                     const pts = parseInt((r.Points || r.Pts || r.points || 0), 10);
                     const wdl = (r['W-D-L'] || r['WDL'] || r['WDL '] || '').toString().trim();
+                    const gf = parseInt((r.GF || r.gf || 0), 10);
+                    const ga = parseInt((r.GA || r.ga || 0), 10);
+                    const gdRaw = parseInt((r.GD || r.gd || (gf - ga)), 10);
+
+                    // Parse W/D/L from WDL string or individual columns
+                    let w = parseInt((r.W || r.w || 0), 10);
+                    let d = parseInt((r.D || r.d || 0), 10);
+                    let l = parseInt((r.L || r.l || 0), 10);
+                    if (!w && !d && !l && wdl.includes('-')) {
+                        const parts = wdl.split('-');
+                        w = parseInt(parts[0] || 0, 10);
+                        d = parseInt(parts[1] || 0, 10);
+                        l = parseInt(parts[2] || 0, 10);
+                    }
 
                     const posNum = parseInt(pos, 10);
                     return {
                         pos: Number.isNaN(posNum) ? 999 : posNum,
                         team: team,
                         wdl: wdl || '0-0-0',
+                        pl: Number.isNaN(mp) ? 0 : mp,
                         pts: Number.isNaN(pts) ? 0 : pts,
-                        mp: Number.isNaN(mp) ? 0 : mp
+                        mp: Number.isNaN(mp) ? 0 : mp,
+                        w: Number.isNaN(w) ? 0 : w,
+                        d: Number.isNaN(d) ? 0 : d,
+                        l: Number.isNaN(l) ? 0 : l,
+                        gf: Number.isNaN(gf) ? 0 : gf,
+                        ga: Number.isNaN(ga) ? 0 : ga,
+                        gd: Number.isNaN(gdRaw) ? 0 : gdRaw,
                     };
                 }).filter(r => r.team);
 
@@ -820,15 +841,14 @@ function goToStandingsFromTeam(lg) {
 // You can update this after each matchday to specify the exact rows
 const TOTM_CONFIG = {
     PREM: {
-        '2026-02-11': { startRow: 4644, endRow: 4863 }
+        // Example: '2026-02-15': { startRow: 2, endRow: 23 }  // Rows 2-23 are matchday 26
     },
     LALIGA: {
         // Example: '2026-02-16': { startRow: 2, endRow: 21 }
     },
     MLS: {
-        '2026-02-21': { startRow: 2, endRow: 221 }
+        // Example: '2026-02-14': { startRow: 2, endRow: 15 }
     }
-    
 };
 
 const LEAGUE_META = {
@@ -2581,8 +2601,32 @@ function closeLineupBuilder() {
     document.getElementById('hub-tab').classList.remove('hidden');
 }
 
+function backToHub() {
+    const allTabs = ['standings-tab','stats-tab','totm-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
+    allTabs.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
+    document.getElementById('hub-tab').classList.remove('hidden');
+}
+
 function initLineupBuilder() {
     renderLineupField();
+}
+
+function makeLineupAvatar(name, team) {
+    const url = getPlayerPhotoUrl(name, team);
+    const initials = getInitials(name);
+    if (url) {
+        return `<img src="${url}" class="lineup-slot-avatar" onerror="this.outerHTML='<div class=lineup-slot-initials>${initials}</div>'">`;
+    }
+    return `<div class="lineup-slot-initials">${initials}</div>`;
+}
+
+function makePickerAvatar(name, team) {
+    const url = getPlayerPhotoUrl(name, team);
+    const initials = getInitials(name);
+    if (url) {
+        return `<img src="${url}" class="player-picker-avatar" onerror="this.outerHTML='<div class=player-picker-initials>${initials}</div>'">`;
+    }
+    return `<div class="player-picker-initials">${initials}</div>`;
 }
 
 function renderLineupField() {
@@ -2594,26 +2638,21 @@ function renderLineupField() {
         { count: 4 }, // defenders
         { count: 1 }  // goalkeeper
     ];
-    
+
     let slotIndex = 0;
     let html = '';
     const positions = ['8%', '35%', '65%', '88%'];
-    
+
     formation.forEach((line, lineIdx) => {
         html += `<div class="lineup-line" style="top: ${positions[lineIdx]};">`;
         for (let i = 0; i < line.count; i++) {
             const player = currentLineup[slotIndex];
             const slotIdx = slotIndex;
             if (player) {
-                const avatarHTML = renderPlayerAvatarHTML(player.name, player.team)
-                    .replace('player-avatar-img', 'lineup-slot-avatar')
-                    .replace('player-avatar', 'lineup-slot-initials')
-                    .replace('width: 80px', 'width: 60px')
-                    .replace('height: 80px', 'height: 60px');
                 const shortName = player.name.split(' ').pop();
                 html += `
                     <div class="lineup-slot filled" onclick="openPlayerPicker(${slotIdx})">
-                        ${avatarHTML}
+                        ${makeLineupAvatar(player.name, player.team)}
                         <div class="lineup-slot-name">${shortName}</div>
                     </div>`;
             } else {
@@ -2626,7 +2665,7 @@ function renderLineupField() {
         }
         html += '</div>';
     });
-    
+
     field.innerHTML = html;
 }
 
@@ -2677,18 +2716,11 @@ function renderPlayerPickerList(players) {
         list.innerHTML = '<div style="text-align:center;color:#555;padding:32px 0;">No players found</div>';
         return;
     }
-    list.innerHTML = players.slice(0, 60).map(p => {
-        // Use the same photo system as player profile pages
-        const avatarHTML = renderPlayerAvatarHTML(p.name, p.team)
-            .replace('player-avatar-img', 'player-picker-avatar')
-            .replace(/width:\s*80px/g, 'width:44px')
-            .replace(/height:\s*80px/g, 'height:44px')
-            .replace('class="player-avatar"', 'class="player-picker-initials"')
-            .replace(/font-size:\s*32px/, 'font-size:15px');
+    list.innerHTML = players.slice(0, 80).map(p => {
         const dataStr = JSON.stringify(p).replace(/"/g, '&quot;');
         return `
             <div class="player-picker-item" onclick='selectPlayerForLineupFromData(this)' data-player="${dataStr}">
-                ${avatarHTML}
+                ${makePickerAvatar(p.name, p.team)}
                 <div class="player-picker-info">
                     <div class="player-picker-name">${p.name}</div>
                     <div class="player-picker-team">${p.team} · ${p.league}</div>
@@ -2757,174 +2789,259 @@ async function viewLeague(league) {
 
 async function renderLeagueOverview(league) {
     const content = document.getElementById('leagueOverviewContent');
-    content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading...</div>';
-    
-    const meta = LEAGUE_META[league];
+    content.innerHTML = '<div style="color:#555;padding:32px;text-align:center">Loading...</div>';
+
     const leagueLogos = {
         'PREM': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/47.png',
         'LALIGA': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/87.png',
         'MLS': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/130.png'
     };
-    
+    const leagueCountry = { PREM: 'England', LALIGA: 'Spain', MLS: 'USA' };
+    const leagueName = { PREM: 'Premier League', LALIGA: 'La Liga', MLS: 'MLS' };
+
     await Promise.all([loadStats(league), loadStandingsData(league)]);
-    
-    const html = `
-        <div class="league-overview-header">
-            <img src="${leagueLogos[league]}" class="league-overview-logo">
-            <div class="league-overview-info">
-                <h2>${meta.name}</h2>
-                <p>${meta.country || (league === 'PREM' ? 'England' : league === 'LALIGA' ? 'Spain' : 'USA')}</p>
+
+    content.innerHTML = `
+        <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:20px 20px 0;margin-bottom:0;">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+                <img src="${leagueLogos[league]}" style="width:44px;height:44px;object-fit:contain;">
+                <div>
+                    <div style="font-size:18px;font-weight:900;">${leagueName[league]}</div>
+                    <div style="font-size:11px;color:#888;margin-top:3px;">${leagueCountry[league]}</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:0;border-bottom:1px solid #1e1e1e;margin:0 -20px;">
+                <div class="lov-tab active-lov-tab" onclick="switchLeagueTab(event,'overview','${league}')" style="padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid #00ff85;color:#fff;">Overview</div>
+                <div class="lov-tab" onclick="switchLeagueTab(event,'table','${league}')" style="padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;color:#888;border-bottom:2px solid transparent;">Table</div>
+                <div class="lov-tab" onclick="switchLeagueTab(event,'fixtures','${league}')" style="padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;color:#888;border-bottom:2px solid transparent;">Fixtures</div>
+                <div class="lov-tab" onclick="switchLeagueTab(event,'stats','${league}')" style="padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;color:#888;border-bottom:2px solid transparent;">Stats</div>
             </div>
         </div>
-        
-        <div class="league-tabs">
-            <div class="league-tab active" onclick="switchLeagueTab('table', '${league}')">Table</div>
-            <div class="league-tab" onclick="switchLeagueTab('fixtures', '${league}')">Fixtures</div>
-            <div class="league-tab" onclick="switchLeagueTab('stats', '${league}')">Stats</div>
-        </div>
-        
-        <div id="leagueTabContent"></div>
+        <div id="leagueTabContent" style="margin-top:16px;"></div>
     `;
-    
-    content.innerHTML = html;
-    switchLeagueTab('table', league);
+
+    // Default to overview tab
+    renderLeagueTabContent('overview', league);
 }
 
-async function switchLeagueTab(tab, league) {
-    document.querySelectorAll('.league-tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
-    
+async function switchLeagueTab(e, tab, league) {
+    // Update tab styles
+    document.querySelectorAll('.lov-tab').forEach(t => {
+        t.style.color = '#888';
+        t.style.borderBottom = '2px solid transparent';
+    });
+    if (e && e.target) {
+        e.target.style.color = '#fff';
+        e.target.style.borderBottom = '2px solid #00ff85';
+    }
+    renderLeagueTabContent(tab, league);
+}
+
+async function renderLeagueTabContent(tab, league) {
     const content = document.getElementById('leagueTabContent');
-    
-    if (tab === 'table') {
-        const standings = await loadStandingsData(league);
+    if (!content) return;
+
+    if (tab === 'overview') {
+        // Show top stats preview + table preview side by side
+        await Promise.all([loadStats(league), loadStandingsData(league)]);
+        const data = statsData[league];
+        const standings = standingsCache[league]?.rows || [];
+
+        // Top 3 standings
+        const top5 = standings.slice(0, 5);
+
+        // Make stat mini-list
+        const miniStat = (arr, label, isRating) => {
+            if (!arr || !arr.length) return '';
+            return arr.slice(0, 3).map((p, i) => `
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 0;${i < 2 ? 'border-bottom:1px solid #1e1e1e;' : ''}cursor:pointer;" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">
+                    <div style="width:28px;height:28px;border-radius:50%;overflow:hidden;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                        ${makeSmallAvatar(p.name, p.team)}
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+                        <div style="font-size:10px;color:#666;">${p.team}</div>
+                    </div>
+                    <div style="font-size:13px;font-weight:900;color:#fff;background:${i===0?'#c0392b':'#1a1a1a'};border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">${isRating ? Number(p.value).toFixed(2) : p.value}</div>
+                </div>`).join('');
+        };
+
         content.innerHTML = `
-            <div class="overflow-x-auto">
-                <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 min-w-[600px]">
-                    <table class="w-full text-left text-[11px]">
-                        <thead><tr class="uppercase bg-zinc-800/50">
-                            <th class="p-3 font-black">#</th>
-                            <th class="p-3 font-black">Team</th>
-                            <th class="p-3 font-black text-center">PL</th>
-                            <th class="p-3 font-black text-center">W</th>
-                            <th class="p-3 font-black text-center">D</th>
-                            <th class="p-3 font-black text-center">L</th>
-                            <th class="p-3 font-black text-center">GD</th>
-                            <th class="p-3 font-black text-center">PTS</th>
-                        </tr></thead>
-                        <tbody>
-                            ${standings.map(row => `
-                                <tr class="border-t border-zinc-800/40 hover:bg-zinc-800/30 cursor-pointer" onclick="viewTeam('${_jsEscapeSingle(row.team)}', '${league}')">
-                                    <td class="p-3">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-1 h-6 rounded" style="background: ${getQualifyColor(league, row.pos)}"></div>
-                                            <span class="font-black">${row.pos}</span>
-                                        </div>
-                                    </td>
-                                    <td class="p-3">
-                                        <div class="flex items-center gap-2">
-                                            <img src="${getLogo(row.team)}" class="w-5 h-5 object-contain">
-                                            <span class="font-bold">${row.team}</span>
-                                        </div>
-                                    </td>
-                                    <td class="p-3 text-center">${row.pl}</td>
-                                    <td class="p-3 text-center">${row.w}</td>
-                                    <td class="p-3 text-center">${row.d}</td>
-                                    <td class="p-3 text-center">${row.l}</td>
-                                    <td class="p-3 text-center">${row.gd}</td>
-                                    <td class="p-3 text-center font-black text-[#00ff85]">${row.pts}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
+                    <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;margin-bottom:12px;">Standings</div>
+                    ${top5.map(row => `
+                        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #141414;cursor:pointer;" onclick="viewTeam('${_jsEscapeSingle(row.team)}','${league}')">
+                            <div style="width:4px;height:20px;border-radius:2px;background:${getQualifyColor(league, row.pos)};flex-shrink:0;"></div>
+                            <span style="font-size:11px;color:#666;width:16px;">${row.pos}</span>
+                            <img src="${getLogo(row.team)}" style="width:18px;height:18px;object-fit:contain;">
+                            <span style="font-size:12px;font-weight:700;flex:1;">${row.team}</span>
+                            <span style="font-size:12px;font-weight:900;color:#00ff85;">${row.pts}</span>
+                        </div>`).join('')}
+                </div>
+                <div>
+                    <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;margin-bottom:12px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                            <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;">Top Scorers</div>
+                            <span style="font-size:10px;color:#00ff85;cursor:pointer;font-weight:800;" onclick="openFullLeaderboard('GOALS','${league}')">All ›</span>
+                        </div>
+                        ${miniStat(data.goals, 'Goals', false)}
+                    </div>
+                    <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                            <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;">Top Assists</div>
+                            <span style="font-size:10px;color:#00ff85;cursor:pointer;font-weight:800;" onclick="openFullLeaderboard('ASSISTS','${league}')">All ›</span>
+                        </div>
+                        ${miniStat(data.assists, 'Assists', false)}
+                    </div>
                 </div>
             </div>
         `;
+
+    } else if (tab === 'table') {
+        const standings = await loadStandingsData(league);
+        content.innerHTML = `
+            <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;overflow:hidden;">
+                <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                    <thead>
+                        <tr style="background:#161616;color:#888;">
+                            <th style="padding:10px 12px;text-align:left;font-weight:800;font-size:10px;text-transform:uppercase;">#</th>
+                            <th style="padding:10px 8px;text-align:left;font-weight:800;font-size:10px;text-transform:uppercase;">Team</th>
+                            <th style="padding:10px 8px;text-align:center;font-weight:800;font-size:10px;">PL</th>
+                            <th style="padding:10px 8px;text-align:center;font-weight:800;font-size:10px;">W</th>
+                            <th style="padding:10px 8px;text-align:center;font-weight:800;font-size:10px;">D</th>
+                            <th style="padding:10px 8px;text-align:center;font-weight:800;font-size:10px;">L</th>
+                            <th style="padding:10px 8px;text-align:center;font-weight:800;font-size:10px;">+/-</th>
+                            <th style="padding:10px 8px;text-align:center;font-weight:800;font-size:10px;">GD</th>
+                            <th style="padding:10px 12px;text-align:center;font-weight:800;font-size:10px;">PTS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${standings.map((row, idx) => `
+                            <tr style="border-top:1px solid #1a1a1a;cursor:pointer;" onmouseover="this.style.background='#161616'" onmouseout="this.style.background=''" onclick="viewTeam('${_jsEscapeSingle(row.team)}','${league}')">
+                                <td style="padding:10px 12px;">
+                                    <div style="display:flex;align-items:center;gap:6px;">
+                                        <div style="width:3px;height:20px;border-radius:2px;background:${getQualifyColor(league, row.pos)};"></div>
+                                        <span style="color:#888;font-weight:700;">${row.pos}</span>
+                                    </div>
+                                </td>
+                                <td style="padding:10px 8px;">
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <img src="${getLogo(row.team)}" style="width:20px;height:20px;object-fit:contain;">
+                                        <span style="font-weight:700;">${row.team}</span>
+                                    </div>
+                                </td>
+                                <td style="padding:10px 8px;text-align:center;color:#888;">${row.pl || row.mp}</td>
+                                <td style="padding:10px 8px;text-align:center;color:#888;">${row.w}</td>
+                                <td style="padding:10px 8px;text-align:center;color:#888;">${row.d}</td>
+                                <td style="padding:10px 8px;text-align:center;color:#888;">${row.l}</td>
+                                <td style="padding:10px 8px;text-align:center;color:#888;">${row.gf || 0}-${row.ga || 0}</td>
+                                <td style="padding:10px 8px;text-align:center;color:#888;">${row.gd >= 0 ? '+' : ''}${row.gd}</td>
+                                <td style="padding:10px 12px;text-align:center;font-weight:900;color:#00ff85;">${row.pts}</td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>
+                <div style="padding:12px 16px;display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid #1a1a1a;">
+                    ${league !== 'MLS' ? `
+                        <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#00ff85;"></div><span style="font-size:10px;color:#888;">Champions League</span></div>
+                        <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;"></div><span style="font-size:10px;color:#888;">Europa League</span></div>
+                        <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#ef4444;"></div><span style="font-size:10px;color:#888;">Relegation</span></div>
+                    ` : `
+                        <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#fbbf24;"></div><span style="font-size:10px;color:#888;">Supporters' Shield</span></div>
+                        <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#22c55e;"></div><span style="font-size:10px;color:#888;">Playoffs</span></div>
+                    `}
+                </div>
+            </div>
+        `;
+
     } else if (tab === 'fixtures') {
-        // Show fixtures grouped by date
         const leagueMatches = allMatches.filter(m => m.league === league);
         const byDate = {};
         leagueMatches.forEach(m => {
-            const key = m.date.getTime();
-            if (!byDate[key]) byDate[key] = [];
-            byDate[key].push(m);
+            const key = m.date.toDateString();
+            if (!byDate[key]) byDate[key] = { date: m.date, matches: [] };
+            byDate[key].matches.push(m);
         });
-        
-        const dates = Object.keys(byDate).map(k => parseInt(k)).sort((a, b) => b - a);
-        
-        content.innerHTML = dates.slice(0, 10).map(dateKey => {
-            const date = new Date(dateKey);
-            const matches = byDate[dateKey];
-            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-            const dateStr = `${months[date.getMonth()]} ${date.getDate()}`;
-            
-            return `
-                <div class="mb-6">
-                    <div class="text-[10px] font-black text-zinc-500 uppercase mb-2">${dateStr}</div>
-                    <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 overflow-hidden">
+
+        const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+        const dateKeys = Object.keys(byDate).sort((a, b) => new Date(a) - new Date(b));
+
+        if (!dateKeys.length) {
+            content.innerHTML = '<div style="color:#555;padding:32px;text-align:center;">No fixtures found</div>';
+            return;
+        }
+
+        content.innerHTML = `
+            <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;overflow:hidden;">
+                ${dateKeys.map(dk => {
+                    const { date, matches } = byDate[dk];
+                    const dateStr = `${dayNames[date.getDay()]}, ${monthNames[date.getMonth()]} ${date.getDate()}`;
+                    return `
+                        <div style="background:#161616;padding:10px 16px;font-size:11px;font-weight:800;color:#888;border-bottom:1px solid #1e1e1e;text-transform:uppercase;">${dateStr}</div>
                         ${matches.map(m => `
-                            <div class="flex items-center justify-between p-3 border-b border-zinc-800/40 last:border-b-0">
-                                <div class="flex items-center gap-2 flex-1 cursor-pointer hover:opacity-70" onclick="viewTeam('${_jsEscapeSingle(m.home)}', '${league}')">
-                                    <img src="${getLogo(m.home)}" class="w-5 h-5 object-contain">
-                                    <span class="text-[12px] font-bold">${m.home}</span>
+                            <div style="display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid #141414;">
+                                <div style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:8px;cursor:pointer;" onclick="viewTeam('${_jsEscapeSingle(m.home)}','${league}')">
+                                    <span style="font-size:13px;font-weight:700;">${m.home}</span>
+                                    <img src="${getLogo(m.home)}" style="width:22px;height:22px;object-fit:contain;">
                                 </div>
-                                <div class="font-mono font-black text-[#00ff85] mx-4">${m.score === 'v' ? 'vs' : m.score}</div>
-                                <div class="flex items-center gap-2 flex-1 justify-end cursor-pointer hover:opacity-70" onclick="viewTeam('${_jsEscapeSingle(m.away)}', '${league}')">
-                                    <span class="text-[12px] font-bold">${m.away}</span>
-                                    <img src="${getLogo(m.away)}" class="w-5 h-5 object-contain">
+                                <div style="min-width:70px;text-align:center;font-family:'Roboto Mono',monospace;font-weight:900;font-size:${m.score === 'v' ? '14' : '16'}px;color:${m.score === 'v' ? '#555' : '#00ff85'};padding:0 12px;">
+                                    ${m.score === 'v' ? 'vs' : m.score}
                                 </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-        }).join('');
+                                <div style="flex:1;display:flex;align-items:center;justify-content:flex-start;gap:8px;cursor:pointer;" onclick="viewTeam('${_jsEscapeSingle(m.away)}','${league}')">
+                                    <img src="${getLogo(m.away)}" style="width:22px;height:22px;object-fit:contain;">
+                                    <span style="font-size:13px;font-weight:700;">${m.away}</span>
+                                </div>
+                            </div>`).join('')}`;
+                }).join('')}
+            </div>
+        `;
+
     } else if (tab === 'stats') {
         await loadStats(league);
         const data = statsData[league];
-        
-        const makeCompactList = (title, arr, valueLabel, kind) => {
-            const top3 = arr.slice(0, 3);
+
+        const makeStatCard = (title, arr, isRating, kind) => {
+            if (!arr || !arr.length) return '';
             return `
-                <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 p-4 mb-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="text-[11px] font-black uppercase text-zinc-400">${title}</div>
-                        <button class="text-[10px] font-black text-[#00ff85] hover:underline" onclick="openFullLeaderboard('${kind}', '${league}')">View All</button>
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;margin-bottom:12px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div style="font-size:13px;font-weight:800;">${title}</div>
+                        <span style="font-size:11px;color:#00ff85;cursor:pointer;font-weight:800;" onclick="openFullLeaderboard('${kind}','${league}')">View All ›</span>
                     </div>
-                    ${top3.map((p, idx) => `
-                        <div class="flex items-center justify-between py-2 ${idx < top3.length - 1 ? 'border-b border-zinc-800/40' : ''}">
-                            <div class="flex items-center gap-2">
-                                <span class="text-[10px] font-black text-zinc-500 w-4">${idx + 1}</span>
-                                <img src="${getLogo(p.team)}" class="w-4 h-4 object-contain">
-                                <span class="text-[12px] font-bold cursor-pointer hover:underline" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">${p.name}</span>
+                    ${arr.slice(0, 3).map((p, idx) => `
+                        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;${idx < 2 ? 'border-bottom:1px solid #1a1a1a;' : ''}cursor:pointer;" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">
+                            <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                                ${makeSmallAvatar(p.name, p.team)}
                             </div>
-                            <span class="font-black text-[#00ff85] text-[13px]">${valueLabel === 'RATING' ? Number(p.value).toFixed(2) : p.value}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:13px;font-weight:700;">${p.name}</div>
+                                <div style="font-size:10px;color:#666;margin-top:2px;">${p.team}</div>
+                            </div>
+                            <div style="font-size:14px;font-weight:900;background:${idx===0?'#c0392b':'#1a1a1a'};color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:${isRating?'10':'13'}px;flex-shrink:0;">${isRating ? Number(p.value).toFixed(2) : p.value}</div>
+                        </div>`).join('')}
+                </div>`;
         };
-        
-        const goalieCleanSheets = (data.cleanSheets || []).filter(cs => {
-            const pl = (data.players && data.players[cs.key]) ? data.players[cs.key] : null;
-            return _isGoalie(pl);
-        });
-        const cleanSheetsToShow = goalieCleanSheets.length > 0 ? goalieCleanSheets : (data.cleanSheets || []);
-        
+
         content.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                ${makeCompactList('Top Scorers', data.goals || [], 'GOALS', 'GOALS')}
-                ${makeCompactList('Top Assists', data.assists || [], 'ASSISTS', 'ASSISTS')}
-                ${makeCompactList('Clean Sheets', cleanSheetsToShow || [], 'CS', 'CLEAN')}
-                ${makeCompactList('FotMob Rating', data.ratings || [], 'RATING', 'RATING')}
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                <div>${makeStatCard('Top Scorer', data.goals || [], false, 'GOALS')}</div>
+                <div>${makeStatCard('Assists', data.assists || [], false, 'ASSISTS')}</div>
+                <div>${makeStatCard('FotMob Rating', data.ratings || [], true, 'RATING')}</div>
             </div>
         `;
     }
 }
 
-function backToHub() {
-    document.getElementById('league-overview-tab').classList.add('hidden');
-    document.getElementById('hub-tab').classList.remove('hidden');
+// Helper: make a small avatar using the FC26 photo system
+function makeSmallAvatar(name, team) {
+    const url = getPlayerPhotoUrl(name, team);
+    const initials = getInitials(name);
+    if (url) {
+        return `<img src="${url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.outerHTML='<span style=font-size:11px;font-weight:900;color:#666>${initials}</span>'">`;
+    }
+    return `<span style="font-size:11px;font-weight:900;color:#666;">${initials}</span>`;
 }
 
 // Initialize lineup builder
