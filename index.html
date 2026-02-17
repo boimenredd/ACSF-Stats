@@ -9,6 +9,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
         :root { --accent: #00ff85; --bg: #0b0e11; --card: #161b22; --border: #30363d; }
+        * { scrollbar-width: none; -ms-overflow-style: none; }
+        *::-webkit-scrollbar { display: none; }
         body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; overflow-x: hidden; margin: 0; padding: 0; }
         
         /* Full-width header */
@@ -1171,7 +1173,11 @@ function renderMatches() {
             if (!groupMatches.length) return;
             html += `
             <div class="league-container">
-                <div class="league-header"><img src="${LEAGUE_META[lg].logo}" class="league-logo"><span>${label}</span></div>
+                <div class="league-header" onclick="viewLeague('${lg}')" style="cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='#222'" onmouseout="this.style.background=''">
+                    <img src="${LEAGUE_META[lg].logo}" class="league-logo">
+                    <span style="flex:1;">${label}</span>
+                    <span style="color:#555;font-size:16px;font-weight:400;">›</span>
+                </div>
                 ${groupMatches.map(m => {
                     return `
                     <div class="match-row">
@@ -2847,52 +2853,56 @@ async function renderLeagueTabContent(tab, league) {
         const data = statsData[league];
         const standings = standingsCache[league]?.rows || [];
 
-        // Top 3 standings
-        const top5 = standings.slice(0, 5);
-
-        // Make stat mini-list
-        const miniStat = (arr, label, isRating) => {
-            if (!arr || !arr.length) return '';
-            return arr.slice(0, 3).map((p, i) => `
-                <div style="display:flex;align-items:center;gap:10px;padding:10px 0;${i < 2 ? 'border-bottom:1px solid #1e1e1e;' : ''}cursor:pointer;" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">
-                    <div style="width:28px;height:28px;border-radius:50%;overflow:hidden;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-                        ${makeSmallAvatar(p.name, p.team)}
-                    </div>
-                    <div style="flex:1;min-width:0;">
-                        <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
-                        <div style="font-size:10px;color:#666;">${p.team}</div>
-                    </div>
-                    <div style="font-size:13px;font-weight:900;color:#fff;background:${i===0?'#c0392b':'#1a1a1a'};border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;">${isRating ? Number(p.value).toFixed(2) : p.value}</div>
-                </div>`).join('');
-        };
+        // Full standings list
+        const allRows = standings;
 
         content.innerHTML = `
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                 <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
-                    <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;margin-bottom:12px;">Standings</div>
-                    ${top5.map(row => `
-                        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #141414;cursor:pointer;" onclick="viewTeam('${_jsEscapeSingle(row.team)}','${league}')">
-                            <div style="width:4px;height:20px;border-radius:2px;background:${getQualifyColor(league, row.pos)};flex-shrink:0;"></div>
-                            <span style="font-size:11px;color:#666;width:16px;">${row.pos}</span>
-                            <img src="${getLogo(row.team)}" style="width:18px;height:18px;object-fit:contain;">
-                            <span style="font-size:12px;font-weight:700;flex:1;">${row.team}</span>
-                            <span style="font-size:12px;font-weight:900;color:#00ff85;">${row.pts}</span>
+                    <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;margin-bottom:12px;letter-spacing:0.8px;">Standings</div>
+                    ${allRows.map(row => `
+                        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #141414;cursor:pointer;" onmouseover="this.style.background='#161616'" onmouseout="this.style.background=''" onclick="viewTeam('${_jsEscapeSingle(row.team)}','${league}')">
+                            <div style="width:3px;height:20px;border-radius:2px;background:${getQualifyColor(league, row.pos)};flex-shrink:0;"></div>
+                            <span style="font-size:11px;color:#666;width:18px;text-align:right;flex-shrink:0;">${row.pos}</span>
+                            <img src="${getLogo(row.team)}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0;">
+                            <span style="font-size:13px;font-weight:700;flex:1;">${row.team}</span>
+                            <span style="font-size:14px;font-weight:900;color:#00ff85;">${row.pts}</span>
                         </div>`).join('')}
                 </div>
                 <div>
                     <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;margin-bottom:12px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                            <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;">Top Scorers</div>
-                            <span style="font-size:10px;color:#00ff85;cursor:pointer;font-weight:800;" onclick="openFullLeaderboard('GOALS','${league}')">All ›</span>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;">Top Scorers</div>
+                            <span style="font-size:11px;color:#00ff85;cursor:pointer;font-weight:800;" onclick="openFullLeaderboard('GOALS','${league}')">All ›</span>
                         </div>
-                        ${miniStat(data.goals, 'Goals', false)}
+                        ${(data.goals || []).slice(0, 3).map((p, i) => `
+                            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;${i < 2 ? 'border-bottom:1px solid #1a1a1a;' : ''}cursor:pointer;" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">
+                                <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                                    ${makeSmallAvatar(p.name, p.team)}
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-size:13px;font-weight:700;">${p.name}</div>
+                                    <div style="font-size:11px;color:#666;margin-top:2px;">${p.team}</div>
+                                </div>
+                                <div style="width:32px;height:32px;border-radius:50%;background:${i===0?'#c0392b':'#1a1a1a'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;">${p.value}</div>
+                            </div>`).join('')}
                     </div>
                     <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                            <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;">Top Assists</div>
-                            <span style="font-size:10px;color:#00ff85;cursor:pointer;font-weight:800;" onclick="openFullLeaderboard('ASSISTS','${league}')">All ›</span>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                            <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;">Top Assists</div>
+                            <span style="font-size:11px;color:#00ff85;cursor:pointer;font-weight:800;" onclick="openFullLeaderboard('ASSISTS','${league}')">All ›</span>
                         </div>
-                        ${miniStat(data.assists, 'Assists', false)}
+                        ${(data.assists || []).slice(0, 3).map((p, i) => `
+                            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;${i < 2 ? 'border-bottom:1px solid #1a1a1a;' : ''}cursor:pointer;" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">
+                                <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                                    ${makeSmallAvatar(p.name, p.team)}
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-size:13px;font-weight:700;">${p.name}</div>
+                                    <div style="font-size:11px;color:#666;margin-top:2px;">${p.team}</div>
+                                </div>
+                                <div style="width:32px;height:32px;border-radius:50%;background:${i===0?'#c0392b':'#1a1a1a'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;">${p.value}</div>
+                            </div>`).join('')}
                     </div>
                 </div>
             </div>
