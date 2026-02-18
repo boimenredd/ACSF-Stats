@@ -99,7 +99,7 @@
         .formation-player:hover { transform: scale(1.05); }
         .formation-avatar { width: 48px; height: 48px; border-radius: 50%; background: #1a1a1a; border: 2px solid #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #555; position: relative; overflow: visible; }
         .formation-avatar-img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
-        .formation-rating { position: absolute; bottom: 0; right: -2px; background: rgba(34,197,94,.95); color: #fff; font-size: 8px; font-weight: 900; padding: 2px 4px; border-radius: 5px; border: 1.5px solid #0f0f0f; font-family: 'Roboto Mono', monospace; line-height: 1.1; }
+        .formation-rating { position: absolute; top: 0; right: 0; background: rgba(34,197,94,.95); color: #fff; font-size: 8px; font-weight: 900; padding: 2px 4px; border-radius: 4px; border: 1px solid #0f0f0f; font-family: 'Roboto Mono', monospace; line-height: 1.1; }
         .formation-rating-top { background: rgba(59,130,246,.95); }
         .formation-rating-top::before { content: '⭐ '; font-size: 7px; }
         .formation-name { font-size: 10px; font-weight: 800; text-align: center; max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2603,14 +2603,14 @@ async function viewPlayer(playerKeyOrName) {
     const mvGBP        = profile?.mvGBP || null;
     const mvStr        = formatMV(mvGBP);
 
-    // Info grid items — only show if we have data
+    // Always show player info card with available data
     const infoItems = [
-        height       ? { value: height,      label: 'Height'         } : null,
-        foot         ? { value: foot,         label: 'Preferred foot' } : null,
-        nationality  ? { value: nationality, label: 'Country' } : null,
-        mvStr        ? { value: mvStr,        label: 'Transfer value' } : null,
-        dob          ? { value: formatDOB(dob), label: 'Date of birth' } : null,
-    ].filter(Boolean);
+        { value: height || '-',      label: 'Height'         },
+        { value: foot || '-',         label: 'Preferred foot' },
+        { value: nationality || '-', label: 'Country' },
+        { value: mvStr || '-',        label: 'Transfer value' },
+        { value: formatDOB(dob) || '-', label: '' }, // No label for DOB
+    ];
 
     content.innerHTML = `
         <div class="stat-card">
@@ -2670,17 +2670,16 @@ async function viewPlayer(playerKeyOrName) {
             </div>
         </div>
 
-        ${infoItems.length ? `
         <div class="mt-6 stat-card">
             <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Player Info</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
                 ${infoItems.map((item, i) => `
                     <div style="padding:14px 0;${i < infoItems.length - (infoItems.length % 2 === 0 ? 2 : 1) ? 'border-bottom:1px solid #1e1e1e;' : ''}${i % 2 === 0 ? 'padding-right:24px;border-right:1px solid #1e1e1e;' : 'padding-left:24px;'}">
                         <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${item.value}</div>
-                        <div style="font-size:11px;color:#666;font-weight:600;">${item.label}</div>
+                        ${item.label ? `<div style="font-size:11px;color:#666;font-weight:600;">${item.label}</div>` : ''}
                     </div>`).join('')}
             </div>
-        </div>` : ''}
+        </div>
     `;
 }
 
