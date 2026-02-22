@@ -1410,13 +1410,10 @@ async function renderTOTMTab(league) {
 }
 
 function generateTOTMFromGroup(group, league) {
-    const players = group.players.slice().sort((a, b) => b.rating - a.rating);
-    const top11 = players.slice(0, 11);
-    const topRating = top11[0].rating;
+    const players = group.players.slice(); // Don't sort overall yet
     const data = statsData[league];
 
-    console.log(`Building TOTM for ${group.label}: ${top11.length} players, top rating ${topRating}`);
-    console.log('Top 11:', top11.map(p => `${p.name}(${p.position}):${p.rating}`).join(', '));
+    console.log(`Building TOTM for ${group.label}: ${players.length} total players`);
 
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     let labelStr = group.label;
@@ -1425,17 +1422,10 @@ function generateTOTMFromGroup(group, league) {
         labelStr = `${months[parsedDate.getMonth()]} ${parsedDate.getDate()}, ${parsedDate.getFullYear()}`;
     }
 
-    // Build a strict 4-3-3 formation: 1 GK, 2 CB + 2 FB, 3 MID, 3 FWD
-    // Categorize all top 11 by position, ensuring no duplicates
+    // Categorize ALL players by position FIRST
     const categorized = { gk: [], cb: [], fb: [], mid: [], fwd: [] };
-    const used = new Set();
     
-    top11.forEach(p => {
-        if (used.has(p.name)) {
-            console.warn(`Duplicate player in top11: ${p.name}`);
-            return;
-        }
-        
+    players.forEach(p => {
         const playerData = data && data.players ? Object.values(data.players).find(pl =>
             pl.name.toLowerCase() === p.name.toLowerCase() || _normMatch(pl.name) === _normMatch(p.name)
         ) : null;
@@ -1445,45 +1435,47 @@ function generateTOTMFromGroup(group, league) {
         const photoUrl = playerData ? (playerData.photoUrl || '') : '';
         const entry = { ...p, pos, key, photoUrl };
         
-        used.add(p.name);
-        
         if (pos === 'GK') categorized.gk.push(entry);
         else if (pos === 'CB') categorized.cb.push(entry);
         else if (pos === 'LB' || pos === 'RB') categorized.fb.push(entry);
         else if (pos === 'CDM' || pos === 'CM' || pos === 'CAM') categorized.mid.push(entry);
         else if (pos === 'LW' || pos === 'LM' || pos === 'RM' || pos === 'RW' || pos === 'ST') categorized.fwd.push(entry);
-        else {
-            console.log(`Unknown position for ${p.name}: "${pos}" → FWD`);
-            categorized.fwd.push(entry);
-        }
+        else categorized.fwd.push(entry); // Unknown → forward
     });
 
-    console.log(`Categorized: GK=${categorized.gk.length} CB=${categorized.cb.length} FB=${categorized.fb.length} MID=${categorized.mid.length} FWD=${categorized.fwd.length}`);
+    console.log(`All positions: GK=${categorized.gk.length} CB=${categorized.cb.length} FB=${categorized.fb.length} MID=${categorized.mid.length} FWD=${categorized.fwd.length}`);
 
-    // Build 4-3-3: pick best players by rating for each position
+    // NOW pick the best from each position by rating to build 4-3-3
     const pickBest = (arr, count) => arr.sort((a, b) => b.rating - a.rating).slice(0, count);
     
-    let gk  = pickBest(categorized.gk, 1);
-    let cb  = pickBest(categorized.cb, 2);
-    let fb  = pickBest(categorized.fb, 2);
-    let mid = pickBest(categorized.mid, 3);
-    let fwd = pickBest(categorized.fwd, 3);
+    let gk  = pickBest(categorized.gk.slice(), 1);   // Best 1 GK
+    let cb  = pickBest(categorized.cb.slice(), 2);   // Best 2 CBs
+    let fb  = pickBest(categorized.fb.slice(), 2);   // Best 2 FBs
+    let mid = pickBest(categorized.mid.slice(), 3);  // Best 3 MIDs
+    let fwd = pickBest(categorized.fwd.slice(), 3);  // Best 3 FWDs
+
+    console.log(`Picked: GK=${gk.length} CB=${cb.length} FB=${fb.length} MID=${mid.length} FWD=${fwd.length}`);
     
-    // If we don't have enough in a position, fill from unused players by rating
-    const allUsedInFormation = new Set([...gk, ...cb, ...fb, ...mid, ...fwd].map(p => p.name));
-    const unused = top11.filter(p => !allUsedInFormation.has(p.name)).sort((a, b) => b.rating - a.rating);
+    // If missing players, fill from remaining by rating
+    const allSelected = [...gk, ...cb, ...fb, ...mid, ...fwd];
+    const selectedNames = new Set(allSelected.map(p => p.name));
+    const remaining = players.filter(p => !selectedNames.has(p.name)).sort((a, b) => b.rating - a.rating);
     
-    let unusedIdx = 0;
-    while (gk.length < 1 && unusedIdx < unused.length) gk.push(unused[unusedIdx++]);
-    while ((cb.length + fb.length) < 4 && unusedIdx < unused.length) {
-        if (cb.length < 2) cb.push(unused[unusedIdx++]);
-        else fb.push(unused[unusedIdx++]);
+    let idx = 0;
+    while (gk.length < 1 && idx < remaining.length) { gk.push(remaining[idx++]); console.log('Filled GK'); }
+    while ((cb.length + fb.length) < 4 && idx < remaining.length) {
+        if (cb.length < 2) cb.push(remaining[idx++]);
+        else fb.push(remaining[idx++]);
     }
-    while (mid.length < 3 && unusedIdx < unused.length) mid.push(unused[unusedIdx++]);
-    while (fwd.length < 3 && unusedIdx < unused.length) fwd.push(unused[unusedIdx++]);
+    while (mid.length < 3 && idx < remaining.length) { mid.push(remaining[idx++]); console.log('Filled MID'); }
+    while (fwd.length < 3 && idx < remaining.length) { fwd.push(remaining[idx++]); console.log('Filled FWD'); }
     
-    // Combine CB + FB for the defensive line (4 players)
     const def = [...cb, ...fb];
+    const formation = [...gk, ...def, ...mid, ...fwd];
+    const topRating = Math.max(...formation.map(p => p.rating));
+
+    console.log(`Final (${formation.length}): ${formation.map(p => `${p.name}(${p.position}):${p.rating}`).join(', ')}`);
+    console.log(`Top rating: ${topRating}`);
 
     const renderPlayer = (p) => {
         const isTop = p.rating === topRating;
