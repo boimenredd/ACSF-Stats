@@ -1364,7 +1364,7 @@ async function renderTOTMTab(league, navDirection = 0) {
             <div class="text-center text-zinc-500 py-8">
                 No matchdays configured yet.<br>
                 <small style="font-size:11px;opacity:0.6;line-height:1.8;">
-                    Add entries to TOTM_CONFIG like:<br>
+                    Not ready yet:<br>
                     <code style="background:#1a1a1a;padding:2px 6px;border-radius:4px;">'Matchday 26': { startRow: 2, endRow: 23 }</code>
                 </small>
             </div>`;
@@ -1426,8 +1426,8 @@ function generateTOTMWithNav(group, league, currentIdx, totalMatchdays) {
     return totmHTML.replace(
         '<div class="totm-header">',
         `<div class="totm-header">
-            <div class="totm-nav-arrow totm-nav-left ${!hasNewer ? 'disabled' : ''}" onclick="renderTOTMTab('${league}', -1)">‹</div>
-            <div class="totm-nav-arrow totm-nav-right ${!hasOlder ? 'disabled' : ''}" onclick="renderTOTMTab('${league}', 1)">›</div>`
+            <div class="totm-nav-arrow totm-nav-right ${!hasNewer ? 'disabled' : ''}" onclick="renderTOTMTab('${league}', -1)">‹</div>
+            <div class="totm-nav-arrow totm-nav-left ${!hasOlder ? 'disabled' : ''}" onclick="renderTOTMTab('${league}', 1)">›</div>`
     );
 }
 
