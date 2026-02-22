@@ -1384,17 +1384,22 @@ async function renderTOTMTab(league) {
         const rowSlice = allRows.slice(sliceStart, sliceEnd);
 
         console.log(`${league} ${label}: rows ${startRow}-${endRow}, sliced ${rowSlice.length} rows`);
+        console.log('First 5 raw rows:', rowSlice.slice(0, 5).map((r, i) => `Row ${i}: [${r.slice(0, 5).join(' | ')}]`));
         
         // Column structure: A=name B=position C=rating D=team
-        const players = rowSlice.map(row => ({
-            name:     (row[0] || '').toString().trim(),
-            position: (row[1] || '').toString().trim(),
-            rating:   parseFloat((row[2] || '').toString()),
-            team:     (row[3] || '').toString().trim(),
-        })).filter(p => p.name && !isNaN(p.rating) && p.rating > 0);
+        const players = rowSlice.map((row, idx) => {
+            const p = {
+                name:     (row[0] || '').toString().trim(),
+                position: (row[1] || '').toString().trim(),
+                rating:   parseFloat((row[2] || '').toString()),
+                team:     (row[3] || '').toString().trim(),
+            };
+            if (idx < 5) console.log(`Player ${idx}: name="${p.name}" pos="${p.position}" rating=${p.rating} team="${p.team}"`);
+            return p;
+        }).filter(p => p.name && !isNaN(p.rating) && p.rating > 0);
 
         console.log(`${league} ${label}: ${players.length} valid players`);
-        if (players.length > 0) console.log('Sample:', players.slice(0, 3).map(p => `${p.name}(${p.position}):${p.rating}`));
+        console.log('Sample positions:', players.slice(0, 10).map(p => `${p.name}(${p.position})`));
 
         if (players.length >= 7) {
             html += generateTOTMFromGroup({ label, players }, league);
