@@ -195,7 +195,7 @@
 
         <!-- LEFT: Leagues Sidebar -->
         <div class="leagues-sidebar">
-            <div class="leagues-title">Top Leagues</div>
+            <div class="leagues-title">Domestic Leagues</div>
             <div class="league-item" onclick="viewLeague('PREM')">
                 <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/47.png" class="league-item-logo">
                 <div class="league-item-name">Premier League</div>
@@ -207,6 +207,16 @@
             <div class="league-item" onclick="viewLeague('MLS')">
                 <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/130.png" class="league-item-logo">
                 <div class="league-item-name">MLS</div>
+            </div>
+            
+            <div class="leagues-title" style="margin-top:24px;">European Competitions</div>
+            <div class="league-item" onclick="viewLeague('UCL')">
+                <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/42.png" class="league-item-logo">
+                <div class="league-item-name">Champions League</div>
+            </div>
+            <div class="league-item" onclick="viewLeague('EUROPA')">
+                <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/73.png" class="league-item-logo">
+                <div class="league-item-name">Europa League</div>
             </div>
         </div>
 
@@ -257,6 +267,7 @@
                     <button id="totm-btn-PREM" onclick="renderTOTMTab('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
                     <button id="totm-btn-LALIGA" onclick="renderTOTMTab('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
                     <button id="totm-btn-MLS" onclick="renderTOTMTab('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
+                    <button id="totm-btn-UCL" onclick="renderTOTMTab('UCL')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">UCL</button>
                 </div>
                 <div id="totmContent" class="px-4"></div>
             </div>
@@ -358,7 +369,7 @@ const LOGOS = {
     "Man City": "https://resources.premierleague.com/premierleague25/badges-alt/43.svg",
     "Man United": "https://resources.premierleague.com/premierleague25/badges-alt/1.svg",
     "Arsenal": "https://resources.premierleague.com/premierleague25/badges-alt/3.svg",
-    "Southampton": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c9/FC_Southampton.svg/1051px-FC_Southampton.svg.png",
+    "Southampton": "https://resources.premierleague.com/premierleague25/badges-alt/20.svg",
     "Bournemouth": "https://resources.premierleague.com/premierleague25/badges-alt/91.svg",
     "Leeds": "https://resources.premierleague.com/premierleague25/badges-alt/2.svg",
     "Brighton": "https://resources.premierleague.com/premierleague25/badges-alt/36.svg",
@@ -830,7 +841,15 @@ function getLogo(team) {
 const SCHEDULE_URLS = {
     PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv',
     LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1516477023&single=true&output=csv',
-    MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1689966801&single=true&output=csv'
+    MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1689966801&single=true&output=csv',
+    UCL: {
+        url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=284985759&single=true&output=csv',
+        columns: { home: 'A', away: 'B', homeScore: 'C', awayScore: 'D' }
+    },
+    EUROPA: {
+        url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=284985759&single=true&output=csv',
+        columns: { home: 'G', away: 'H', homeScore: 'I', awayScore: 'J' }
+    }
 };
 
 
@@ -843,7 +862,9 @@ const DOMESTIC_TOURNEY_URLS = {
 const STANDINGS_URLS = {
     PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=935978435&single=true&output=csv',
     LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv',
-    MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv'
+    MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv',
+    UCL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=474382009&single=true&output=csv',
+    EUROPA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1627277990&single=true&output=csv'
 };
 
 // --- Standings cache + helpers (for Team page table snapshot) ---
@@ -958,6 +979,9 @@ const TOTM_CONFIG = {
     },
     MLS: {
         'Matchday 1': { startRow: 2, endRow: 221 }
+    },
+    UCL: {
+        'Matchday 8': { startRow: 2, endRow: 200 }
     }
 };
 
@@ -1085,7 +1109,9 @@ function countryFlag(nationality) {
 const LEAGUE_META = {
     PREM: { name: 'England - Premier League', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/eng.png' },
     LALIGA: { name: 'Spain - La Liga', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/esp.png' },
-    MLS: { name: 'USA - MLS', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/usa.png' }
+    MLS: { name: 'USA - MLS', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/usa.png' },
+    UCL: { name: 'Europe - Champions League', logo: 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/42.png' },
+    EUROPA: { name: 'Europe - Europa League', logo: 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/73.png' }
 };
 
 const STATS_URLS = {
@@ -1094,7 +1120,8 @@ const STATS_URLS = {
         assists: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=1828601090&single=true&output=csv',
         cleanSheets: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=1875623411&single=true&output=csv',
         ratingsLog: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=812230696&single=true&output=csv',
-        avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=692292778&single=true&output=csv'
+        avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=692292778&single=true&output=csv',
+        lineupBuilder: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRc0sBW3bukg08_oX2R3oM-dfBXJZ9bfDwi1VNwZxsS2i7ufQ3jpsY5H9Z7NxaWmo8XsDSFldLhgqVH/pub?gid=983480432&single=true&output=csv'
     },
     LALIGA: {
         goals: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSzA_l8odJEBfgmsNLrgCEGeyCtIah5X9SlrXgfUjRSxUaGOq6tMXdO-I8uMxzPpxu0hlvcmP2BKv-a/pub?gid=0&single=true&output=csv',
@@ -1109,11 +1136,19 @@ const STATS_URLS = {
         cleanSheets: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuw34XoWFJCJm7vYxAmfNNOOuVnprbE2kuVb9OpEgUZQsA6KhbxCYtW81oe1BkaGJ01fFMBpV5he31/pub?gid=1875623411&single=true&output=csv',
         ratingsLog: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuw34XoWFJCJm7vYxAmfNNOOuVnprbE2kuVb9OpEgUZQsA6KhbxCYtW81oe1BkaGJ01fFMBpV5he31/pub?gid=812230696&single=true&output=csv',
         avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQuw34XoWFJCJm7vYxAmfNNOOuVnprbE2kuVb9OpEgUZQsA6KhbxCYtW81oe1BkaGJ01fFMBpV5he31/pub?gid=692292778&single=true&output=csv'
+    },
+    UCL: {
+        goals: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRljln76x3l1S6dUXrA_4Krl_rUUcw6IBYwV5cvFuozORLF6GIuIE3PV9_8QJqUJuH9CbJxX3VGvEqx/pub?gid=0&single=true&output=csv',
+        assists: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRljln76x3l1S6dUXrA_4Krl_rUUcw6IBYwV5cvFuozORLF6GIuIE3PV9_8QJqUJuH9CbJxX3VGvEqx/pub?gid=1828601090&single=true&output=csv',
+        cleanSheets: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRljln76x3l1S6dUXrA_4Krl_rUUcw6IBYwV5cvFuozORLF6GIuIE3PV9_8QJqUJuH9CbJxX3VGvEqx/pub?gid=1875623411&single=true&output=csv',
+        ratingsLog: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRljln76x3l1S6dUXrA_4Krl_rUUcw6IBYwV5cvFuozORLF6GIuIE3PV9_8QJqUJuH9CbJxX3VGvEqx/pub?gid=812230696&single=true&output=csv',
+        avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRljln76x3l1S6dUXrA_4Krl_rUUcw6IBYwV5cvFuozORLF6GIuIE3PV9_8QJqUJuH9CbJxX3VGvEqx/pub?gid=692292778&single=true&output=csv',
+        lineupBuilder: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRljln76x3l1S6dUXrA_4Krl_rUUcw6IBYwV5cvFuozORLF6GIuIE3PV9_8QJqUJuH9CbJxX3VGvEqx/pub?gid=983480432&single=true&output=csv'
     }
 };
 
 let allMatches = [], uniqueDates = [], dateIdx = 0, currentView = 'hub', currentTeam = null, currentPlayer = null;
-let statsData = { PREM: {}, LALIGA: {}, MLS: {}, COMBINED: {} };
+let statsData = { PREM: {}, LALIGA: {}, MLS: {}, UCL: {}, EUROPA: {}, COMBINED: {} };
 
 let currentTeamPlayersList = [];
 let currentTeamLeague = null;
@@ -1192,30 +1227,36 @@ function _leagueForTeamFast(teamName){
 }
 
 async function init() {
-    const keys = ['PREM', 'LALIGA', 'MLS'];
+    const keys = ['PREM', 'LALIGA', 'MLS', 'UCL', 'EUROPA'];
     allMatches = [];
     const dateMap = {};
 
-    const pushMatch = (league, date, row, compOverride) => {
-        if (!date || !row[1] || !row[2]) return;
-        const home = (row[1] || '').trim();
-        const away = (row[2] || '').trim();
-
-        const rawScore = (row[3] || 'v').toString().trim();
-        const rawComp = (compOverride || row[4] || '').toString().trim();
+    const pushMatch = (league, date, row, compOverride, colConfig) => {
+        if (!date) return;
+        
+        // Default columns (A-D): home=1, away=2, score=3, comp=4
+        const homeCol = colConfig?.home || 1;
+        const awayCol = colConfig?.away || 2;
+        const scoreCol = colConfig?.score || 3;
+        const compCol = colConfig?.comp || 4;
+        
+        if (!row[homeCol] || !row[awayCol]) return;
+        
+        const home = (row[homeCol] || '').trim();
+        const away = (row[awayCol] || '').trim();
+        const rawScore = (row[scoreCol] || 'v').toString().trim();
+        const rawComp = (compOverride || row[compCol] || '').toString().trim();
 
         const isScoreLike = (s) => {
             const t = (s || '').toString().trim().toLowerCase();
             if (!t) return false;
             if (t === 'v') return true;
-            // 1-0, 1 - 0, 1:0
             return /^(\d+\s*[-:]\s*\d+)$/.test(t);
         };
 
         let score = rawScore || 'v';
         let comp = rawComp || '';
 
-        // If score cell contains letters (likely a competition label) and comp is blank, treat score as comp.
         if (!comp && score && !isScoreLike(score) && /[a-z]/i.test(score)) {
             comp = score;
             score = 'v';
@@ -1235,8 +1276,18 @@ async function init() {
     };
 
     for (let k of keys) {
+        const scheduleConfig = SCHEDULE_URLS[k];
+        const isCustomColumns = typeof scheduleConfig === 'object' && scheduleConfig.url;
+        const url = isCustomColumns ? scheduleConfig.url : scheduleConfig;
+        const colConfig = isCustomColumns ? {
+            home: scheduleConfig.columns.home.charCodeAt(0) - 65, // A=0, B=1, etc.
+            away: scheduleConfig.columns.away.charCodeAt(0) - 65,
+            score: scheduleConfig.columns.homeScore.charCodeAt(0) - 65,
+            comp: 4
+        } : null;
+        
         await new Promise(res => {
-            Papa.parse(SCHEDULE_URLS[k], {
+            Papa.parse(url, {
                 download: true,
                 complete: (results) => {
                     let currentDate = null;
@@ -1252,7 +1303,9 @@ async function init() {
                             currentDate = null;
                             awaitingDate = true;
                             pendingMatchRows = [];
-                            if (row[1] && row[2]) pendingMatchRows.push(row);
+                            const homeCol = colConfig?.home || 1;
+                            const awayCol = colConfig?.away || 2;
+                            if (row[homeCol] && row[awayCol]) pendingMatchRows.push(row);
                             return;
                         }
 
@@ -1260,15 +1313,15 @@ async function init() {
                             if (parsedA && parsedA !== 'MATCHDAY_MARKER') {
                                 currentDate = parsedA;
                                 awaitingDate = false;
-                                pendingMatchRows.forEach(r => pushMatch(k, currentDate, r));
+                                pendingMatchRows.forEach(r => pushMatch(k, currentDate, r, null, colConfig));
                                 pendingMatchRows = [];
-                                pushMatch(k, currentDate, row);
+                                pushMatch(k, currentDate, row, null, colConfig);
                             }
                             return;
                         }
 
                         if (parsedA && parsedA !== 'MATCHDAY_MARKER') currentDate = parsedA;
-                        pushMatch(k, currentDate, row);
+                        pushMatch(k, currentDate, row, null, colConfig);
                     });
 
                     res();
@@ -1643,13 +1696,44 @@ function generateTOTMFromGroup(group, league) {
     });
 
     return `
-        <div class="totm-container">
+        <div class="totm-container" id="totm-download-target">
             <div class="totm-header">
                 <div class="totm-title">Team of the Matchday</div>
-                <div class="totm-subtitle">${LEAGUE_META[league].name} · ${labelStr}</div>
+                <div class="totm-subtitle">${LEAGUE_META[league]?.name || league} · ${labelStr}</div>
+                <button onclick="downloadTOTM('${league}', '${labelStr}')" style="position:absolute;top:8px;right:8px;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:6px 12px;border-radius:8px;font-size:10px;font-weight:900;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='#00ff85'" onmouseout="this.style.borderColor='#2a2a2a'">↓ DOWNLOAD</button>
             </div>
             <div class="formation">${formationHTML}</div>
         </div>`;
+}
+
+async function downloadTOTM(league, label) {
+    const element = document.getElementById('totm-download-target');
+    if (!element) return;
+    
+    // Load html2canvas if not already loaded
+    if (typeof html2canvas === 'undefined') {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        document.head.appendChild(script);
+        await new Promise(resolve => script.onload = resolve);
+    }
+    
+    // Capture the TOTM container
+    const canvas = await html2canvas(element, {
+        backgroundColor: '#0f0f0f',
+        scale: 2,
+        logging: false
+    });
+    
+    // Convert to blob and download
+    canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `TOTM_${league}_${label.replace(/[^a-z0-9]/gi, '_')}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
 }
 
 function changeDate(step) {
@@ -2680,7 +2764,7 @@ async function viewPlayer(playerKeyOrName) {
 
     const parts = _splitPlayerKey(playerKeyOrName);
     if (parts.league) await loadStats(parts.league);
-    await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
+    await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS'), loadStats('UCL')]);
 
     // Also load player profiles (nationality, height, foot, market value)
     await loadPlayerProfiles();
@@ -2697,7 +2781,7 @@ async function viewPlayer(playerKeyOrName) {
             if (m && pool[m.key]) playerData = pool[m.key];
         }
     } else {
-        for (const lg of ['PREM', 'LALIGA', 'MLS']) {
+        for (const lg of ['PREM', 'LALIGA', 'MLS', 'UCL']) {
             const pool = statsData[lg].players || {};
             if (pool[playerKeyOrName]) { playerData = pool[playerKeyOrName]; break; }
         }
@@ -2705,12 +2789,12 @@ async function viewPlayer(playerKeyOrName) {
 
     if (!playerData) {
         const candidates = [];
-        ['PREM','LALIGA','MLS'].forEach(lg => {
+        ['PREM','LALIGA','MLS','UCL'].forEach(lg => {
             Object.values(statsData[lg].players || {}).forEach(p => candidates.push({ key: p.key, name: p.name, team: p.team }));
         });
         const m = _bestFuzzyPlayerMatch(playerKeyOrName, candidates);
         if (m) {
-            for (const lg of ['PREM','LALIGA','MLS']) {
+            for (const lg of ['PREM','LALIGA','MLS','UCL']) {
                 const pool = statsData[lg].players || {};
                 if (pool[m.key]) { playerData = pool[m.key]; break; }
             }
@@ -2731,6 +2815,35 @@ async function viewPlayer(playerKeyOrName) {
     const dob          = profile?.dob || '';
     const mvGBP        = profile?.mvGBP || null;
     const mvStr        = formatMV(mvGBP);
+    
+    // Calculate per-competition stats
+    const allLeagues = ['PREM', 'LALIGA', 'MLS', 'UCL'];
+    const competitionStats = {};
+    let totalGoals = 0, totalAssists = 0, totalCS = 0, totalMatches = 0;
+    
+    for (const lg of allLeagues) {
+        await loadStats(lg);
+        const pool = statsData[lg].players || {};
+        const playerInLeague = Object.values(pool).find(p => 
+            _normMatch(p.name) === _normMatch(playerData.name)
+        );
+        
+        if (playerInLeague) {
+            const goals = playerInLeague.goals || 0;
+            const assists = playerInLeague.assists || 0;
+            const cs = playerInLeague.cleanSheets || 0;
+            const matches = playerInLeague.matches || 0;
+            const avgRating = playerInLeague.avgRating || 0;
+            
+            if (matches > 0) {
+                competitionStats[lg] = { goals, assists, cs, matches, avgRating };
+                totalGoals += goals;
+                totalAssists += assists;
+                totalCS += cs;
+                totalMatches += matches;
+            }
+        }
+    }
 
     // Always show player info card with available data
     const infoItems = [
@@ -2740,6 +2853,20 @@ async function viewPlayer(playerKeyOrName) {
         { value: mvStr || '-',        label: 'Transfer value' },
         { value: formatDOB(dob) || '-', label: '' }, // No label for DOB
     ];
+    
+    const leagueNames = {
+        'PREM': 'Premier League',
+        'LALIGA': 'La Liga',
+        'MLS': 'MLS',
+        'UCL': 'Champions League'
+    };
+    
+    const leagueLogos = {
+        'PREM': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/47.png',
+        'LALIGA': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/87.png',
+        'MLS': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/130.png',
+        'UCL': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/42.png'
+    };
 
     content.innerHTML = `
         <div class="stat-card">
@@ -2763,50 +2890,58 @@ async function viewPlayer(playerKeyOrName) {
                 `).join('') || '<div class="text-zinc-500 text-sm">No ratings yet</div>'}
             </div>
         </div>
-
-        <div class="grid grid-cols-${isGK ? 4 : 3} gap-3 mt-6">
-            <div class="stat-card text-center relative overflow-hidden">
-                <div class="text-[10px] font-black text-zinc-500 uppercase">Goals</div>
-                <div class="text-2xl font-black text-[#00ff85] mt-1">${playerData.goals || 0}</div>
-                <img src="${getLogo(playerData.team)}" class="absolute right-2 bottom-2 w-12 h-12 object-contain opacity-10 pointer-events-none player-logo-dup">
-            </div>
-            <div class="stat-card text-center relative overflow-hidden">
-                <div class="text-[10px] font-black text-zinc-500 uppercase">Assists</div>
-                <div class="text-2xl font-black text-[#00ff85] mt-1">${playerData.assists || 0}</div>
-                <img src="${getLogo(playerData.team)}" class="absolute right-2 bottom-2 w-12 h-12 object-contain opacity-10 pointer-events-none player-logo-dup">
-            </div>
-            ${isGK ? `
-            <div class="stat-card text-center relative overflow-hidden">
-                <div class="text-[10px] font-black text-zinc-500 uppercase">Clean Sheets</div>
-                <div class="text-2xl font-black text-[#00ff85] mt-1">${playerData.cleanSheets || 0}</div>
-                <img src="${getLogo(playerData.team)}" class="absolute right-2 bottom-2 w-12 h-12 object-contain opacity-10 pointer-events-none player-logo-dup">
-            </div>` : ''}
-            <div class="stat-card text-center relative overflow-hidden">
-                <div class="text-[10px] font-black text-zinc-500 uppercase">Games</div>
-                <div class="text-2xl font-black text-[#00ff85] mt-1">${playerData.matches || 0}</div>
-                <img src="${getLogo(playerData.team)}" class="absolute right-2 bottom-2 w-12 h-12 object-contain opacity-10 pointer-events-none player-logo-dup">
+        
+        <div class="mt-6 stat-card">
+            <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Season Stats</div>
+            <div class="grid grid-cols-${isGK ? 4 : 3} gap-3">
+                <div class="text-center relative overflow-hidden">
+                    <div class="text-[10px] font-black text-zinc-500 uppercase">Goals</div>
+                    <div class="text-2xl font-black text-[#00ff85] mt-1">${totalGoals}</div>
+                </div>
+                <div class="text-center relative overflow-hidden">
+                    <div class="text-[10px] font-black text-zinc-500 uppercase">Assists</div>
+                    <div class="text-2xl font-black text-[#00ff85] mt-1">${totalAssists}</div>
+                </div>
+                ${isGK ? `
+                <div class="text-center relative overflow-hidden">
+                    <div class="text-[10px] font-black text-zinc-500 uppercase">Clean Sheets</div>
+                    <div class="text-2xl font-black text-[#00ff85] mt-1">${totalCS}</div>
+                </div>` : ''}
+                <div class="text-center relative overflow-hidden">
+                    <div class="text-[10px] font-black text-zinc-500 uppercase">Games</div>
+                    <div class="text-2xl font-black text-[#00ff85] mt-1">${totalMatches}</div>
+                </div>
             </div>
         </div>
 
         <div class="mt-6 grid grid-cols-2 gap-3">
-            <div class="stat-card text-center">
-                <div class="text-[10px] font-black text-zinc-500 uppercase">Avg Rating</div>
-                <div class="text-2xl font-black text-[#00ff85] mt-1">${playerData.avgRating != null ? Number(playerData.avgRating).toFixed(2) : '-'}</div>
+            <div class="stat-card">
+                <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Player Info</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+                    ${infoItems.map((item, i) => `
+                        <div style="padding:14px 0;${i < infoItems.length - (infoItems.length % 2 === 0 ? 2 : 1) ? 'border-bottom:1px solid #1e1e1e;' : ''}${i % 2 === 0 ? 'padding-right:24px;border-right:1px solid #1e1e1e;' : 'padding-left:24px;'}">
+                            <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${item.value}</div>
+                            ${item.label ? `<div style="font-size:11px;color:#666;font-weight:600;">${item.label}</div>` : ''}
+                        </div>`).join('')}
+                </div>
             </div>
-            <div class="stat-card text-center">
-                <div class="text-[10px] font-black text-zinc-500 uppercase">League</div>
-                <div class="text-xl font-black mt-2">${(playerData.league || '').toUpperCase()}</div>
-            </div>
-        </div>
-
-        <div class="mt-6 stat-card">
-            <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Player Info</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
-                ${infoItems.map((item, i) => `
-                    <div style="padding:14px 0;${i < infoItems.length - (infoItems.length % 2 === 0 ? 2 : 1) ? 'border-bottom:1px solid #1e1e1e;' : ''}${i % 2 === 0 ? 'padding-right:24px;border-right:1px solid #1e1e1e;' : 'padding-left:24px;'}">
-                        <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${item.value}</div>
-                        ${item.label ? `<div style="font-size:11px;color:#666;font-weight:600;">${item.label}</div>` : ''}
-                    </div>`).join('')}
+            
+            <div class="stat-card">
+                <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">By Competition</div>
+                ${Object.keys(competitionStats).length ? Object.entries(competitionStats).map(([lg, stats]) => `
+                    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #1a1a1a;">
+                        <img src="${leagueLogos[lg]}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0;">
+                        <div style="flex:1;">
+                            <div style="font-size:12px;font-weight:700;">${leagueNames[lg]}</div>
+                            <div style="font-size:10px;color:#666;margin-top:2px;">${stats.matches} matches · ${stats.avgRating.toFixed(2)} avg</div>
+                        </div>
+                        <div style="display:flex;gap:8px;font-size:11px;font-weight:900;">
+                            <div style="background:#1a1a1a;padding:4px 8px;border-radius:6px;">${stats.goals}G</div>
+                            <div style="background:#1a1a1a;padding:4px 8px;border-radius:6px;">${stats.assists}A</div>
+                            ${isGK ? `<div style="background:#1a1a1a;padding:4px 8px;border-radius:6px;">${stats.cs}CS</div>` : ''}
+                        </div>
+                    </div>
+                `).join('') : '<div class="text-zinc-500 text-sm">No stats available</div>'}
             </div>
         </div>
     `;
@@ -2829,11 +2964,11 @@ async function searchPlayer(e) {
     const query = document.getElementById('globalSearch').value.trim();
     if (!query) return;
 
-    await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS')]);
+    await Promise.all([loadStats('PREM'), loadStats('LALIGA'), loadStats('MLS'), loadStats('UCL')]);
     await ensureSearchIndex();
 
     const playerCandidates = [];
-    ['PREM', 'LALIGA', 'MLS'].forEach(lg => {
+    ['PREM', 'LALIGA', 'MLS', 'UCL'].forEach(lg => {
         const players = statsData[lg].players ? Object.values(statsData[lg].players) : [];
         players.forEach(p => {
             if (p && p.key && p.name) playerCandidates.push({ key: p.key, name: p.name, team: p.team || '' });
@@ -3114,12 +3249,31 @@ async function renderLeagueOverview(league) {
     const leagueLogos = {
         'PREM': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/47.png',
         'LALIGA': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/87.png',
-        'MLS': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/130.png'
+        'MLS': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/130.png',
+        'UCL': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/42.png',
+        'EUROPA': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/73.png'
     };
-    const leagueCountry = { PREM: 'England', LALIGA: 'Spain', MLS: 'USA' };
-    const leagueName = { PREM: 'Premier League', LALIGA: 'La Liga', MLS: 'MLS' };
+    const leagueCountry = { 
+        PREM: 'England', 
+        LALIGA: 'Spain', 
+        MLS: 'USA', 
+        UCL: 'Europe', 
+        EUROPA: 'Europe' 
+    };
+    const leagueName = { 
+        PREM: 'Premier League', 
+        LALIGA: 'La Liga', 
+        MLS: 'MLS', 
+        UCL: 'Champions League', 
+        EUROPA: 'Europa League' 
+    };
+    
+    const hasStats = ['PREM', 'LALIGA', 'MLS', 'UCL'].includes(league);
 
-    await Promise.all([loadStats(league), loadStandingsData(league)]);
+    await Promise.all([
+        hasStats ? loadStats(league) : Promise.resolve(),
+        loadStandingsData(league)
+    ]);
 
     content.innerHTML = `
         <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:20px 20px 0;margin-bottom:0;">
@@ -3134,7 +3288,7 @@ async function renderLeagueOverview(league) {
                 <div class="lov-tab active-lov-tab" onclick="switchLeagueTab(event,'overview','${league}')" style="padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid #00ff85;color:#fff;">Overview</div>
                 <div class="lov-tab" onclick="switchLeagueTab(event,'table','${league}')" style="padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;color:#888;border-bottom:2px solid transparent;">Table</div>
                 <div class="lov-tab" onclick="switchLeagueTab(event,'fixtures','${league}')" style="padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;color:#888;border-bottom:2px solid transparent;">Fixtures</div>
-                <div class="lov-tab" onclick="switchLeagueTab(event,'stats','${league}')" style="padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;color:#888;border-bottom:2px solid transparent;">Stats</div>
+                ${hasStats ? `<div class="lov-tab" onclick="switchLeagueTab(event,'stats','${league}')" style="padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;color:#888;border-bottom:2px solid transparent;">Stats</div>` : ''}
             </div>
         </div>
         <div id="leagueTabContent" style="margin-top:16px;"></div>
@@ -3163,15 +3317,61 @@ async function renderLeagueTabContent(tab, league) {
 
     if (tab === 'overview') {
         // Show top stats preview + table preview side by side
-        await Promise.all([loadStats(league), loadStandingsData(league)]);
-        const data = statsData[league];
+        const hasStats = ['PREM', 'LALIGA', 'MLS', 'UCL'].includes(league);
+        
+        if (hasStats) {
+            await Promise.all([loadStats(league), loadStandingsData(league)]);
+        } else {
+            await loadStandingsData(league);
+        }
+        
+        const data = statsData[league] || {};
         const standings = standingsCache[league]?.rows || [];
 
         // Full standings list
         const allRows = standings;
+        
+        const statsColumn = hasStats ? `
+            <div>
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;margin-bottom:12px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;">Top Scorers</div>
+                        <span style="font-size:11px;color:#00ff85;cursor:pointer;font-weight:800;" onclick="openFullLeaderboard('GOALS','${league}')">All ›</span>
+                    </div>
+                    ${(data.goals || []).slice(0, 3).map((p, i) => `
+                        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;${i < 2 ? 'border-bottom:1px solid #1a1a1a;' : ''}cursor:pointer;" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">
+                            <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                                ${makeSmallAvatar(p.name, p.team)}
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:13px;font-weight:700;">${p.name}</div>
+                                <div style="font-size:11px;color:#666;margin-top:2px;">${p.team}</div>
+                            </div>
+                            <div style="width:32px;height:32px;border-radius:50%;background:${i===0?'#c0392b':'#1a1a1a'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;">${p.value}</div>
+                        </div>`).join('')}
+                </div>
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;">Top Assists</div>
+                        <span style="font-size:11px;color:#00ff85;cursor:pointer;font-weight:800;" onclick="openFullLeaderboard('ASSISTS','${league}')">All ›</span>
+                    </div>
+                    ${(data.assists || []).slice(0, 3).map((p, i) => `
+                        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;${i < 2 ? 'border-bottom:1px solid #1a1a1a;' : ''}cursor:pointer;" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">
+                            <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                                ${makeSmallAvatar(p.name, p.team)}
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:13px;font-weight:700;">${p.name}</div>
+                                <div style="font-size:11px;color:#666;margin-top:2px;">${p.team}</div>
+                            </div>
+                            <div style="width:32px;height:32px;border-radius:50%;background:${i===0?'#2980b9':'#1a1a1a'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;">${p.value}</div>
+                        </div>`).join('')}
+                </div>
+                ${await renderMostRecentTOTM(league)}
+            </div>` : '';
 
         content.innerHTML = `
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div style="display:grid;grid-template-columns:${hasStats ? '1fr 1fr' : '1fr'};gap:12px;">
                 <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
                     <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;margin-bottom:12px;letter-spacing:0.8px;">Standings</div>
                     ${allRows.map(row => `
@@ -3183,29 +3383,9 @@ async function renderLeagueTabContent(tab, league) {
                             <span style="font-size:14px;font-weight:900;color:#00ff85;">${row.pts}</span>
                         </div>`).join('')}
                 </div>
-                <div>
-                    <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;margin-bottom:12px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                            <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;">Top Scorers</div>
-                            <span style="font-size:11px;color:#00ff85;cursor:pointer;font-weight:800;" onclick="openFullLeaderboard('GOALS','${league}')">All ›</span>
-                        </div>
-                        ${(data.goals || []).slice(0, 3).map((p, i) => `
-                            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;${i < 2 ? 'border-bottom:1px solid #1a1a1a;' : ''}cursor:pointer;" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">
-                                <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-                                    ${makeSmallAvatar(p.name, p.team)}
-                                </div>
-                                <div style="flex:1;min-width:0;">
-                                    <div style="font-size:13px;font-weight:700;">${p.name}</div>
-                                    <div style="font-size:11px;color:#666;margin-top:2px;">${p.team}</div>
-                                </div>
-                                <div style="width:32px;height:32px;border-radius:50%;background:${i===0?'#c0392b':'#1a1a1a'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;">${p.value}</div>
-                            </div>`).join('')}
-                    </div>
-                    <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                            <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;">Top Assists</div>
-                            <span style="font-size:11px;color:#00ff85;cursor:pointer;font-weight:800;" onclick="openFullLeaderboard('ASSISTS','${league}')">All ›</span>
-                        </div>
+                ${statsColumn}
+            </div>
+        `;
                         ${(data.assists || []).slice(0, 3).map((p, i) => `
                             <div style="display:flex;align-items:center;gap:12px;padding:10px 0;${i < 2 ? 'border-bottom:1px solid #1a1a1a;' : ''}cursor:pointer;" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">
                                 <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
