@@ -361,7 +361,7 @@
     </nav>
 
 <script>
-window.LOGOS = {
+const LOGOS = {
     "Liverpool": "https://resources.premierleague.com/premierleague25/badges-alt/14.svg",
     "Newcastle": "https://resources.premierleague.com/premierleague25/badges-alt/4.svg",
     "Chelsea": "https://resources.premierleague.com/premierleague25/badges-alt/8.svg",
@@ -500,7 +500,6 @@ window.LOGOS = {
     "Utrecht": "https://img.uefa.com/imgml/TP/teams/logos/32x32/52323.png",
     "M. Tel-Aviv": "https://img.uefa.com/imgml/TP/teams/logos/32x32/57477.png"
 };
-const LOGOS = window.LOGOS; // Shorthand for code that references it directly
 
 function _normMatch(s) {
     return (s || '')
@@ -830,15 +829,14 @@ function _jsEscapeSingle(s) {
     return (s || '').toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
-window.getLogo = function getLogo(team) {
+function getLogo(team) {
     if (!team) return "";
     const t = canonicalTeamName(team).trim();
     for (let key in LOGOS) {
         if (t.toLowerCase().includes(key.toLowerCase())) return LOGOS[key];
     }
     return `https://via.placeholder.com/24?text=${t.charAt(0)}`;
-};
-const getLogo = window.getLogo; // Shorthand
+}
 
 const SCHEDULE_URLS = {
     PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv',
@@ -1487,7 +1485,7 @@ function renderMatches() {
 // Track current matchday index for each league
 let currentTOTMIndex = { PREM: 0, LALIGA: 0, MLS: 0 };
 
-window.renderTOTMTab = async function renderTOTMTab(league, navDirection = 0) {
+async function renderTOTMTab(league, navDirection = 0) {
     document.querySelectorAll('[id^="totm-btn-"]').forEach(b => b.classList.remove('active-league'));
     const btn = document.getElementById(`totm-btn-${league}`);
     if (btn) btn.classList.add('active-league');
@@ -1748,7 +1746,7 @@ function changeDate(step) {
     renderMatches();
 }
 
-window.switchTab = function switchTab(t) {
+function switchTab(t) {
     currentView = t;
     const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
     allTabs.forEach(id => {
@@ -1773,8 +1771,7 @@ window.switchTab = function switchTab(t) {
     if (t === 'standings') renderStandings('PREM');
     if (t === 'stats') renderStats('PREM');
     if (t === 'totm') renderTOTMTab('PREM');
-};
-const switchTab = window.switchTab; // Shorthand
+}
 
 function backToView() {
     if (currentView === 'hub') switchTab('hub');
@@ -1800,7 +1797,7 @@ function getQualifyColor(lg, pos) {
     return 'transparent';
 }
 
-window.renderStandings = function renderStandings(lg) {
+function renderStandings(lg) {
     document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active-league'));
     document.getElementById(`btn-${lg}`).classList.add('active-league');
     const head = document.getElementById('standingsHead');
@@ -2337,7 +2334,7 @@ function showTeamLeaderboard(type){
     `;
 }
 
-window.renderStats = async function renderStats(lg) {
+async function renderStats(lg) {
     document.querySelectorAll('[id^="stat-btn-"]').forEach(b => b.classList.remove('active-league'));
     const btn = document.getElementById(`stat-btn-${lg}`);
     if (btn) btn.classList.add('active-league');
@@ -2603,7 +2600,7 @@ function _matchRowClickable(m, highlightWinner = false) {
     `;
 }
 
-window.viewTeam = async function viewTeam(teamName, league) {
+async function viewTeam(teamName, league) {
     currentTeam = { name: teamName, league };
     const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','league-overview-tab','player-tab','lineup-builder-tab'];
     allTabs.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
@@ -2762,7 +2759,7 @@ window.viewTeam = async function viewTeam(teamName, league) {
     showTeamLeaderboard('goals');
 }
 
-window.viewPlayer = async function viewPlayer(playerKeyOrName) {
+async function viewPlayer(playerKeyOrName) {
     const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','league-overview-tab','team-tab','lineup-builder-tab'];
     allTabs.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
     document.getElementById('player-tab').classList.remove('hidden');
@@ -3197,7 +3194,7 @@ if (localStorage.getItem('savedLineup')) {
 }
 
 // ===== LEAGUE OVERVIEW =====
-window.viewLeague = async function viewLeague(league) {
+async function viewLeague(league) {
     const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','team-tab','player-tab','lineup-builder-tab'];
     allTabs.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
     document.getElementById('league-overview-tab').classList.remove('hidden');
@@ -3395,23 +3392,6 @@ async function renderLeagueTabContent(tab, league) {
                         </div>`).join('')}
                 </div>
                 ${statsColumn}
-            </div>
-        `;
-                        ${(data.assists || []).slice(0, 3).map((p, i) => `
-                            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;${i < 2 ? 'border-bottom:1px solid #1a1a1a;' : ''}cursor:pointer;" onclick="viewPlayer('${_jsEscapeSingle(p.key)}')">
-                                <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-                                    ${makeSmallAvatar(p.name, p.team)}
-                                </div>
-                                <div style="flex:1;min-width:0;">
-                                    <div style="font-size:13px;font-weight:700;">${p.name}</div>
-                                    <div style="font-size:11px;color:#666;margin-top:2px;">${p.team}</div>
-                                </div>
-                                <div style="width:32px;height:32px;border-radius:50%;background:${i===0?'#c0392b':'#1a1a1a'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;">${p.value}</div>
-                            </div>`).join('')}
-                    </div>
-                    
-                    ${await renderMostRecentTOTM(league)}
-                </div>
             </div>
         `;
 
