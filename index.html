@@ -1485,7 +1485,7 @@ function renderMatches() {
 // Track current matchday index for each league
 let currentTOTMIndex = { PREM: 0, LALIGA: 0, MLS: 0 };
 
-async function renderTOTMTab(league, navDirection = 0) {
+window.renderTOTMTab = async function renderTOTMTab(league, navDirection = 0) {
     document.querySelectorAll('[id^="totm-btn-"]').forEach(b => b.classList.remove('active-league'));
     const btn = document.getElementById(`totm-btn-${league}`);
     if (btn) btn.classList.add('active-league');
@@ -1746,7 +1746,7 @@ function changeDate(step) {
     renderMatches();
 }
 
-function switchTab(t) {
+window.switchTab = function switchTab(t) {
     currentView = t;
     const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
     allTabs.forEach(id => {
@@ -1771,7 +1771,7 @@ function switchTab(t) {
     if (t === 'standings') renderStandings('PREM');
     if (t === 'stats') renderStats('PREM');
     if (t === 'totm') renderTOTMTab('PREM');
-}
+};
 
 function backToView() {
     if (currentView === 'hub') switchTab('hub');
@@ -1797,7 +1797,7 @@ function getQualifyColor(lg, pos) {
     return 'transparent';
 }
 
-function renderStandings(lg) {
+window.renderStandings = function renderStandings(lg) {
     document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active-league'));
     document.getElementById(`btn-${lg}`).classList.add('active-league');
     const head = document.getElementById('standingsHead');
@@ -2334,7 +2334,7 @@ function showTeamLeaderboard(type){
     `;
 }
 
-async function renderStats(lg) {
+window.renderStats = async function renderStats(lg) {
     document.querySelectorAll('[id^="stat-btn-"]').forEach(b => b.classList.remove('active-league'));
     const btn = document.getElementById(`stat-btn-${lg}`);
     if (btn) btn.classList.add('active-league');
@@ -2600,7 +2600,7 @@ function _matchRowClickable(m, highlightWinner = false) {
     `;
 }
 
-async function viewTeam(teamName, league) {
+window.viewTeam = async function viewTeam(teamName, league) {
     currentTeam = { name: teamName, league };
     const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','league-overview-tab','player-tab','lineup-builder-tab'];
     allTabs.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
@@ -2759,7 +2759,7 @@ async function viewTeam(teamName, league) {
     showTeamLeaderboard('goals');
 }
 
-async function viewPlayer(playerKeyOrName) {
+window.viewPlayer = async function viewPlayer(playerKeyOrName) {
     const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','league-overview-tab','team-tab','lineup-builder-tab'];
     allTabs.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
     document.getElementById('player-tab').classList.remove('hidden');
@@ -3194,7 +3194,7 @@ if (localStorage.getItem('savedLineup')) {
 }
 
 // ===== LEAGUE OVERVIEW =====
-async function viewLeague(league) {
+window.viewLeague = async function viewLeague(league) {
     const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','team-tab','player-tab','lineup-builder-tab'];
     allTabs.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
     document.getElementById('league-overview-tab').classList.remove('hidden');
