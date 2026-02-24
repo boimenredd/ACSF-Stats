@@ -1234,11 +1234,12 @@ async function init() {
     const pushMatch = (league, date, row, compOverride, colConfig) => {
         if (!date) return;
         
-        // Default columns (A-D): home=1, away=2, score=3, comp=4
-        const homeCol = colConfig?.home || 1;
-        const awayCol = colConfig?.away || 2;
-        const scoreCol = colConfig?.score || 3;
-        const compCol = colConfig?.comp || 4;
+        // colConfig contains 0-based array indices
+        // Default columns (B-E in sheet = indices 1-4 in array): home=1, away=2, score=3, comp=4
+        const homeCol = colConfig?.home ?? 1;
+        const awayCol = colConfig?.away ?? 2;
+        const scoreCol = colConfig?.score ?? 3;
+        const compCol = colConfig?.comp ?? 4;
         
         if (!row[homeCol] || !row[awayCol]) return;
         
@@ -1280,7 +1281,7 @@ async function init() {
         const isCustomColumns = typeof scheduleConfig === 'object' && scheduleConfig.url;
         const url = isCustomColumns ? scheduleConfig.url : scheduleConfig;
         const colConfig = isCustomColumns ? {
-            home: scheduleConfig.columns.home.charCodeAt(0) - 65, // A=0, B=1, etc.
+            home: scheduleConfig.columns.home.charCodeAt(0) - 65, // A=0, B=1, G=6, H=7
             away: scheduleConfig.columns.away.charCodeAt(0) - 65,
             score: scheduleConfig.columns.homeScore.charCodeAt(0) - 65,
             comp: 4
@@ -1296,22 +1297,26 @@ async function init() {
 
                     results.data.forEach((row, i) => {
                         if (i === 0) return;
-                        const cellA = row[0];
-                        const parsedA = cellA ? parseSheetDate(cellA) : null;
+                        
+                        // For custom columns, check the home column for dates/matchday markers
+                        // For default, check column A
+                        const dateCheckCol = colConfig?.home ?? 0;
+                        const cellToCheck = row[dateCheckCol];
+                        const parsedDate = cellToCheck ? parseSheetDate(cellToCheck) : null;
 
-                        if (parsedA === 'MATCHDAY_MARKER') {
+                        if (parsedDate === 'MATCHDAY_MARKER') {
                             currentDate = null;
                             awaitingDate = true;
                             pendingMatchRows = [];
-                            const homeCol = colConfig?.home || 1;
-                            const awayCol = colConfig?.away || 2;
+                            const homeCol = colConfig?.home ?? 1;
+                            const awayCol = colConfig?.away ?? 2;
                             if (row[homeCol] && row[awayCol]) pendingMatchRows.push(row);
                             return;
                         }
 
                         if (awaitingDate) {
-                            if (parsedA && parsedA !== 'MATCHDAY_MARKER') {
-                                currentDate = parsedA;
+                            if (parsedDate && parsedDate !== 'MATCHDAY_MARKER') {
+                                currentDate = parsedDate;
                                 awaitingDate = false;
                                 pendingMatchRows.forEach(r => pushMatch(k, currentDate, r, null, colConfig));
                                 pendingMatchRows = [];
@@ -1320,7 +1325,7 @@ async function init() {
                             return;
                         }
 
-                        if (parsedA && parsedA !== 'MATCHDAY_MARKER') currentDate = parsedA;
+                        if (parsedDate && parsedDate !== 'MATCHDAY_MARKER') currentDate = parsedDate;
                         pushMatch(k, currentDate, row, null, colConfig);
                     });
 
