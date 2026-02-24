@@ -3336,6 +3336,9 @@ async function renderLeagueTabContent(tab, league) {
         // Full standings list
         const allRows = standings;
         
+        // Get TOTM HTML if has stats
+        const totmHTML = hasStats ? await renderMostRecentTOTM(league) : '';
+        
         const statsColumn = hasStats ? `
             <div>
                 <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;margin-bottom:12px;">
@@ -3372,7 +3375,7 @@ async function renderLeagueTabContent(tab, league) {
                             <div style="width:32px;height:32px;border-radius:50%;background:${i===0?'#2980b9':'#1a1a1a'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;">${p.value}</div>
                         </div>`).join('')}
                 </div>
-                ${await renderMostRecentTOTM(league)}
+                ${totmHTML}
             </div>` : '';
 
         content.innerHTML = `
