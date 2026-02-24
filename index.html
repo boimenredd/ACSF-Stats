@@ -361,7 +361,7 @@
     </nav>
 
 <script>
-const LOGOS = {
+window.LOGOS = {
     "Liverpool": "https://resources.premierleague.com/premierleague25/badges-alt/14.svg",
     "Newcastle": "https://resources.premierleague.com/premierleague25/badges-alt/4.svg",
     "Chelsea": "https://resources.premierleague.com/premierleague25/badges-alt/8.svg",
@@ -500,6 +500,7 @@ const LOGOS = {
     "Utrecht": "https://img.uefa.com/imgml/TP/teams/logos/32x32/52323.png",
     "M. Tel-Aviv": "https://img.uefa.com/imgml/TP/teams/logos/32x32/57477.png"
 };
+const LOGOS = window.LOGOS; // Shorthand for code that references it directly
 
 function _normMatch(s) {
     return (s || '')
@@ -829,14 +830,15 @@ function _jsEscapeSingle(s) {
     return (s || '').toString().replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
-function getLogo(team) {
+window.getLogo = function getLogo(team) {
     if (!team) return "";
     const t = canonicalTeamName(team).trim();
     for (let key in LOGOS) {
         if (t.toLowerCase().includes(key.toLowerCase())) return LOGOS[key];
     }
     return `https://via.placeholder.com/24?text=${t.charAt(0)}`;
-}
+};
+const getLogo = window.getLogo; // Shorthand
 
 const SCHEDULE_URLS = {
     PREM: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1616061697&single=true&output=csv',
@@ -1772,6 +1774,7 @@ window.switchTab = function switchTab(t) {
     if (t === 'stats') renderStats('PREM');
     if (t === 'totm') renderTOTMTab('PREM');
 };
+const switchTab = window.switchTab; // Shorthand
 
 function backToView() {
     if (currentView === 'hub') switchTab('hub');
