@@ -240,6 +240,8 @@
                     <button id="btn-PREM" onclick="renderStandings('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
                     <button id="btn-LALIGA" onclick="renderStandings('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
                     <button id="btn-MLS" onclick="renderStandings('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
+                    <button id="btn-UCL" onclick="renderStandings('UCL')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">UCL</button>
+                    <button id="btn-EUROPA" onclick="renderStandings('EUROPA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">UEL</button>
                 </div>
                 <div class="px-4 overflow-x-auto">
                     <div class="bg-zinc-900/50 rounded-xl border border-zinc-800">
@@ -257,6 +259,7 @@
                     <button id="stat-btn-PREM" onclick="renderStats('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
                     <button id="stat-btn-LALIGA" onclick="renderStats('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
                     <button id="stat-btn-MLS" onclick="renderStats('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
+                    <button id="stat-btn-UCL" onclick="renderStats('UCL')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">UCL</button>
                     <button id="stat-btn-COMBINED" onclick="renderStats('COMBINED')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">COMBINED</button>
                 </div>
                 <div id="statsContent" class="px-4"></div>
@@ -448,7 +451,7 @@ const LOGOS = {
     "Sporting": "https://ssl.gstatic.com/onebox/media/sports/logos/58doDuhR0wW3WZE9PdODUw_48x48.png",
     "Inter": "https://ssl.gstatic.com/onebox/media/sports/logos/l2-icwsMhIvsbRw8AwC1yg_48x48.png",
     "Lazio": "https://upload.wikimedia.org/wikipedia/en/thumb/c/ce/S.S._Lazio_badge.svg/1280px-S.S._Lazio_badge.svg.png",
-    "Juventus": "https://ssl.gstatic.com/onebox/media/sports/logos/6lal-0xwWtos5HI99HRvuQ_48x48.png",
+    "Juventus": "https://upload.wikimedia.org/wikipedia/commons/9/99/Juventus_FC_2017_squared_icon_(white).png",
     "Atalanta": "https://ssl.gstatic.com/onebox/media/sports/logos/0XmrZHobvb6ua5tgMOnTEA_48x48.png",
     "Galatasaray": "https://ssl.gstatic.com/onebox/media/sports/logos/TWjoccvTU4JXZJZ3aW3cVg_48x48.png",
     "Olympiacos": "https://ssl.gstatic.com/onebox/media/sports/logos/FqnQ9nu7UDiSgnXKohdIgg_48x48.png",
@@ -465,8 +468,11 @@ const LOGOS = {
     "Union SG": "https://upload.wikimedia.org/wikipedia/en/0/02/Royale_Union_Saint-Gilloise_logo.png",
     "Dortmund": "https://ssl.gstatic.com/onebox/media/sports/logos/FZnTSH2rbHFos4BnlWAItw_48x48.png",
     "Eintracht Frankfurt": "https://ssl.gstatic.com/onebox/media/sports/logos/VOizBJPDHnvnSaU3XPVGAw_48x48.png",
+    "Frankfurt": "https://ssl.gstatic.com/onebox/media/sports/logos/VOizBJPDHnvnSaU3XPVGAw_48x48.png",
     "Slavia Praha": "https://ssl.gstatic.com/onebox/media/sports/logos/gfoznySB_HVFREKTmomtlg_48x48.png",
     "Ajax": "https://ssl.gstatic.com/onebox/media/sports/logos/WIAAdPpdzFwVKU7maFvJ6w_48x48.png",
+    "Bodo/Glimt": "https://img.uefa.com/imgml/TP/teams/logos/50x50/59333.png",
+    "Kairat Almaty": "https://img.uefa.com/imgml/TP/teams/logos/50x50/79970.png",
     "Lyon": "https://upload.wikimedia.org/wikipedia/en/thumb/1/1c/Olympique_Lyonnais_logo.svg/1280px-Olympique_Lyonnais_logo.svg.png",
     "Porto": "https://upload.wikimedia.org/wikipedia/sco/thumb/f/f1/FC_Porto.svg/500px-FC_Porto.svg.png",
     "Freiburg": "https://img.uefa.com/imgml/TP/teams/logos/32x32/59880.png",
@@ -981,7 +987,9 @@ const TOTM_CONFIG = {
         'Matchday 1': { startRow: 2, endRow: 221 }
     },
     UCL: {
-        'Matchday 8': { startRow: 2, endRow: 200 }
+        'Round 8': { startRow: 1278, endRow: 1486 },
+        'R16 PO Leg 1': { startRow: 1487, endRow: 1596 },
+        'R16 PO Leg 2': { startRow: 1597, endRow: 1695 }
     }
 };
 
@@ -1705,7 +1713,6 @@ function generateTOTMFromGroup(group, league) {
             <div class="totm-header">
                 <div class="totm-title">Team of the Matchday</div>
                 <div class="totm-subtitle">${LEAGUE_META[league]?.name || league} · ${labelStr}</div>
-                <button onclick="downloadTOTM('${league}', '${labelStr}')" style="position:absolute;top:8px;right:8px;background:#1a1a1a;border:1px solid #2a2a2a;color:#fff;padding:6px 12px;border-radius:8px;font-size:10px;font-weight:900;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='#00ff85'" onmouseout="this.style.borderColor='#2a2a2a'">↓ DOWNLOAD</button>
             </div>
             <div class="formation">${formationHTML}</div>
         </div>`;
@@ -1787,6 +1794,9 @@ function getQualifyColor(lg, pos) {
         if (pos <= 8) return '#22c55e';
         if (pos === 18) return '#facc15';
         if (pos >= 19) return '#ef4444';
+    } else if (lg === 'UCL' || lg === 'EUROPA') {
+        if (pos <= 8) return '#22c55e'; // Bright green for R16
+        if (pos <= 24) return '#3b82f6'; // Blue for R16 PO
     } else {
         if (pos === 1) return '#00ff85';
         if (pos <= 4) return '#3b82f6';
@@ -1834,6 +1844,8 @@ function renderStandings(lg) {
 
     const rules = lg === 'MLS'
         ? [{c:'#fbbf24', l:'Shield'}, {c:'#22c55e', l:'Playoffs'}, {c:'#facc15', l:'Rel PO'}, {c:'#ef4444', l:'Rel'}]
+        : (lg === 'UCL' || lg === 'EUROPA')
+        ? [{c:'#22c55e', l:'R16'}, {c:'#3b82f6', l:'R16 PO'}]
         : [{c:'#00ff85', l:'Champ'}, {c:'#3b82f6', l:'UCL'}, {c:'#fbbf24', l:'UEL'}, {c:'#166534', l:'UECL'}, {c:'#ef4444', l:'Rel'}];
     legend.innerHTML = rules.map(rule => `<div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:${rule.c}"></div><span class="text-[9px] font-black text-zinc-500 uppercase">${rule.l}</span></div>`).join('');
 }
@@ -2882,40 +2894,48 @@ async function viewPlayer(playerKeyOrName) {
                     <p class="text-zinc-400 text-sm flex items-center gap-2 mt-1">
                         <img src="${getLogo(playerData.team)}" class="w-4 h-4 object-contain">
                         <span class="cursor-pointer hover:text-[#00ff85]" onclick="viewTeam('${_jsEscapeSingle(playerData.team)}', '${playerData.league}')">${playerData.team}</span>
+                        <span class="text-zinc-600">·</span>
+                        <span>${playerData.league || '2025/2026'}</span>
                     </p>
                 </div>
             </div>
         </div>
 
         <div class="mt-6 stat-card">
-            <div class="text-[10px] font-black text-zinc-500 uppercase mb-2">Last 5 Match Ratings</div>
-            <div class="flex gap-2 flex-wrap">
-                ${(playerData.recentRatings && playerData.recentRatings.length ? playerData.recentRatings.slice(-5) : []).map(r => `
-                    <div class="${_ratingClass(r.rating)}">${r.rating != null ? Number(r.rating).toFixed(1) : '-'}</div>
-                `).join('') || '<div class="text-zinc-500 text-sm">No ratings yet</div>'}
-            </div>
-        </div>
-        
-        <div class="mt-6 stat-card">
-            <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Season Stats</div>
-            <div class="grid grid-cols-${isGK ? 4 : 3} gap-3">
-                <div class="text-center relative overflow-hidden">
-                    <div class="text-[10px] font-black text-zinc-500 uppercase">Goals</div>
-                    <div class="text-2xl font-black text-[#00ff85] mt-1">${totalGoals}</div>
-                </div>
-                <div class="text-center relative overflow-hidden">
-                    <div class="text-[10px] font-black text-zinc-500 uppercase">Assists</div>
-                    <div class="text-2xl font-black text-[#00ff85] mt-1">${totalAssists}</div>
-                </div>
-                ${isGK ? `
-                <div class="text-center relative overflow-hidden">
-                    <div class="text-[10px] font-black text-zinc-500 uppercase">Clean Sheets</div>
-                    <div class="text-2xl font-black text-[#00ff85] mt-1">${totalCS}</div>
-                </div>` : ''}
-                <div class="text-center relative overflow-hidden">
-                    <div class="text-[10px] font-black text-zinc-500 uppercase">Games</div>
-                    <div class="text-2xl font-black text-[#00ff85] mt-1">${totalMatches}</div>
-                </div>
+            <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Senior Career</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                ${Object.entries(competitionStats).map(([lg, stats]) => `
+                    <div style="display:flex;align-items:center;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;padding:12px 16px;">
+                        <div style="display:flex;align-items:center;gap:12px;flex:1;">
+                            <img src="${leagueLogos[lg]}" style="width:32px;height:32px;object-fit:contain;flex-shrink:0;">
+                            <div style="flex:1;">
+                                <div style="font-size:13px;font-weight:900;">${leagueNames[lg]}</div>
+                                <div style="font-size:11px;color:#666;margin-top:2px;">2025/2026</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:16px;align-items:center;">
+                            <div style="text-align:center;">
+                                <div style="font-size:18px;font-weight:900;color:#fff;">${stats.matches}</div>
+                                <div style="font-size:9px;color:#666;font-weight:800;margin-top:2px;">MP</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="font-size:18px;font-weight:900;color:#fff;">${stats.goals}</div>
+                                <div style="font-size:9px;color:#666;font-weight:800;margin-top:2px;">G</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="font-size:18px;font-weight:900;color:#fff;">${stats.assists}</div>
+                                <div style="font-size:9px;color:#666;font-weight:800;margin-top:2px;">A</div>
+                            </div>
+                            ${isGK ? `<div style="text-align:center;">
+                                <div style="font-size:18px;font-weight:900;color:#fff;">${stats.cs}</div>
+                                <div style="font-size:9px;color:#666;font-weight:800;margin-top:2px;">CS</div>
+                            </div>` : ''}
+                            <div style="background:#22c55e;padding:6px 10px;border-radius:8px;margin-left:8px;">
+                                <div style="font-size:14px;font-weight:900;color:#000;">${stats.avgRating.toFixed(2)}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
             </div>
         </div>
 
@@ -2932,21 +2952,12 @@ async function viewPlayer(playerKeyOrName) {
             </div>
             
             <div class="stat-card">
-                <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">By Competition</div>
-                ${Object.keys(competitionStats).length ? Object.entries(competitionStats).map(([lg, stats]) => `
-                    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #1a1a1a;">
-                        <img src="${leagueLogos[lg]}" style="width:24px;height:24px;object-fit:contain;flex-shrink:0;">
-                        <div style="flex:1;">
-                            <div style="font-size:12px;font-weight:700;">${leagueNames[lg]}</div>
-                            <div style="font-size:10px;color:#666;margin-top:2px;">${stats.matches} matches · ${stats.avgRating.toFixed(2)} avg</div>
-                        </div>
-                        <div style="display:flex;gap:8px;font-size:11px;font-weight:900;">
-                            <div style="background:#1a1a1a;padding:4px 8px;border-radius:6px;">${stats.goals}G</div>
-                            <div style="background:#1a1a1a;padding:4px 8px;border-radius:6px;">${stats.assists}A</div>
-                            ${isGK ? `<div style="background:#1a1a1a;padding:4px 8px;border-radius:6px;">${stats.cs}CS</div>` : ''}
-                        </div>
-                    </div>
-                `).join('') : '<div class="text-zinc-500 text-sm">No stats available</div>'}
+                <div class="text-[10px] font-black text-zinc-500 uppercase mb-2">Last 5 Match Ratings</div>
+                <div class="flex gap-2 flex-wrap mt-4">
+                    ${(playerData.recentRatings && playerData.recentRatings.length ? playerData.recentRatings.slice(-5) : []).map(r => `
+                        <div class="${_ratingClass(r.rating)}">${r.rating != null ? Number(r.rating).toFixed(1) : '-'}</div>
+                    `).join('') || '<div class="text-zinc-500 text-sm">No ratings yet</div>'}
+                </div>
             </div>
         </div>
     `;
