@@ -1981,9 +1981,21 @@ async function loadStats(league) {
     });
 
     const upsertPlayer = (name, team) => {
-        const n = (name || '').toString().trim();
+        let n = (name || '').toString().trim();
         const t = (team || '').toString().trim();
         if (!n) return null;
+        
+        // Normalize common player names
+        const nameReplacements = {
+            'Raphael Dias Belloli': 'Raphinha',
+            'Pedro González López': 'Pedri',
+            'Luis Alberto Suarez Diaz': 'Luis Suarez',
+            'Luis Fernando Díaz Marulanda': 'Luis Diaz'
+        };
+        
+        if (nameReplacements[n]) {
+            n = nameReplacements[n];
+        }
 
         const teamKey = canonicalTeamName(t);
         const key = _makePlayerKey(league, teamKey, n);
@@ -2124,6 +2136,7 @@ async function loadStats(league) {
                     const ratingRaw = (r.Rating || r.Score || r['Match Rating'] || r['rating'] || '').toString().trim();
                     const date = (r.Date || r.MatchDate || r['Date'] || '').toString().trim();
                     const opp = (r.Opponent || r.Opp || r['Opponent'] || '').toString().trim();
+                    const score = (r.Result || r.Score || r['Match Score'] || '').toString().trim();
 
                     const rating = parseFloat(ratingRaw);
                     if (Number.isNaN(rating)) return;
@@ -2132,7 +2145,7 @@ async function loadStats(league) {
                     if (!p) return;
 
                     p.matches = (p.matches || 0) + 1;
-                    p.recentRatings.push({ date, opponent: opp, rating });
+                    p.recentRatings.push({ date, opponent: opp, rating, score: score || '' });
                 });
             } else {
                 const rows = await parseCsv(src.ratingsLog, false);
@@ -2143,6 +2156,7 @@ async function loadStats(league) {
                     const team = (row[2] || '').toString().trim();
                     const date = (row[3] || '').toString().trim();
                     const opp = (row[4] || '').toString().trim();
+                    const score = (row[5] || '').toString().trim(); // Score if available
                     if (!name) return;
                     if (i === 0 && (name.toLowerCase() === 'player' || name.toLowerCase().includes('name'))) return;
 
@@ -2153,7 +2167,7 @@ async function loadStats(league) {
                     if (!p) return;
 
                     p.matches = (p.matches || 0) + 1;
-                    p.recentRatings.push({ date, opponent: opp, rating });
+                    p.recentRatings.push({ date, opponent: opp, rating, score: score || '' });
                 });
             }
         }
@@ -2922,7 +2936,8 @@ async function viewPlayer(playerKeyOrName) {
                     ...r,
                     league: lg,
                     leagueLogo: leagueLogos[lg],
-                    leagueName: leagueNames[lg]
+                    leagueName: leagueNames[lg],
+                    playerTeam: playerInLeague.team
                 });
             });
         }
@@ -2934,19 +2949,57 @@ async function viewPlayer(playerKeyOrName) {
         return new Date(b.date) - new Date(a.date);
     });
     
-    // Function to determine W/D/L from score
-    const getResult = (score, playerTeam, opponent) => {
-        if (!score || score === 'v' || !score.includes('-')) return '';
-        const parts = score.split('-').map(s => parseInt(s.trim()));
-        if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) return '';
+    // Function to format match result with bold team score
+    const formatMatchResult = (match) => {
+        if (!match.score) return { result: '', homeScore: '', awayScore: '' };
         
-        // Assume playerTeam is home if opponent is in the score
-        const homeScore = parts[0];
-        const awayScore = parts[1];
+        // Find the actual match from allMatches to determine home/away
+        const matchDate = match.date ? new Date(match.date) : null;
+        let isHome = true; // default assumption
         
-        if (homeScore > awayScore) return 'W';
-        if (homeScore < awayScore) return 'L';
-        return 'D';
+        if (matchDate) {
+            const gameMatch = allMatches.find(m => {
+                const mDate = m.date ? new Date(m.date) : null;
+                if (!mDate || !matchDate) return false;
+                const sameDay = mDate.toDateString() === matchDate.toDateString();
+                const teamInMatch = (m.home === match.playerTeam || m.away === match.playerTeam);
+                const oppInMatch = (m.home === match.opponent || m.away === match.opponent);
+                return sameDay && teamInMatch && oppInMatch;
+            });
+            
+            if (gameMatch) {
+                isHome = gameMatch.home === match.playerTeam;
+            }
+        }
+        
+        const parts = match.score.split('-').map(s => s.trim());
+        if (parts.length !== 2) return { result: '', homeScore: '', awayScore: '' };
+        
+        const homeScore = parseInt(parts[0]);
+        const awayScore = parseInt(parts[1]);
+        
+        if (isNaN(homeScore) || isNaN(awayScore)) return { result: '', homeScore: '', awayScore: '' };
+        
+        let result = '';
+        if (isHome) {
+            if (homeScore > awayScore) result = 'W';
+            else if (homeScore < awayScore) result = 'L';
+            else result = 'D';
+        } else {
+            if (awayScore > homeScore) result = 'W';
+            else if (awayScore < homeScore) result = 'L';
+            else result = 'D';
+        }
+        
+        return { 
+            result, 
+            homeScore, 
+            awayScore,
+            isHome,
+            formattedScore: isHome 
+                ? `<strong>${homeScore}</strong> - ${awayScore}`
+                : `${homeScore} - <strong>${awayScore}</strong>`
+        };
     };
 
     content.innerHTML = `
@@ -3007,23 +3060,24 @@ async function viewPlayer(playerKeyOrName) {
             <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Match Ratings</div>
             <div style="display:flex;flex-direction:column;gap:4px;max-height:600px;overflow-y:auto;">
                 ${allMatchRatings.length ? allMatchRatings.map(r => {
-                    const result = getResult(r.score, playerData.team, r.opponent);
-                    const resultColor = result === 'W' ? '#22c55e' : result === 'L' ? '#ef4444' : '#888';
+                    const matchInfo = formatMatchResult(r);
+                    const resultColor = matchInfo.result === 'W' ? '#22c55e' : matchInfo.result === 'L' ? '#ef4444' : '#888';
                     return `
                         <div style="display:flex;align-items:center;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:8px 12px;gap:12px;">
                             <img src="${r.leagueLogo}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0;">
                             <div style="font-size:11px;color:#666;width:70px;flex-shrink:0;">${r.date || '-'}</div>
-                            <div style="flex:1;display:flex;align-items:center;gap:8px;">
-                                <img src="${getLogo(r.opponent)}" style="width:18px;height:18px;object-fit:contain;">
-                                <span style="font-size:12px;font-weight:700;">${r.opponent || 'Unknown'}</span>
+                            <div style="flex:1;display:flex;align-items:center;gap:8px;min-width:0;">
+                                <img src="${getLogo(r.opponent)}" style="width:18px;height:18px;object-fit:contain;flex-shrink:0;">
+                                <span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.opponent || 'Unknown'}</span>
                             </div>
-                            ${result ? `<div style="display:flex;align-items:center;gap:8px;">
-                                <span style="font-size:11px;font-weight:900;color:${resultColor};">${result}</span>
-                                <span style="font-size:13px;font-weight:700;">${r.score || '-'}</span>
-                            </div>` : ''}
-                            <div style="display:flex;align-items:center;gap:6px;">
-                                <span style="color:#fbbf24;font-size:14px;">★</span>
-                                <span style="font-size:14px;font-weight:900;color:#00ff85;">${r.rating ? Number(r.rating).toFixed(1) : '-'}</span>
+                            ${matchInfo.result ? `
+                                <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                                    <span style="font-size:11px;font-weight:900;color:${resultColor};min-width:12px;">${matchInfo.result}</span>
+                                    <span style="font-size:13px;font-weight:700;">${matchInfo.formattedScore}</span>
+                                </div>
+                            ` : ''}
+                            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;background:${r.rating >= 8 ? '#22c55e' : r.rating >= 7 ? '#fbbf24' : r.rating >= 6 ? '#888' : '#ef4444'};padding:4px 8px;border-radius:6px;">
+                                <span style="font-size:14px;font-weight:900;color:#000;">${r.rating ? Number(r.rating).toFixed(1) : '-'}</span>
                             </div>
                         </div>
                     `;
