@@ -471,7 +471,7 @@ const LOGOS = {
     "Frankfurt": "https://ssl.gstatic.com/onebox/media/sports/logos/VOizBJPDHnvnSaU3XPVGAw_48x48.png",
     "Slavia Praha": "https://ssl.gstatic.com/onebox/media/sports/logos/gfoznySB_HVFREKTmomtlg_48x48.png",
     "Ajax": "https://ssl.gstatic.com/onebox/media/sports/logos/WIAAdPpdzFwVKU7maFvJ6w_48x48.png",
-    "Bodo/Glimt": "https://img.uefa.com/imgml/TP/teams/logos/50x50/59333.png",
+    "Bodo Glimt": "https://img.uefa.com/imgml/TP/teams/logos/50x50/59333.png",
     "Kairat Almaty": "https://img.uefa.com/imgml/TP/teams/logos/50x50/79970.png",
     "Lyon": "https://upload.wikimedia.org/wikipedia/en/thumb/1/1c/Olympique_Lyonnais_logo.svg/1280px-Olympique_Lyonnais_logo.svg.png",
     "Porto": "https://upload.wikimedia.org/wikipedia/sco/thumb/f/f1/FC_Porto.svg/500px-FC_Porto.svg.png",
@@ -570,7 +570,13 @@ const PHOTO_ALIAS_MAP = new Map(PHOTO_ALIAS_TO_ID);
 
 // Additional manual aliases for players with multiple known names
 PHOTO_ALIAS_MAP.set(normalizeName('Raphael Dias Belloli'), '229906'); // Raphinha
+PHOTO_ALIAS_MAP.set(normalizeName('Raphinha'), '229906'); // Raphinha short name
 PHOTO_ALIAS_MAP.set(normalizeName('Pedro González López'), '262464'); // Pedri
+PHOTO_ALIAS_MAP.set(normalizeName('Pedri'), '262464'); // Pedri short name
+PHOTO_ALIAS_MAP.set(normalizeName('Luis Alberto Suarez Diaz'), '176580'); // Luis Suarez
+PHOTO_ALIAS_MAP.set(normalizeName('Luis Suarez'), '176580'); // Luis Suarez short name
+PHOTO_ALIAS_MAP.set(normalizeName('Luis Fernando Díaz Marulanda'), '234799'); // Luis Diaz
+PHOTO_ALIAS_MAP.set(normalizeName('Luis Diaz'), '234799'); // Luis Diaz short name
 const PHOTO_NAME_LIST = PHOTO_ALIAS_TO_ID.map(x => x[0]);
 
 function getLocalPhotoById(id) {
@@ -2011,14 +2017,28 @@ async function loadStats(league) {
         const rows = await parseCsv(url, false);
         rows.forEach((row, i) => {
             if (!Array.isArray(row)) return;
-            const a = (row[0] || '').toString().trim();
-            const b = (row[1] || '').toString().trim();
-            const c = (row[2] || '').toString().trim();
-            if (!a) return;
+            let a = (row[0] || '').toString().trim();
+            let b = (row[1] || '').toString().trim();
+            let c = (row[2] || '').toString().trim();
+            let d = (row[3] || '').toString().trim();
+            
+            if (!a && !b) return;
+            
             // Skip header rows
-            if (i === 0 && (a.toLowerCase() === 'player' || a.toLowerCase().includes('name'))) return;
-            // Skip rows where column A is just a number (rank column)
+            if (i === 0 && (a.toLowerCase() === 'player' || a.toLowerCase().includes('name') || b.toLowerCase() === 'player' || b.toLowerCase().includes('name'))) return;
+            
+            // If column A is just a number and column B looks like a name, swap them
+            // This handles CSVs where rank is in column A, name in B, value in C, team in D
+            if (/^\d+$/.test(a) && b && !/^\d+$/.test(b)) {
+                // Rank in A, Name in B, likely Value in C, Team in D
+                a = b;
+                b = c;
+                c = d;
+            }
+            
+            // Skip if A is still just a number after potential swap
             if (/^\d+$/.test(a)) return;
+            if (!a) return;
 
             const val = parseInt(b, 10);
             const p = upsertPlayer(a, c);
@@ -2888,6 +2908,47 @@ async function viewPlayer(playerKeyOrName) {
         'UCL': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/42.png'
     };
 
+    // Collect all match ratings from all leagues
+    const allMatchRatings = [];
+    for (const lg of allLeagues) {
+        const pool = statsData[lg].players || {};
+        const playerInLeague = Object.values(pool).find(p => 
+            _normMatch(p.name) === _normMatch(playerData.name)
+        );
+        
+        if (playerInLeague && playerInLeague.recentRatings && playerInLeague.recentRatings.length) {
+            playerInLeague.recentRatings.forEach(r => {
+                allMatchRatings.push({
+                    ...r,
+                    league: lg,
+                    leagueLogo: leagueLogos[lg],
+                    leagueName: leagueNames[lg]
+                });
+            });
+        }
+    }
+    
+    // Sort by date descending (most recent first)
+    allMatchRatings.sort((a, b) => {
+        if (!a.date || !b.date) return 0;
+        return new Date(b.date) - new Date(a.date);
+    });
+    
+    // Function to determine W/D/L from score
+    const getResult = (score, playerTeam, opponent) => {
+        if (!score || score === 'v' || !score.includes('-')) return '';
+        const parts = score.split('-').map(s => parseInt(s.trim()));
+        if (parts.length !== 2 || isNaN(parts[0]) || isNaN(parts[1])) return '';
+        
+        // Assume playerTeam is home if opponent is in the score
+        const homeScore = parts[0];
+        const awayScore = parts[1];
+        
+        if (homeScore > awayScore) return 'W';
+        if (homeScore < awayScore) return 'L';
+        return 'D';
+    };
+
     content.innerHTML = `
         <div class="stat-card">
             <div class="flex items-center gap-4">
@@ -2942,25 +3003,42 @@ async function viewPlayer(playerKeyOrName) {
             </div>
         </div>
 
-        <div class="mt-6 grid grid-cols-2 gap-3">
-            <div class="stat-card">
-                <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Player Info</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
-                    ${infoItems.map((item, i) => `
-                        <div style="padding:14px 0;${i < infoItems.length - (infoItems.length % 2 === 0 ? 2 : 1) ? 'border-bottom:1px solid #1e1e1e;' : ''}${i % 2 === 0 ? 'padding-right:24px;border-right:1px solid #1e1e1e;' : 'padding-left:24px;'}">
-                            <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${item.value}</div>
-                            ${item.label ? `<div style="font-size:11px;color:#666;font-weight:600;">${item.label}</div>` : ''}
-                        </div>`).join('')}
-                </div>
+        <div class="mt-6 stat-card">
+            <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Match Ratings</div>
+            <div style="display:flex;flex-direction:column;gap:4px;max-height:600px;overflow-y:auto;">
+                ${allMatchRatings.length ? allMatchRatings.map(r => {
+                    const result = getResult(r.score, playerData.team, r.opponent);
+                    const resultColor = result === 'W' ? '#22c55e' : result === 'L' ? '#ef4444' : '#888';
+                    return `
+                        <div style="display:flex;align-items:center;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:8px 12px;gap:12px;">
+                            <img src="${r.leagueLogo}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0;">
+                            <div style="font-size:11px;color:#666;width:70px;flex-shrink:0;">${r.date || '-'}</div>
+                            <div style="flex:1;display:flex;align-items:center;gap:8px;">
+                                <img src="${getLogo(r.opponent)}" style="width:18px;height:18px;object-fit:contain;">
+                                <span style="font-size:12px;font-weight:700;">${r.opponent || 'Unknown'}</span>
+                            </div>
+                            ${result ? `<div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:11px;font-weight:900;color:${resultColor};">${result}</span>
+                                <span style="font-size:13px;font-weight:700;">${r.score || '-'}</span>
+                            </div>` : ''}
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <span style="color:#fbbf24;font-size:14px;">★</span>
+                                <span style="font-size:14px;font-weight:900;color:#00ff85;">${r.rating ? Number(r.rating).toFixed(1) : '-'}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('') : '<div style="color:#666;text-align:center;padding:20px;">No match ratings available</div>'}
             </div>
-            
-            <div class="stat-card">
-                <div class="text-[10px] font-black text-zinc-500 uppercase mb-2">Last 5 Match Ratings</div>
-                <div class="flex gap-2 flex-wrap mt-4">
-                    ${(playerData.recentRatings && playerData.recentRatings.length ? playerData.recentRatings.slice(-5) : []).map(r => `
-                        <div class="${_ratingClass(r.rating)}">${r.rating != null ? Number(r.rating).toFixed(1) : '-'}</div>
-                    `).join('') || '<div class="text-zinc-500 text-sm">No ratings yet</div>'}
-                </div>
+        </div>
+
+        <div class="mt-6 stat-card">
+            <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Player Info</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+                ${infoItems.map((item, i) => `
+                    <div style="padding:14px 0;${i < infoItems.length - (infoItems.length % 2 === 0 ? 2 : 1) ? 'border-bottom:1px solid #1e1e1e;' : ''}${i % 2 === 0 ? 'padding-right:24px;border-right:1px solid #1e1e1e;' : 'padding-left:24px;'}">
+                        <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${item.value}</div>
+                        ${item.label ? `<div style="font-size:11px;color:#666;font-weight:600;">${item.label}</div>` : ''}
+                    </div>`).join('')}
             </div>
         </div>
     `;
