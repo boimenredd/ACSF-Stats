@@ -850,11 +850,11 @@ const SCHEDULE_URLS = {
     MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1689966801&single=true&output=csv',
     UCL: {
         url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=284985759&single=true&output=csv',
-        columns: { home: 'A', away: 'B', homeScore: 'C', awayScore: 'D' }
+        columns: { home: 'B', away: 'C', homeScore: 'D', awayScore: 'D', dateCol: 'A' }
     },
     EUROPA: {
         url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=284985759&single=true&output=csv',
-        columns: { home: 'G', away: 'H', homeScore: 'I', awayScore: 'J' }
+        columns: { home: 'H', away: 'I', homeScore: 'J', awayScore: 'J', dateCol: 'G' }
     }
 };
 
@@ -1292,7 +1292,8 @@ async function init() {
             home: scheduleConfig.columns.home.charCodeAt(0) - 65, // A=0, B=1, G=6, H=7
             away: scheduleConfig.columns.away.charCodeAt(0) - 65,
             score: scheduleConfig.columns.homeScore.charCodeAt(0) - 65,
-            comp: 4
+            comp: 4,
+            dateCol: scheduleConfig.columns.dateCol ? scheduleConfig.columns.dateCol.charCodeAt(0) - 65 : 0 // Date column
         } : null;
         
         await new Promise(res => {
@@ -1306,9 +1307,8 @@ async function init() {
                     results.data.forEach((row, i) => {
                         if (i === 0) return;
                         
-                        // For custom columns, check the home column for dates/matchday markers
-                        // For default, check column A
-                        const dateCheckCol = colConfig?.home ?? 0;
+                        // For custom columns, use specified dateCol; for default, check column A (index 0)
+                        const dateCheckCol = colConfig?.dateCol ?? 0;
                         const cellToCheck = row[dateCheckCol];
                         const parsedDate = cellToCheck ? parseSheetDate(cellToCheck) : null;
 
@@ -2015,7 +2015,10 @@ async function loadStats(league) {
             const b = (row[1] || '').toString().trim();
             const c = (row[2] || '').toString().trim();
             if (!a) return;
+            // Skip header rows
             if (i === 0 && (a.toLowerCase() === 'player' || a.toLowerCase().includes('name'))) return;
+            // Skip rows where column A is just a number (rank column)
+            if (/^\d+$/.test(a)) return;
 
             const val = parseInt(b, 10);
             const p = upsertPlayer(a, c);
