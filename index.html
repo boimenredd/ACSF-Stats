@@ -1676,63 +1676,93 @@ function generateTOTMFromGroup(group, league) {
     console.log(`Final (${formation.length}): DEF=[${def.map(p => p.name).join(',')}] MID=[${mid.map(p => p.name).join(',')}] FWD=[${fwd.map(p => p.name).join(',')}]`);
     console.log(`Top rating: ${topRating}`);
 
-    const renderPlayer = (p) => {
-        const isTop = p.rating === topRating;
+    const renderPlayer = (p, league) => {
         const photoUrl = getPlayerPhotoUrl(p.name, p.team) || p.photoUrl || '';
         const teamLogo = getLogo(p.team);
         const initials = getInitials(p.name);
         const clickFn = p.key ? `viewPlayer('${_jsEscapeSingle(p.key)}')` : '';
-        const shortName = p.name.toUpperCase().split(' ').pop();
-        
-        // League-specific styling
-        let containerStyle = '';
-        let nameStyle = '';
-        let ratingStyle = '';
-        let ratingBg = '';
+        const lastName = p.name.toUpperCase().split(' ').pop();
         
         if (league === 'PREM') {
-            // Premier League: Purple/pink theme
-            containerStyle = 'position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;';
-            nameStyle = 'font-size:12px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:0.5px;text-align:center;';
-            ratingBg = isTop ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' : '#00d9ff';
-            ratingStyle = `position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);background:${ratingBg};color:#000;font-size:13px;font-weight:900;padding:4px 10px;border-radius:6px;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.3);`;
-        } else if (league === 'LALIGA') {
-            // La Liga: Red/orange theme  
-            containerStyle = 'position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;';
-            nameStyle = 'font-size:12px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:0.5px;text-align:center;';
-            ratingBg = isTop ? '#ff4444' : '#00d9ff';
-            ratingStyle = `position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);background:${ratingBg};color:#fff;font-size:13px;font-weight:900;padding:4px 10px;border-radius:6px;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.3);`;
-        } else if (league === 'MLS') {
-            // MLS: Modern card style
-            containerStyle = 'position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;';
-            nameStyle = 'font-size:11px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:0.5px;background:#000;padding:6px 12px;border-radius:0 0 8px 8px;text-align:center;width:100%;';
-            ratingBg = '#00d9ff';
-            ratingStyle = `position:absolute;bottom:32px;right:8px;background:${ratingBg};color:#000;font-size:13px;font-weight:900;padding:4px 10px;border-radius:6px;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.3);`;
-        } else {
-            // UCL: Blue/white theme
-            containerStyle = 'position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;';
-            nameStyle = 'font-size:12px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:0.5px;background:#001f5c;padding:6px 12px;border-radius:0 0 8px 8px;text-align:center;width:100%;border:2px solid #0066ff;';
-            ratingBg = '#00d9ff';
-            ratingStyle = `position:absolute;bottom:32px;right:8px;background:${ratingBg};color:#000;font-size:13px;font-weight:900;padding:4px 10px;border-radius:6px;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.3);`;
-        }
-        
-        return `
-            <div style="${containerStyle}" ${clickFn ? `onclick="${clickFn}"` : ''}>
-                <div style="position:relative;width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid ${league === 'PREM' ? '#a855f7' : league === 'LALIGA' ? '#ff4444' : league === 'MLS' ? '#00d9ff' : '#0066ff'};box-shadow:0 4px 12px rgba(0,0,0,0.5);">
-                    ${photoUrl
-                        ? `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML='<div style=width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#666;>${initials}</div>'">`
-                        : `<div style="width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#666;">${initials}</div>`}
-                    <div style="position:absolute;bottom:4px;left:4px;width:24px;height:24px;border-radius:50%;overflow:hidden;background:#fff;padding:2px;">
-                        <img src="${teamLogo}" style="width:100%;height:100%;object-fit:contain;">
+            // Premier League style - outlined circles with floating badge
+            return `
+                <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;" ${clickFn ? `onclick="${clickFn}"` : ''}>
+                    <div style="position:relative;width:90px;height:90px;">
+                        <div style="width:100%;height:100%;border-radius:50%;border:3px solid rgba(255,255,255,0.3);overflow:hidden;background:#1a1a1a;">
+                            ${photoUrl ? `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:#666;">${initials}</div>`}
+                        </div>
+                        <div style="position:absolute;bottom:-4px;left:-4px;width:32px;height:32px;background:#fff;border-radius:50%;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+                            <img src="${teamLogo}" style="width:100%;height:100%;object-fit:contain;">
+                        </div>
+                        <div style="position:absolute;bottom:-8px;right:-8px;background:linear-gradient(135deg,#00d9ff,#0099cc);color:#fff;font-size:14px;font-weight:900;padding:6px 10px;border-radius:8px;box-shadow:0 3px 10px rgba(0,0,0,0.4);display:flex;align-items:center;gap:3px;">
+                            <span style="color:#fbbf24;">★</span>${p.rating.toFixed(1)}
+                        </div>
                     </div>
-                </div>
-                <div style="${ratingStyle}">${p.rating.toFixed(1)}</div>
-                <div style="${nameStyle}">${shortName}</div>
-            </div>`;
+                    <div style="font-size:13px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:0.5px;text-shadow:0 2px 4px rgba(0,0,0,0.5);">${lastName}</div>
+                </div>`;
+        } else if (league === 'LALIGA') {
+            // La Liga style - clean circles with corner badge
+            return `
+                <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;" ${clickFn ? `onclick="${clickFn}"` : ''}>
+                    <div style="position:relative;width:85px;height:85px;">
+                        <div style="width:100%;height:100%;border-radius:50%;overflow:hidden;background:#1a1a1a;border:2px solid rgba(255,68,68,0.3);">
+                            ${photoUrl ? `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#666;">${initials}</div>`}
+                        </div>
+                        <div style="position:absolute;bottom:2px;left:2px;width:28px;height:28px;background:#fff;border-radius:50%;padding:2px;box-shadow:0 2px 6px rgba(0,0,0,0.3);">
+                            <img src="${teamLogo}" style="width:100%;height:100%;object-fit:contain;">
+                        </div>
+                        <div style="position:absolute;top:-6px;right:-6px;background:#00d9ff;color:#fff;font-size:13px;font-weight:900;padding:5px 9px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.4);">${p.rating.toFixed(1)}</div>
+                    </div>
+                    <div style="font-size:12px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:0.5px;">${lastName}</div>
+                </div>`;
+        } else if (league === 'MLS') {
+            // MLS style - card format with colored background and name bar
+            const cardColors = ['#e11d48', '#f43f5e', '#0891b2', '#fbbf24', '#f59e0b', '#ec4899'];
+            const cardBg = cardColors[Math.floor(Math.random() * cardColors.length)];
+            return `
+                <div style="position:relative;width:140px;border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.2);cursor:pointer;" ${clickFn ? `onclick="${clickFn}"` : ''}>
+                    <div style="position:relative;width:100%;height:180px;background:${cardBg};padding:12px;">
+                        <div style="position:absolute;top:8px;left:8px;width:32px;height:32px;background:#fff;border-radius:8px;padding:4px;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+                            <img src="${teamLogo}" style="width:100%;height:100%;object-fit:contain;">
+                        </div>
+                        <div style="position:absolute;top:8px;right:8px;background:#00d9ff;color:#000;font-size:13px;font-weight:900;padding:4px 10px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.3);">${p.rating.toFixed(1)}</div>
+                        <div style="position:absolute;bottom:0;left:0;width:100%;height:140px;border-radius:12px 12px 0 0;overflow:hidden;background:rgba(0,0,0,0.1);">
+                            ${photoUrl ? `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;object-position:top;">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:900;color:rgba(255,255,255,0.3);">${initials}</div>`}
+                        </div>
+                        <div style="position:absolute;bottom:12px;left:12px;right:12px;background:rgba(255,255,255,0.9);padding:4px 8px;border-radius:6px;text-align:center;">
+                            <div style="font-size:10px;font-weight:900;color:#000;text-transform:uppercase;">GOOOAL</div>
+                        </div>
+                    </div>
+                    <div style="background:#000;color:#fff;font-size:12px;font-weight:900;padding:8px;text-align:center;text-transform:uppercase;letter-spacing:0.5px;">${lastName}</div>
+                </div>`;
+        } else {
+            // UCL style - hexagonal frames
+            return `
+                <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;" ${clickFn ? `onclick="${clickFn}"` : ''}>
+                    <div style="position:relative;width:100px;height:110px;">
+                        <svg viewBox="0 0 100 110" style="position:absolute;top:0;left:0;width:100%;height:100%;">
+                            <defs>
+                                <clipPath id="hexClip-${p.name.replace(/\s+/g,'')}">
+                                    <path d="M50 5 L90 25 L90 75 L50 95 L10 75 L10 25 Z"/>
+                                </clipPath>
+                            </defs>
+                            <path d="M50 5 L90 25 L90 75 L50 95 L10 75 L10 25 Z" fill="none" stroke="rgba(0,102,255,0.5)" stroke-width="2"/>
+                        </svg>
+                        <div style="position:absolute;top:8px;left:12px;right:12px;bottom:8px;clip-path:polygon(50% 0%, 100% 20%, 100% 70%, 50% 90%, 0% 70%, 0% 20%);overflow:hidden;background:#001f5c;">
+                            ${photoUrl ? `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#666;">${initials}</div>`}
+                        </div>
+                        <div style="position:absolute;top:75px;left:50%;transform:translateX(-50%);width:36px;height:36px;background:#fff;border-radius:50%;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,0.4);">
+                            <img src="${teamLogo}" style="width:100%;height:100%;object-fit:contain;">
+                        </div>
+                        <div style="position:absolute;top:0px;right:-8px;background:#00d9ff;color:#000;font-size:12px;font-weight:900;padding:4px 8px;border-radius:6px;box-shadow:0 2px 8px rgba(0,0,0,0.4);">${p.rating.toFixed(1)}</div>
+                    </div>
+                    <div style="background:#001f5c;border:2px solid #0066ff;color:#fff;font-size:11px;font-weight:900;padding:6px 16px;border-radius:0 0 8px 8px;text-transform:uppercase;letter-spacing:0.5px;min-width:80px;text-align:center;">${lastName}</div>
+                </div>`;
+        }
     };
 
     const lineHTML = (arr) => arr.length
-        ? `<div class="formation-line">${arr.map(renderPlayer).join('')}</div>`
+        ? `<div class="formation-line">${arr.map(p => renderPlayer(p, league)).join('')}</div>`
         : '';
 
     // Positions from top (fwd) to bottom (gk)
@@ -1742,39 +1772,60 @@ function generateTOTMFromGroup(group, league) {
     let formationHTML = '';
     lines.forEach((line, i) => {
         if (!line.length) return;
-        formationHTML += `<div class="formation-line" style="top:${positions[i]};">${line.map(renderPlayer).join('')}</div>`;
+        formationHTML += `<div class="formation-line" style="top:${positions[i]};">${line.map(p => renderPlayer(p, league)).join('')}</div>`;
     });
     
-    // League-specific background and title styling
-    let bgGradient = '';
-    let titleStyle = '';
-    let subtitleStyle = '';
+    // League-specific backgrounds and titles
+    let containerStyle = '';
+    let headerHTML = '';
     
     if (league === 'PREM') {
-        bgGradient = 'linear-gradient(135deg, #1a0033 0%, #4c1d95 50%, #7c2d12 100%)';
-        titleStyle = 'font-size:36px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:2px;text-shadow:0 4px 8px rgba(0,0,0,0.5);background:linear-gradient(90deg, #a855f7, #ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;';
-        subtitleStyle = 'font-size:13px;font-weight:700;color:#ccc;text-transform:uppercase;letter-spacing:1px;';
+        containerStyle = 'background:linear-gradient(135deg, #1a0033 0%, #4c1d95 50%, #7c2d12 100%);position:relative;min-height:700px;padding:40px 20px;';
+        headerHTML = `
+            <div style="text-align:center;margin-bottom:40px;">
+                <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px;">
+                    <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/47.png" style="width:48px;height:48px;">
+                    <div style="font-size:48px;font-weight:900;background:linear-gradient(90deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-transform:uppercase;letter-spacing:2px;">Team of the week</div>
+                </div>
+                <div style="font-size:13px;font-weight:700;color:#ccc;text-transform:uppercase;">PREMIER LEAGUE 2024/25 · ${labelStr}</div>
+            </div>`;
     } else if (league === 'LALIGA') {
-        bgGradient = 'linear-gradient(135deg, #1a0000 0%, #7f1d1d 50%, #991b1b 100%)';
-        titleStyle = 'font-size:42px;font-weight:900;color:#ff4444;text-transform:uppercase;letter-spacing:2px;font-style:italic;text-shadow:0 4px 8px rgba(0,0,0,0.8);';
-        subtitleStyle = 'font-size:12px;font-weight:700;color:#ccc;text-transform:uppercase;';
+        containerStyle = 'background:linear-gradient(135deg, #1a0000 0%, #450a0a 100%);position:relative;min-height:700px;padding:40px 20px;overflow:hidden;';
+        headerHTML = `
+            <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(255,68,68,0.03) 20px,rgba(255,68,68,0.03) 40px);pointer-events:none;"></div>
+            <div style="text-align:center;margin-bottom:40px;position:relative;z-index:1;">
+                <div style="font-size:12px;font-weight:700;color:#999;text-transform:uppercase;margin-bottom:8px;">LALIGA 2024/25<br>${labelStr}</div>
+                <div style="font-size:52px;font-weight:900;color:#ff4444;text-transform:uppercase;font-style:italic;letter-spacing:1px;text-shadow:0 4px 12px rgba(0,0,0,0.8);position:relative;">
+                    <span style="position:relative;">Team of the week</span>
+                    <div style="position:absolute;top:50%;left:0;right:0;height:8px;background:repeating-linear-gradient(90deg,transparent,transparent 10px,rgba(255,255,255,0.1) 10px,rgba(255,255,255,0.1) 20px);transform:translateY(-50%);"></div>
+                </div>
+            </div>`;
     } else if (league === 'MLS') {
-        bgGradient = 'linear-gradient(135deg, #fee2e2 0%, #fca5a5 50%, #ef4444 100%)';
-        titleStyle = 'font-size:38px;font-weight:900;color:#000;text-transform:uppercase;letter-spacing:1px;';
-        subtitleStyle = 'font-size:13px;font-weight:700;color:#333;text-transform:uppercase;';
+        containerStyle = 'background:linear-gradient(135deg, #fee2e2 0%, #fca5a5 40%, #fb923c 100%);position:relative;min-height:700px;padding:40px 20px;';
+        headerHTML = `
+            <div style="text-align:center;margin-bottom:40px;">
+                <div style="display:flex;align-items:center;justify-content:center;gap:20px;">
+                    <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/130.png" style="width:64px;height:64px;">
+                    <div style="font-size:48px;font-weight:900;color:#000;text-transform:uppercase;letter-spacing:1px;">TEAM<br><span style="font-size:28px;">OF THE</span><br>MATCHDAY</div>
+                    <div style="font-size:16px;font-weight:900;color:#000;text-transform:uppercase;padding:12px 20px;background:rgba(255,255,255,0.9);border-radius:12px;">MATCHDAY 1</div>
+                </div>
+            </div>`;
     } else {
-        bgGradient = 'linear-gradient(135deg, #001133 0%, #001f5c 50%, #0066ff 100%)';
-        titleStyle = 'font-size:40px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:3px;text-shadow:0 4px 8px rgba(0,0,0,0.8);';
-        subtitleStyle = 'font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;';
+        containerStyle = 'background:linear-gradient(135deg, #001133 0%, #001f5c 50%, #0047ab 100%);position:relative;min-height:700px;padding:40px 20px;';
+        headerHTML = `
+            <div style="text-align:center;margin-bottom:40px;">
+                <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:12px;">
+                    <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/42.png" style="width:56px;height:56px;">
+                    <div style="font-size:52px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:4px;text-shadow:0 4px 12px rgba(0,0,0,0.8);">TEAM OF<br><span style="font-size:38px;">THE</span> WEEK</div>
+                </div>
+                <div style="font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;">UEFA CHAMPIONS LEAGUE · ${labelStr}</div>
+            </div>`;
     }
 
     return `
-        <div class="totm-container" id="totm-download-target" style="background:${bgGradient};">
-            <div class="totm-header">
-                <div style="${titleStyle}">TEAM OF THE ${league === 'MLS' ? 'MATCHDAY' : 'WEEK'}</div>
-                <div style="${subtitleStyle}">${LEAGUE_META[league]?.name || league} · ${labelStr}</div>
-            </div>
-            <div class="formation">${formationHTML}</div>
+        <div class="totm-container" id="totm-download-target" style="${containerStyle}">
+            ${headerHTML}
+            <div class="formation" style="position:relative;max-width:900px;margin:0 auto;">${formationHTML}</div>
         </div>`;
 }
 
@@ -2205,12 +2256,13 @@ async function loadStats(league) {
                 const rows = await parseCsv(src.ratingsLog, false);
                 rows.forEach((row, i) => {
                     if (!Array.isArray(row)) return;
-                    const name = (row[0] || '').toString().trim();
-                    const ratingRaw = (row[1] || '').toString().trim();
-                    const team = (row[2] || '').toString().trim();
-                    const date = (row[3] || '').toString().trim();
-                    const opp = (row[4] || '').toString().trim();
-                    const score = (row[5] || '').toString().trim(); // Score if available
+                    const name = (row[0] || '').toString().trim(); // A
+                    const position = (row[1] || '').toString().trim(); // B
+                    const ratingRaw = (row[2] || '').toString().trim(); // C
+                    const team = (row[3] || '').toString().trim(); // D
+                    const date = (row[4] || '').toString().trim(); // E
+                    const opp = (row[5] || '').toString().trim(); // F
+                    const score = (row[6] || '').toString().trim(); // G
                     if (!name) return;
                     if (i === 0 && (name.toLowerCase() === 'player' || name.toLowerCase().includes('name'))) return;
 
