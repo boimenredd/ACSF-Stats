@@ -2152,12 +2152,13 @@ async function loadStats(league) {
                 const rows = await parseCsv(src.ratingsLog, false);
                 rows.forEach((row, i) => {
                     if (!Array.isArray(row)) return;
-                    const name = (row[0] || '').toString().trim();
-                    const ratingRaw = (row[1] || '').toString().trim();
-                    const team = (row[2] || '').toString().trim();
-                    const date = (row[3] || '').toString().trim();
-                    const opp = (row[4] || '').toString().trim();
-                    const score = (row[5] || '').toString().trim(); // Score if available
+                    const name = (row[0] || '').toString().trim(); // A
+                    const position = (row[1] || '').toString().trim(); // B
+                    const ratingRaw = (row[2] || '').toString().trim(); // C
+                    const team = (row[3] || '').toString().trim(); // D
+                    const date = (row[4] || '').toString().trim(); // E
+                    const opp = (row[5] || '').toString().trim(); // F
+                    const score = (row[6] || '').toString().trim(); // G
                     if (!name) return;
                     if (i === 0 && (name.toLowerCase() === 'player' || name.toLowerCase().includes('name'))) return;
 
