@@ -2129,7 +2129,10 @@ async function loadStats(league) {
             const isObj = objRows.length && typeof objRows[0] === 'object' && !Array.isArray(objRows[0]);
 
             if (isObj) {
-                objRows.forEach((r) => {
+                console.log(`${league} Ratings Log (object mode) - First 3 rows:`, objRows.slice(0, 3));
+                console.log(`${league} First row keys:`, Object.keys(objRows[0] || {}));
+                
+                objRows.forEach((r, idx) => {
                     const name = (r.Player || r.Name || r['Player Name'] || r['player'] || '').toString().trim();
                     if (!name) return;
 
@@ -2138,6 +2141,10 @@ async function loadStats(league) {
                     const date = (r.Date || r.MatchDate || r['Date'] || '').toString().trim();
                     const opp = (r.Opponent || r.Opp || r['Opponent'] || '').toString().trim();
                     const score = (r.Result || r.Score || r['Match Score'] || '').toString().trim();
+
+                    if (idx < 3) {
+                        console.log(`${league} Row ${idx} parsed - Name:${name} Team:${team} Rating:${ratingRaw} Date:${date} Opp:${opp}`);
+                    }
 
                     const rating = parseFloat(ratingRaw);
                     if (Number.isNaN(rating)) return;
