@@ -2874,6 +2874,11 @@ async function viewPlayer(playerKeyOrName) {
     
     // Calculate per-competition stats
     const allLeagues = ['PREM', 'LALIGA', 'MLS', 'UCL'];
+    
+    console.log('=== STARTING PLAYER PAGE RENDER ===');
+    console.log('PlayerData:', playerData);
+    console.log('StatsData available:', Object.keys(statsData));
+    
     const competitionStats = {};
     let totalGoals = 0, totalAssists = 0, totalCS = 0, totalMatches = 0;
     
@@ -3070,8 +3075,11 @@ async function viewPlayer(playerKeyOrName) {
         if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
         return dateB - dateA;
     });
+    
+    console.log('About to render player page HTML');
 
-    content.innerHTML = `
+    try {
+        content.innerHTML = `
         <div class="stat-card">
             <div class="flex items-center gap-4">
                 ${renderPlayerAvatarHTML(playerData.name, playerData.team)}
@@ -3164,6 +3172,10 @@ async function viewPlayer(playerKeyOrName) {
             </div>
         </div>
     `;
+    } catch (error) {
+        console.error('Error rendering player page:', error);
+        content.innerHTML = `<div class="text-center text-red-500 py-8">Error loading player: ${error.message}</div>`;
+    }
 }
 
 function formatDOB(dob) {
