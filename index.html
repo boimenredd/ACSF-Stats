@@ -1678,56 +1678,25 @@ function generateTOTMFromGroup(group, league) {
 
     const renderPlayer = (p) => {
         const isTop = p.rating === topRating;
+        const ratingClass = isTop ? 'formation-rating formation-rating-top' : 'formation-rating';
         const photoUrl = getPlayerPhotoUrl(p.name, p.team) || p.photoUrl || '';
         const teamLogo = getLogo(p.team);
         const initials = getInitials(p.name);
         const clickFn = p.key ? `viewPlayer('${_jsEscapeSingle(p.key)}')` : '';
-        const shortName = p.name.toUpperCase().split(' ').pop();
-        
-        // League-specific styling
-        let containerStyle = '';
-        let nameStyle = '';
-        let ratingStyle = '';
-        let ratingBg = '';
-        
-        if (league === 'PREM') {
-            // Premier League: Purple/pink theme
-            containerStyle = 'position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;';
-            nameStyle = 'font-size:12px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:0.5px;text-align:center;';
-            ratingBg = isTop ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)' : '#00d9ff';
-            ratingStyle = `position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);background:${ratingBg};color:#000;font-size:13px;font-weight:900;padding:4px 10px;border-radius:6px;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.3);`;
-        } else if (league === 'LALIGA') {
-            // La Liga: Red/orange theme  
-            containerStyle = 'position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;';
-            nameStyle = 'font-size:12px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:0.5px;text-align:center;';
-            ratingBg = isTop ? '#ff4444' : '#00d9ff';
-            ratingStyle = `position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);background:${ratingBg};color:#fff;font-size:13px;font-weight:900;padding:4px 10px;border-radius:6px;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.3);`;
-        } else if (league === 'MLS') {
-            // MLS: Modern card style
-            containerStyle = 'position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;';
-            nameStyle = 'font-size:11px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:0.5px;background:#000;padding:6px 12px;border-radius:0 0 8px 8px;text-align:center;width:100%;';
-            ratingBg = '#00d9ff';
-            ratingStyle = `position:absolute;bottom:32px;right:8px;background:${ratingBg};color:#000;font-size:13px;font-weight:900;padding:4px 10px;border-radius:6px;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.3);`;
-        } else {
-            // UCL: Blue/white theme
-            containerStyle = 'position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;';
-            nameStyle = 'font-size:12px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:0.5px;background:#001f5c;padding:6px 12px;border-radius:0 0 8px 8px;text-align:center;width:100%;border:2px solid #0066ff;';
-            ratingBg = '#00d9ff';
-            ratingStyle = `position:absolute;bottom:32px;right:8px;background:${ratingBg};color:#000;font-size:13px;font-weight:900;padding:4px 10px;border-radius:6px;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.3);`;
-        }
+        const shortName = p.name.split(' ').pop();
         
         return `
-            <div style="${containerStyle}" ${clickFn ? `onclick="${clickFn}"` : ''}>
-                <div style="position:relative;width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid ${league === 'PREM' ? '#a855f7' : league === 'LALIGA' ? '#ff4444' : league === 'MLS' ? '#00d9ff' : '#0066ff'};box-shadow:0 4px 12px rgba(0,0,0,0.5);">
+            <div class="formation-player" ${clickFn ? `onclick="${clickFn}"` : ''}>
+                <div class="formation-avatar">
                     ${photoUrl
-                        ? `<img src="${photoUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.outerHTML='<div style=width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#666;>${initials}</div>'">`
-                        : `<div style="width:100%;height:100%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#666;">${initials}</div>`}
-                    <div style="position:absolute;bottom:4px;left:4px;width:24px;height:24px;border-radius:50%;overflow:hidden;background:#fff;padding:2px;">
-                        <img src="${teamLogo}" style="width:100%;height:100%;object-fit:contain;">
+                        ? `<img src="${photoUrl}" class="formation-avatar-img" onerror="this.outerHTML='<div style=width:64px;height:64px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#666;>${initials}</div>'">`
+                        : `<div style="width:64px;height:64px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#666;">${initials}</div>`}
+                    <div class="formation-avatar-team-logo">
+                        <img src="${teamLogo}" alt="${p.team}">
                     </div>
+                    <div class="${ratingClass}">${p.rating.toFixed(1)}</div>
                 </div>
-                <div style="${ratingStyle}">${p.rating.toFixed(1)}</div>
-                <div style="${nameStyle}">${shortName}</div>
+                <div class="formation-name">${shortName}</div>
             </div>`;
     };
 
@@ -1744,35 +1713,12 @@ function generateTOTMFromGroup(group, league) {
         if (!line.length) return;
         formationHTML += `<div class="formation-line" style="top:${positions[i]};">${line.map(renderPlayer).join('')}</div>`;
     });
-    
-    // League-specific background and title styling
-    let bgGradient = '';
-    let titleStyle = '';
-    let subtitleStyle = '';
-    
-    if (league === 'PREM') {
-        bgGradient = 'linear-gradient(135deg, #1a0033 0%, #4c1d95 50%, #7c2d12 100%)';
-        titleStyle = 'font-size:36px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:2px;text-shadow:0 4px 8px rgba(0,0,0,0.5);background:linear-gradient(90deg, #a855f7, #ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;';
-        subtitleStyle = 'font-size:13px;font-weight:700;color:#ccc;text-transform:uppercase;letter-spacing:1px;';
-    } else if (league === 'LALIGA') {
-        bgGradient = 'linear-gradient(135deg, #1a0000 0%, #7f1d1d 50%, #991b1b 100%)';
-        titleStyle = 'font-size:42px;font-weight:900;color:#ff4444;text-transform:uppercase;letter-spacing:2px;font-style:italic;text-shadow:0 4px 8px rgba(0,0,0,0.8);';
-        subtitleStyle = 'font-size:12px;font-weight:700;color:#ccc;text-transform:uppercase;';
-    } else if (league === 'MLS') {
-        bgGradient = 'linear-gradient(135deg, #fee2e2 0%, #fca5a5 50%, #ef4444 100%)';
-        titleStyle = 'font-size:38px;font-weight:900;color:#000;text-transform:uppercase;letter-spacing:1px;';
-        subtitleStyle = 'font-size:13px;font-weight:700;color:#333;text-transform:uppercase;';
-    } else {
-        bgGradient = 'linear-gradient(135deg, #001133 0%, #001f5c 50%, #0066ff 100%)';
-        titleStyle = 'font-size:40px;font-weight:900;color:#fff;text-transform:uppercase;letter-spacing:3px;text-shadow:0 4px 8px rgba(0,0,0,0.8);';
-        subtitleStyle = 'font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;';
-    }
 
     return `
-        <div class="totm-container" id="totm-download-target" style="background:${bgGradient};">
+        <div class="totm-container" id="totm-download-target">
             <div class="totm-header">
-                <div style="${titleStyle}">TEAM OF THE ${league === 'MLS' ? 'MATCHDAY' : 'WEEK'}</div>
-                <div style="${subtitleStyle}">${LEAGUE_META[league]?.name || league} · ${labelStr}</div>
+                <div class="totm-title">Team of the Matchday</div>
+                <div class="totm-subtitle">${LEAGUE_META[league]?.name || league} · ${labelStr}</div>
             </div>
             <div class="formation">${formationHTML}</div>
         </div>`;
@@ -3110,17 +3056,6 @@ async function viewPlayer(playerKeyOrName) {
         </div>
 
         <div class="mt-6 stat-card">
-            <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Player Info</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
-                ${infoItems.map((item, i) => `
-                    <div style="padding:14px 0;${i < infoItems.length - (infoItems.length % 2 === 0 ? 2 : 1) ? 'border-bottom:1px solid #1e1e1e;' : ''}${i % 2 === 0 ? 'padding-right:24px;border-right:1px solid #1e1e1e;' : 'padding-left:24px;'}">
-                        <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${item.value}</div>
-                        ${item.label ? `<div style="font-size:11px;color:#666;font-weight:600;">${item.label}</div>` : ''}
-                    </div>`).join('')}
-            </div>
-        </div>
-
-        <div class="mt-6 stat-card">
             <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Senior Career</div>
             <div style="display:flex;flex-direction:column;gap:8px;">
                 ${Object.entries(competitionStats).map(([lg, stats]) => `
@@ -3163,14 +3098,13 @@ async function viewPlayer(playerKeyOrName) {
             <div style="display:flex;flex-direction:column;gap:4px;max-height:600px;overflow-y:auto;">
                 ${allMatchRatings.length ? allMatchRatings.map(r => {
                     const matchInfo = findAndFormatMatch(r);
-                    const oppName = r.opponent || 'Unknown';
                     return `
                         <div style="display:flex;align-items:center;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:8px 12px;gap:12px;">
                             <img src="${r.leagueLogo}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0;">
                             <div style="font-size:11px;color:#666;width:70px;flex-shrink:0;">${r.date || '-'}</div>
                             <div style="flex:1;display:flex;align-items:center;gap:8px;min-width:0;">
-                                <img src="${getLogo(oppName)}" style="width:18px;height:18px;object-fit:contain;flex-shrink:0;">
-                                <span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${oppName}</span>
+                                <img src="${getLogo(r.opponent)}" style="width:18px;height:18px;object-fit:contain;flex-shrink:0;">
+                                <span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.opponent || 'Unknown'}</span>
                             </div>
                             ${matchInfo.hasMatch ? `
                                 <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
@@ -3184,6 +3118,17 @@ async function viewPlayer(playerKeyOrName) {
                         </div>
                     `;
                 }).join('') : '<div style="color:#666;text-align:center;padding:20px;">No match ratings available</div>'}
+            </div>
+        </div>
+
+        <div class="mt-6 stat-card">
+            <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Player Info</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+                ${infoItems.map((item, i) => `
+                    <div style="padding:14px 0;${i < infoItems.length - (infoItems.length % 2 === 0 ? 2 : 1) ? 'border-bottom:1px solid #1e1e1e;' : ''}${i % 2 === 0 ? 'padding-right:24px;border-right:1px solid #1e1e1e;' : 'padding-left:24px;'}">
+                        <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${item.value}</div>
+                        ${item.label ? `<div style="font-size:11px;color:#666;font-weight:600;">${item.label}</div>` : ''}
+                    </div>`).join('')}
             </div>
         </div>
     `;
