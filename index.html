@@ -990,6 +990,7 @@ const TOTM_CONFIG = {
         'Matchday 25': { startRow: 4405, endRow: 4624 }
     },
     MLS: {
+        'Matchday 2': { startRow: 222, endRow: 441 },
         'Matchday 1': { startRow: 2, endRow: 221 }
     },
     UCL: {
@@ -2922,7 +2923,7 @@ async function viewPlayer(playerKeyOrName) {
         'UCL': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/42.png'
     };
 
-    // Collect all match ratings from all leagues
+    // Collect all match ratings from all leagues and link with schedule data
     const allMatchRatings = [];
     for (const lg of allLeagues) {
         const pool = statsData[lg].players || {};
@@ -2931,13 +2932,88 @@ async function viewPlayer(playerKeyOrName) {
         );
         
         if (playerInLeague && playerInLeague.recentRatings && playerInLeague.recentRatings.length) {
+            // For each rating, find the corresponding match in the schedule
             playerInLeague.recentRatings.forEach(r => {
+                // Find match in allMatches for this league and date
+                const matchDate = r.date ? new Date(r.date) : null;
+                let matchInfo = null;
+                
+                if (matchDate) {
+                    // Find the schedule match
+                    const scheduleMatch = allMatches.find(m => {
+                        if (m.league !== lg) return false;
+                        const mDate = new Date(m.date);
+                        if (isNaN(mDate.getTime())) return false;
+                        
+                        // Check if same date
+                        if (mDate.toDateString() !== matchDate.toDateString()) return false;
+                        
+                        // Check if player's team is in this match
+                        const playerTeamNorm = canonicalTeamName(playerInLeague.team);
+                        const homeNorm = canonicalTeamName(m.home);
+                        const awayNorm = canonicalTeamName(m.away);
+                        
+                        return homeNorm === playerTeamNorm || awayNorm === playerTeamNorm ||
+                               _normMatch(m.home) === _normMatch(playerInLeague.team) ||
+                               _normMatch(m.away) === _normMatch(playerInLeague.team);
+                    });
+                    
+                    if (scheduleMatch) {
+                        // Determine if player is home or away
+                        const playerTeamNorm = canonicalTeamName(playerInLeague.team);
+                        const homeNorm = canonicalTeamName(scheduleMatch.home);
+                        const isHome = homeNorm === playerTeamNorm || _normMatch(scheduleMatch.home) === _normMatch(playerInLeague.team);
+                        
+                        // Get opponent
+                        const opponent = isHome ? scheduleMatch.away : scheduleMatch.home;
+                        
+                        // Parse score from schedule (column D)
+                        let result = '';
+                        let formattedScore = '';
+                        if (scheduleMatch.score && scheduleMatch.score !== 'v') {
+                            const scoreParts = scheduleMatch.score.split('-').map(s => s.trim());
+                            if (scoreParts.length === 2) {
+                                const homeScore = parseInt(scoreParts[0]);
+                                const awayScore = parseInt(scoreParts[1]);
+                                
+                                if (!isNaN(homeScore) && !isNaN(awayScore)) {
+                                    // Determine W/L/D
+                                    if (isHome) {
+                                        if (homeScore > awayScore) result = 'W';
+                                        else if (homeScore < awayScore) result = 'L';
+                                        else result = 'D';
+                                        formattedScore = `<strong>${homeScore}</strong> - ${awayScore}`;
+                                    } else {
+                                        if (awayScore > homeScore) result = 'W';
+                                        else if (awayScore < homeScore) result = 'L';
+                                        else result = 'D';
+                                        formattedScore = `${homeScore} - <strong>${awayScore}</strong>`;
+                                    }
+                                }
+                            }
+                        }
+                        
+                        matchInfo = {
+                            opponent,
+                            result,
+                            formattedScore,
+                            hasMatch: true
+                        };
+                    }
+                }
+                
+                // Add to array
                 allMatchRatings.push({
-                    ...r,
+                    date: r.date,
+                    opponent: matchInfo ? matchInfo.opponent : (r.opponent || 'Unknown'),
+                    rating: r.rating,
                     league: lg,
                     leagueLogo: leagueLogos[lg],
                     leagueName: leagueNames[lg],
-                    playerTeam: playerInLeague.team
+                    playerTeam: playerInLeague.team,
+                    result: matchInfo ? matchInfo.result : '',
+                    formattedScore: matchInfo ? matchInfo.formattedScore : '',
+                    hasMatch: matchInfo ? matchInfo.hasMatch : false
                 });
             });
         }
@@ -2946,61 +3022,10 @@ async function viewPlayer(playerKeyOrName) {
     // Sort by date descending (most recent first)
     allMatchRatings.sort((a, b) => {
         if (!a.date || !b.date) return 0;
-        return new Date(b.date) - new Date(a.date);
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateB - dateA;
     });
-    
-    // Function to format match result with bold team score
-    const formatMatchResult = (match) => {
-        if (!match.score) return { result: '', homeScore: '', awayScore: '' };
-        
-        // Find the actual match from allMatches to determine home/away
-        const matchDate = match.date ? new Date(match.date) : null;
-        let isHome = true; // default assumption
-        
-        if (matchDate) {
-            const gameMatch = allMatches.find(m => {
-                const mDate = m.date ? new Date(m.date) : null;
-                if (!mDate || !matchDate) return false;
-                const sameDay = mDate.toDateString() === matchDate.toDateString();
-                const teamInMatch = (m.home === match.playerTeam || m.away === match.playerTeam);
-                const oppInMatch = (m.home === match.opponent || m.away === match.opponent);
-                return sameDay && teamInMatch && oppInMatch;
-            });
-            
-            if (gameMatch) {
-                isHome = gameMatch.home === match.playerTeam;
-            }
-        }
-        
-        const parts = match.score.split('-').map(s => s.trim());
-        if (parts.length !== 2) return { result: '', homeScore: '', awayScore: '' };
-        
-        const homeScore = parseInt(parts[0]);
-        const awayScore = parseInt(parts[1]);
-        
-        if (isNaN(homeScore) || isNaN(awayScore)) return { result: '', homeScore: '', awayScore: '' };
-        
-        let result = '';
-        if (isHome) {
-            if (homeScore > awayScore) result = 'W';
-            else if (homeScore < awayScore) result = 'L';
-            else result = 'D';
-        } else {
-            if (awayScore > homeScore) result = 'W';
-            else if (awayScore < homeScore) result = 'L';
-            else result = 'D';
-        }
-        
-        return { 
-            result, 
-            homeScore, 
-            awayScore,
-            isHome,
-            formattedScore: isHome 
-                ? `<strong>${homeScore}</strong> - ${awayScore}`
-                : `${homeScore} - <strong>${awayScore}</strong>`
-        };
-    };
 
     content.innerHTML = `
         <div class="stat-card">
@@ -3060,20 +3085,19 @@ async function viewPlayer(playerKeyOrName) {
             <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Match Ratings</div>
             <div style="display:flex;flex-direction:column;gap:4px;max-height:600px;overflow-y:auto;">
                 ${allMatchRatings.length ? allMatchRatings.map(r => {
-                    const matchInfo = formatMatchResult(r);
-                    const resultColor = matchInfo.result === 'W' ? '#22c55e' : matchInfo.result === 'L' ? '#ef4444' : '#888';
+                    const resultColor = r.result === 'W' ? '#22c55e' : r.result === 'L' ? '#ef4444' : '#888';
                     return `
                         <div style="display:flex;align-items:center;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:8px 12px;gap:12px;">
                             <img src="${r.leagueLogo}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0;">
                             <div style="font-size:11px;color:#666;width:70px;flex-shrink:0;">${r.date || '-'}</div>
                             <div style="flex:1;display:flex;align-items:center;gap:8px;min-width:0;">
                                 <img src="${getLogo(r.opponent)}" style="width:18px;height:18px;object-fit:contain;flex-shrink:0;">
-                                <span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.opponent || 'Unknown'}</span>
+                                <span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.opponent}</span>
                             </div>
-                            ${matchInfo.result ? `
+                            ${r.hasMatch && r.result ? `
                                 <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-                                    <span style="font-size:11px;font-weight:900;color:${resultColor};min-width:12px;">${matchInfo.result}</span>
-                                    <span style="font-size:13px;font-weight:700;">${matchInfo.formattedScore}</span>
+                                    <span style="font-size:11px;font-weight:900;color:${resultColor};min-width:12px;">${r.result}</span>
+                                    <span style="font-size:13px;font-weight:700;">${r.formattedScore}</span>
                                 </div>
                             ` : ''}
                             <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;background:${r.rating >= 8 ? '#22c55e' : r.rating >= 7 ? '#fbbf24' : r.rating >= 6 ? '#888' : '#ef4444'};padding:4px 8px;border-radius:6px;">
