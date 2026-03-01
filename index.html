@@ -2924,8 +2924,9 @@ async function viewPlayer(playerKeyOrName) {
         'UCL': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/42.png'
     };
 
-    // Collect all match ratings from all leagues and link with schedule data
+    // Collect all match ratings from all leagues and derive opponent/result from schedule
     const allMatchRatings = [];
+    
     for (const lg of allLeagues) {
         const pool = statsData[lg].players || {};
         const playerInLeague = Object.values(pool).find(p => 
@@ -2934,88 +2935,87 @@ async function viewPlayer(playerKeyOrName) {
         
         if (playerInLeague && playerInLeague.recentRatings && playerInLeague.recentRatings.length) {
             // For each rating, find the corresponding match in the schedule
-            playerInLeague.recentRatings.forEach(r => {
-                // Find match in allMatches for this league and date
-                const matchDate = r.date ? new Date(r.date) : null;
-                let matchInfo = null;
+            playerInLeague.recentRatings.forEach(ratingEntry => {
+                // Get the date from the rating
+                const ratingDate = ratingEntry.date;
+                if (!ratingDate) return;
                 
-                if (matchDate) {
-                    // Find the schedule match
-                    const scheduleMatch = allMatches.find(m => {
-                        if (m.league !== lg) return false;
-                        const mDate = new Date(m.date);
-                        if (isNaN(mDate.getTime())) return false;
-                        
-                        // Check if same date
-                        if (mDate.toDateString() !== matchDate.toDateString()) return false;
-                        
-                        // Check if player's team is in this match
-                        const playerTeamNorm = canonicalTeamName(playerInLeague.team);
-                        const homeNorm = canonicalTeamName(m.home);
-                        const awayNorm = canonicalTeamName(m.away);
-                        
-                        return homeNorm === playerTeamNorm || awayNorm === playerTeamNorm ||
-                               _normMatch(m.home) === _normMatch(playerInLeague.team) ||
-                               _normMatch(m.away) === _normMatch(playerInLeague.team);
-                    });
-                    
-                    if (scheduleMatch) {
-                        // Determine if player is home or away
-                        const playerTeamNorm = canonicalTeamName(playerInLeague.team);
-                        const homeNorm = canonicalTeamName(scheduleMatch.home);
-                        const isHome = homeNorm === playerTeamNorm || _normMatch(scheduleMatch.home) === _normMatch(playerInLeague.team);
-                        
-                        // Get opponent
-                        const opponent = isHome ? scheduleMatch.away : scheduleMatch.home;
-                        
-                        // Parse score from schedule (column D)
-                        let result = '';
-                        let formattedScore = '';
-                        if (scheduleMatch.score && scheduleMatch.score !== 'v') {
-                            const scoreParts = scheduleMatch.score.split('-').map(s => s.trim());
-                            if (scoreParts.length === 2) {
-                                const homeScore = parseInt(scoreParts[0]);
-                                const awayScore = parseInt(scoreParts[1]);
-                                
-                                if (!isNaN(homeScore) && !isNaN(awayScore)) {
-                                    // Determine W/L/D
-                                    if (isHome) {
-                                        if (homeScore > awayScore) result = 'W';
-                                        else if (homeScore < awayScore) result = 'L';
-                                        else result = 'D';
-                                        formattedScore = `<strong>${homeScore}</strong> - ${awayScore}`;
-                                    } else {
-                                        if (awayScore > homeScore) result = 'W';
-                                        else if (awayScore < homeScore) result = 'L';
-                                        else result = 'D';
-                                        formattedScore = `${homeScore} - <strong>${awayScore}</strong>`;
-                                    }
-                                }
-                            }
-                        }
-                        
-                        matchInfo = {
-                            opponent,
-                            result,
-                            formattedScore,
-                            hasMatch: true
-                        };
-                    }
-                }
-                
-                // Add to array
-                allMatchRatings.push({
-                    date: r.date,
-                    opponent: matchInfo ? matchInfo.opponent : (r.opponent || 'Unknown'),
-                    rating: r.rating,
+                let matchData = {
+                    date: ratingDate,
+                    opponent: 'Unknown',
+                    rating: ratingEntry.rating,
                     league: lg,
                     leagueLogo: leagueLogos[lg],
                     leagueName: leagueNames[lg],
                     playerTeam: playerInLeague.team,
-                    result: matchInfo ? matchInfo.result : '',
-                    formattedScore: matchInfo ? matchInfo.formattedScore : '',
-                    hasMatch: matchInfo ? matchInfo.hasMatch : false
+                    result: '',
+                    formattedScore: '',
+                    hasMatch: false
+                };
+                
+                // Parse the date
+                const parsedDate = new Date(ratingDate);
+                if (isNaN(parsedDate.getTime())) {
+                    allMatchRatings.push(matchData);
+                    return;
+                }
+                
+                // Find the match in schedule for this league and date
+                const scheduleMatch = allMatches.find(m => {
+                    // Must be same league
+                    if (m.league !== lg) return false;
+                    
+                    // Must have a valid date
+                    const mDate = new Date(m.date);
+                    if (isNaN(mDate.getTime())) return false;
+                    
+                    // Must be same date
+                    if (mDate.toDateString() !== parsedDate.toDateString()) return false;
+                    
+                    // Must include player's team (either home or away)
+                    const playerTeamNorm = _normMatch(playerInLeague.team);
+                    const homeNorm = _normMatch(m.home);
+                    const awayNorm = _normMatch(m.away);
+                    
+                    return homeNorm === playerTeamNorm || awayNorm === playerTeamNorm;
                 });
+                
+                if (scheduleMatch) {
+                    // Determine if player is home or away
+                    const playerTeamNorm = _normMatch(playerInLeague.team);
+                    const homeNorm = _normMatch(scheduleMatch.home);
+                    const isHome = homeNorm === playerTeamNorm;
+                    
+                    // Get opponent (opposite team)
+                    matchData.opponent = isHome ? scheduleMatch.away : scheduleMatch.home;
+                    matchData.hasMatch = true;
+                    
+                    // Parse score and determine W/L/D
+                    if (scheduleMatch.score && scheduleMatch.score !== 'v' && scheduleMatch.score.includes('-')) {
+                        const scoreParts = scheduleMatch.score.split('-').map(s => s.trim());
+                        if (scoreParts.length === 2) {
+                            const homeScore = parseInt(scoreParts[0]);
+                            const awayScore = parseInt(scoreParts[1]);
+                            
+                            if (!isNaN(homeScore) && !isNaN(awayScore)) {
+                                // Determine result
+                                if (isHome) {
+                                    if (homeScore > awayScore) matchData.result = 'W';
+                                    else if (homeScore < awayScore) matchData.result = 'L';
+                                    else matchData.result = 'D';
+                                    matchData.formattedScore = `<strong>${homeScore}</strong> - ${awayScore}`;
+                                } else {
+                                    if (awayScore > homeScore) matchData.result = 'W';
+                                    else if (awayScore < homeScore) matchData.result = 'L';
+                                    else matchData.result = 'D';
+                                    matchData.formattedScore = `${homeScore} - <strong>${awayScore}</strong>`;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                allMatchRatings.push(matchData);
             });
         }
     }
@@ -3025,6 +3025,7 @@ async function viewPlayer(playerKeyOrName) {
         if (!a.date || !b.date) return 0;
         const dateA = new Date(a.date);
         const dateB = new Date(b.date);
+        if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
         return dateB - dateA;
     });
 
@@ -3041,6 +3042,17 @@ async function viewPlayer(playerKeyOrName) {
                         <span>${playerData.league || '2025/2026'}</span>
                     </p>
                 </div>
+            </div>
+        </div>
+
+        <div class="mt-6 stat-card">
+            <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Player Info</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+                ${infoItems.map((item, i) => `
+                    <div style="padding:14px 0;${i < infoItems.length - (infoItems.length % 2 === 0 ? 2 : 1) ? 'border-bottom:1px solid #1e1e1e;' : ''}${i % 2 === 0 ? 'padding-right:24px;border-right:1px solid #1e1e1e;' : 'padding-left:24px;'}">
+                        <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${item.value}</div>
+                        ${item.label ? `<div style="font-size:11px;color:#666;font-weight:600;">${item.label}</div>` : ''}
+                    </div>`).join('')}
             </div>
         </div>
 
@@ -3107,17 +3119,6 @@ async function viewPlayer(playerKeyOrName) {
                         </div>
                     `;
                 }).join('') : '<div style="color:#666;text-align:center;padding:20px;">No match ratings available</div>'}
-            </div>
-        </div>
-
-        <div class="mt-6 stat-card">
-            <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Player Info</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
-                ${infoItems.map((item, i) => `
-                    <div style="padding:14px 0;${i < infoItems.length - (infoItems.length % 2 === 0 ? 2 : 1) ? 'border-bottom:1px solid #1e1e1e;' : ''}${i % 2 === 0 ? 'padding-right:24px;border-right:1px solid #1e1e1e;' : 'padding-left:24px;'}">
-                        <div style="font-size:15px;font-weight:900;margin-bottom:4px;">${item.value}</div>
-                        ${item.label ? `<div style="font-size:11px;color:#666;font-weight:600;">${item.label}</div>` : ''}
-                    </div>`).join('')}
             </div>
         </div>
     `;
