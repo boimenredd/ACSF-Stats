@@ -2150,8 +2150,14 @@ async function loadStats(league) {
                 });
             } else {
                 const rows = await parseCsv(src.ratingsLog, false);
+                console.log(`${league} Ratings Log - First 3 rows:`, rows.slice(0, 3));
                 rows.forEach((row, i) => {
                     if (!Array.isArray(row)) return;
+                    
+                    if (i < 3) {
+                        console.log(`${league} Row ${i}:`, row);
+                    }
+                    
                     const name = (row[0] || '').toString().trim(); // A
                     const position = (row[1] || '').toString().trim(); // B
                     const ratingRaw = (row[2] || '').toString().trim(); // C
@@ -2159,6 +2165,11 @@ async function loadStats(league) {
                     const date = (row[4] || '').toString().trim(); // E
                     const opp = (row[5] || '').toString().trim(); // F
                     const score = (row[6] || '').toString().trim(); // G
+                    
+                    if (i < 3) {
+                        console.log(`${league} Parsed - Name:${name} Pos:${position} Rating:${ratingRaw} Team:${team} Date:${date} Opp:${opp}`);
+                    }
+                    
                     if (!name) return;
                     if (i === 0 && (name.toLowerCase() === 'player' || name.toLowerCase().includes('name'))) return;
 
