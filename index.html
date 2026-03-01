@@ -2946,98 +2946,60 @@ async function viewPlayer(playerKeyOrName) {
     // Sort by date descending (most recent first)
     allMatchRatings.sort((a, b) => {
         if (!a.date || !b.date) return 0;
-        const dateA = new Date(a.date);
-        const dateB = new Date(b.date);
-        return dateB - dateA;
+        return new Date(b.date) - new Date(a.date);
     });
     
-    // Function to find match result from schedule and format it
-    const findAndFormatMatch = (rating) => {
-        if (!rating.date || !rating.opponent || !rating.playerTeam) {
-            return { result: '', formattedScore: '', hasMatch: false };
-        }
+    // Function to format match result with bold team score
+    const formatMatchResult = (match) => {
+        if (!match.score) return { result: '', homeScore: '', awayScore: '' };
         
-        try {
-            const ratingDate = new Date(rating.date);
-            if (isNaN(ratingDate.getTime())) {
-                return { result: '', formattedScore: '', hasMatch: false };
-            }
-            
-            // Normalize team names for matching
-            const playerTeamNorm = canonicalTeamName(rating.playerTeam);
-            const opponentNorm = canonicalTeamName(rating.opponent);
-            
-            // Find match in allMatches for this player's league on this date
-            const match = allMatches.find(m => {
-                if (m.league !== rating.league) return false;
-                
-                const matchDate = new Date(m.date);
-                if (isNaN(matchDate.getTime())) return false;
-                
-                // Check if same date
-                if (matchDate.toDateString() !== ratingDate.toDateString()) return false;
-                
-                // Check if teams match
-                const homeNorm = canonicalTeamName(m.home);
-                const awayNorm = canonicalTeamName(m.away);
-                
-                const playerIsHome = homeNorm === playerTeamNorm || _normMatch(m.home) === _normMatch(rating.playerTeam);
-                const playerIsAway = awayNorm === playerTeamNorm || _normMatch(m.away) === _normMatch(rating.playerTeam);
-                const oppIsHome = homeNorm === opponentNorm || _normMatch(m.home) === _normMatch(rating.opponent);
-                const oppIsAway = awayNorm === opponentNorm || _normMatch(m.away) === _normMatch(rating.opponent);
-                
-                return (playerIsHome && oppIsAway) || (playerIsAway && oppIsHome);
+        // Find the actual match from allMatches to determine home/away
+        const matchDate = match.date ? new Date(match.date) : null;
+        let isHome = true; // default assumption
+        
+        if (matchDate) {
+            const gameMatch = allMatches.find(m => {
+                const mDate = m.date ? new Date(m.date) : null;
+                if (!mDate || !matchDate) return false;
+                const sameDay = mDate.toDateString() === matchDate.toDateString();
+                const teamInMatch = (m.home === match.playerTeam || m.away === match.playerTeam);
+                const oppInMatch = (m.home === match.opponent || m.away === match.opponent);
+                return sameDay && teamInMatch && oppInMatch;
             });
             
-            if (!match || !match.score || match.score === 'v') {
-                return { result: '', formattedScore: '', hasMatch: false };
+            if (gameMatch) {
+                isHome = gameMatch.home === match.playerTeam;
             }
-            
-            // Parse score
-            const scoreParts = match.score.split('-').map(s => s.trim());
-            if (scoreParts.length !== 2) {
-                return { result: '', formattedScore: '', hasMatch: false };
-            }
-            
-            const homeScore = parseInt(scoreParts[0]);
-            const awayScore = parseInt(scoreParts[1]);
-            
-            if (isNaN(homeScore) || isNaN(awayScore)) {
-                return { result: '', formattedScore: '', hasMatch: false };
-            }
-            
-            // Determine if player's team is home or away
-            const homeNorm = canonicalTeamName(match.home);
-            const playerTeamNorm = canonicalTeamName(rating.playerTeam);
-            const isHome = homeNorm === playerTeamNorm || _normMatch(match.home) === _normMatch(rating.playerTeam);
-            
-            // Calculate result
-            let result = '';
-            if (isHome) {
-                if (homeScore > awayScore) result = 'W';
-                else if (homeScore < awayScore) result = 'L';
-                else result = 'D';
-            } else {
-                if (awayScore > homeScore) result = 'W';
-                else if (awayScore < homeScore) result = 'L';
-                else result = 'D';
-            }
-            
-            // Format score with player's team score bold
-            const formattedScore = isHome 
-                ? `<strong>${homeScore}</strong> - ${awayScore}`
-                : `${homeScore} - <strong>${awayScore}</strong>`;
-            
-            return { 
-                result, 
-                formattedScore,
-                hasMatch: true,
-                resultColor: result === 'W' ? '#22c55e' : result === 'L' ? '#ef4444' : '#888'
-            };
-        } catch (e) {
-            console.error('Error finding match:', e);
-            return { result: '', formattedScore: '', hasMatch: false };
         }
+        
+        const parts = match.score.split('-').map(s => s.trim());
+        if (parts.length !== 2) return { result: '', homeScore: '', awayScore: '' };
+        
+        const homeScore = parseInt(parts[0]);
+        const awayScore = parseInt(parts[1]);
+        
+        if (isNaN(homeScore) || isNaN(awayScore)) return { result: '', homeScore: '', awayScore: '' };
+        
+        let result = '';
+        if (isHome) {
+            if (homeScore > awayScore) result = 'W';
+            else if (homeScore < awayScore) result = 'L';
+            else result = 'D';
+        } else {
+            if (awayScore > homeScore) result = 'W';
+            else if (awayScore < homeScore) result = 'L';
+            else result = 'D';
+        }
+        
+        return { 
+            result, 
+            homeScore, 
+            awayScore,
+            isHome,
+            formattedScore: isHome 
+                ? `<strong>${homeScore}</strong> - ${awayScore}`
+                : `${homeScore} - <strong>${awayScore}</strong>`
+        };
     };
 
     content.innerHTML = `
@@ -3098,7 +3060,8 @@ async function viewPlayer(playerKeyOrName) {
             <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Match Ratings</div>
             <div style="display:flex;flex-direction:column;gap:4px;max-height:600px;overflow-y:auto;">
                 ${allMatchRatings.length ? allMatchRatings.map(r => {
-                    const matchInfo = findAndFormatMatch(r);
+                    const matchInfo = formatMatchResult(r);
+                    const resultColor = matchInfo.result === 'W' ? '#22c55e' : matchInfo.result === 'L' ? '#ef4444' : '#888';
                     return `
                         <div style="display:flex;align-items:center;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:8px 12px;gap:12px;">
                             <img src="${r.leagueLogo}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0;">
@@ -3107,9 +3070,9 @@ async function viewPlayer(playerKeyOrName) {
                                 <img src="${getLogo(r.opponent)}" style="width:18px;height:18px;object-fit:contain;flex-shrink:0;">
                                 <span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.opponent || 'Unknown'}</span>
                             </div>
-                            ${matchInfo.hasMatch ? `
+                            ${matchInfo.result ? `
                                 <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-                                    <span style="font-size:11px;font-weight:900;color:${matchInfo.resultColor};min-width:12px;">${matchInfo.result}</span>
+                                    <span style="font-size:11px;font-weight:900;color:${resultColor};min-width:12px;">${matchInfo.result}</span>
                                     <span style="font-size:13px;font-weight:700;">${matchInfo.formattedScore}</span>
                                 </div>
                             ` : ''}
