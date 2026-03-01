@@ -2132,18 +2132,18 @@ async function loadStats(league) {
                 console.log(`${league} Ratings Log (object mode) - First 3 rows:`, objRows.slice(0, 3));
                 console.log(`${league} First row keys:`, Object.keys(objRows[0] || {}));
                 
+                // Ratings log has: Name, Position, Rating, Team
+                // NO dates or opponents - those come from schedule
+                // We'll store ratings with their row index for later matching
                 objRows.forEach((r, idx) => {
                     const name = (r.Player || r.Name || r['Player Name'] || r['player'] || '').toString().trim();
                     if (!name) return;
 
                     const team = (r.Team || r.Club || r['team'] || '').toString().trim();
                     const ratingRaw = (r.Rating || r.Score || r['Match Rating'] || r['rating'] || '').toString().trim();
-                    const date = (r.Date || r.MatchDate || r['Date'] || '').toString().trim();
-                    const opp = (r.Opponent || r.Opp || r['Opponent'] || '').toString().trim();
-                    const score = (r.Result || r.Score || r['Match Score'] || '').toString().trim();
 
                     if (idx < 3) {
-                        console.log(`${league} Row ${idx} parsed - Name:${name} Team:${team} Rating:${ratingRaw} Date:${date} Opp:${opp}`);
+                        console.log(`${league} Row ${idx} parsed - Name:${name} Team:${team} Rating:${ratingRaw} RowIndex:${idx + 2}`);
                     }
 
                     const rating = parseFloat(ratingRaw);
@@ -2153,7 +2153,8 @@ async function loadStats(league) {
                     if (!p) return;
 
                     p.matches = (p.matches || 0) + 1;
-                    p.recentRatings.push({ date, opponent: opp, rating, score: score || '' });
+                    // Store rating with row index (CSV row = idx + 2 because of header)
+                    p.recentRatings.push({ rating, rowIndex: idx + 2, league });
                 });
             } else {
                 const rows = await parseCsv(src.ratingsLog, false);
@@ -2947,7 +2948,7 @@ async function viewPlayer(playerKeyOrName) {
         'UCL': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/42.png'
     };
 
-    // Collect all match ratings from all leagues and derive opponent/result from schedule
+    // Collect all match ratings and link with schedule using TOTM_CONFIG + matchday lookup
     const allMatchRatings = [];
     
     console.log('Player stats for:', playerData.name, 'Team:', playerData.team, 'League:', playerData.league);
@@ -2963,24 +2964,68 @@ async function viewPlayer(playerKeyOrName) {
         if (playerInLeague && playerInLeague.recentRatings && playerInLeague.recentRatings.length) {
             console.log(`Processing ${playerInLeague.recentRatings.length} ratings for ${lg}`);
             
-            // For each rating, find the corresponding match in the schedule
+            // For each rating, find which matchday it belongs to, then find that match in schedule
             playerInLeague.recentRatings.forEach((ratingEntry, idx) => {
-                // Get the date from the rating
-                const ratingDate = ratingEntry.date;
+                const rowIndex = ratingEntry.rowIndex;
+                const rating = ratingEntry.rating;
                 
                 if (idx < 3) {
-                    console.log(`Rating ${idx}:`, ratingEntry);
+                    console.log(`Rating ${idx}: Row ${rowIndex}, Rating ${rating}`);
                 }
                 
-                if (!ratingDate) {
-                    console.log('No date for rating');
+                // Find which matchday this row belongs to using TOTM_CONFIG
+                let matchdayLabel = null;
+                const config = TOTM_CONFIG[lg] || {};
+                for (const [label, range] of Object.entries(config)) {
+                    if (rowIndex >= range.startRow && rowIndex <= range.endRow) {
+                        matchdayLabel = label;
+                        break;
+                    }
+                }
+                
+                if (!matchdayLabel) {
+                    if (idx < 3) {
+                        console.log(`No matchday found for row ${rowIndex} in ${lg}`);
+                    }
                     return;
                 }
                 
+                if (idx < 3) {
+                    console.log(`Found matchday: ${matchdayLabel}`);
+                }
+                
+                // Now find the match in the schedule for this team in this matchday
+                // For leagues with "Matchday X" format, we need to find matches for that matchday
+                // For UCL with "Round X" or "R16 PO Leg X", we need different logic
+                
+                const playerTeamNorm = _normMatch(playerInLeague.team);
+                
+                // Find all matches involving this player's team
+                const teamMatches = allMatches.filter(m => {
+                    if (m.league !== lg) return false;
+                    const homeNorm = _normMatch(m.home);
+                    const awayNorm = _normMatch(m.away);
+                    return homeNorm === playerTeamNorm || awayNorm === playerTeamNorm;
+                });
+                
+                if (idx < 3) {
+                    console.log(`Found ${teamMatches.length} total matches for ${playerInLeague.team} in ${lg}`);
+                }
+                
+                // For now, since we don't have an exact date or matchday field in schedule,
+                // we'll have to use the first unmatched game or approximate
+                // This is a limitation - ideally schedule CSV would have a matchday column
+                
+                // Let's try to find a match by counting: 
+                // If this is the player's 1st rating, use their 1st match
+                // If this is the player's 2nd rating, use their 2nd match, etc.
+                const ratingIndex = playerInLeague.recentRatings.indexOf(ratingEntry);
+                const scheduleMatch = teamMatches[ratingIndex];
+                
                 let matchData = {
-                    date: ratingDate,
+                    date: matchdayLabel,
                     opponent: 'Unknown',
-                    rating: ratingEntry.rating,
+                    rating: rating,
                     league: lg,
                     leagueLogo: leagueLogos[lg],
                     leagueName: leagueNames[lg],
@@ -2990,64 +3035,19 @@ async function viewPlayer(playerKeyOrName) {
                     hasMatch: false
                 };
                 
-                // Parse the date - try multiple formats
-                let parsedDate = new Date(ratingDate);
-                
-                // If invalid, try other common formats
-                if (isNaN(parsedDate.getTime())) {
-                    // Try MM/DD/YYYY
-                    const parts = ratingDate.split('/');
-                    if (parts.length === 3) {
-                        parsedDate = new Date(parts[2], parts[0] - 1, parts[1]);
-                    }
-                }
-                
-                if (isNaN(parsedDate.getTime())) {
-                    console.log('Invalid date format:', ratingDate);
-                    allMatchRatings.push(matchData);
-                    return;
-                }
-                
-                if (idx < 3) {
-                    console.log(`Parsed date: ${parsedDate.toDateString()}`);
-                }
-                
-                // Find the match in schedule for this league and date
-                const scheduleMatch = allMatches.find(m => {
-                    // Must be same league
-                    if (m.league !== lg) return false;
-                    
-                    // Must have a valid date
-                    const mDate = new Date(m.date);
-                    if (isNaN(mDate.getTime())) return false;
-                    
-                    // Must be same date (compare date strings for more flexibility)
-                    const rateDateStr = parsedDate.toDateString();
-                    const matchDateStr = mDate.toDateString();
-                    
-                    if (rateDateStr !== matchDateStr) return false;
-                    
-                    // Must include player's team (either home or away)
-                    const playerTeamNorm = _normMatch(playerInLeague.team);
-                    const homeNorm = _normMatch(m.home);
-                    const awayNorm = _normMatch(m.away);
-                    
-                    return homeNorm === playerTeamNorm || awayNorm === playerTeamNorm;
-                });
-                
                 if (scheduleMatch) {
-                    if (idx < 3) {
-                        console.log('Found schedule match:', scheduleMatch);
-                    }
-                    
                     // Determine if player is home or away
-                    const playerTeamNorm = _normMatch(playerInLeague.team);
                     const homeNorm = _normMatch(scheduleMatch.home);
                     const isHome = homeNorm === playerTeamNorm;
                     
-                    // Get opponent (opposite team)
+                    // Get opponent
                     matchData.opponent = isHome ? scheduleMatch.away : scheduleMatch.home;
+                    matchData.date = scheduleMatch.date || matchdayLabel;
                     matchData.hasMatch = true;
+                    
+                    if (idx < 3) {
+                        console.log(`Matched to schedule: ${scheduleMatch.home} vs ${scheduleMatch.away} on ${scheduleMatch.date}`);
+                    }
                     
                     // Parse score and determine W/L/D
                     if (scheduleMatch.score && scheduleMatch.score !== 'v' && scheduleMatch.score.includes('-')) {
@@ -3074,7 +3074,7 @@ async function viewPlayer(playerKeyOrName) {
                     }
                 } else {
                     if (idx < 3) {
-                        console.log(`No schedule match found for ${parsedDate.toDateString()} in ${lg}`);
+                        console.log(`No schedule match found for rating index ${ratingIndex}`);
                     }
                 }
                 
@@ -3085,15 +3085,16 @@ async function viewPlayer(playerKeyOrName) {
     
     console.log(`Total match ratings collected: ${allMatchRatings.length}`);
     
-    // Sort by date descending (most recent first)
+    // Sort by date descending
     allMatchRatings.sort((a, b) => {
-        if (!a.date || !b.date) return 0;
         const dateA = new Date(a.date);
         const dateB = new Date(b.date);
-        if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
-        return dateB - dateA;
+        if (!isNaN(dateA.getTime()) && !isNaN(dateB.getTime())) {
+            return dateB - dateA;
+        }
+        return 0;
     });
-    
+
     console.log('About to render player page HTML');
 
     try {
