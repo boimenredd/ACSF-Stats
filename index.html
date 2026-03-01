@@ -2927,18 +2927,32 @@ async function viewPlayer(playerKeyOrName) {
     // Collect all match ratings from all leagues and derive opponent/result from schedule
     const allMatchRatings = [];
     
+    console.log('Player stats for:', playerData.name, 'Team:', playerData.team, 'League:', playerData.league);
+    
     for (const lg of allLeagues) {
         const pool = statsData[lg].players || {};
         const playerInLeague = Object.values(pool).find(p => 
             _normMatch(p.name) === _normMatch(playerData.name)
         );
         
+        console.log(`League ${lg}:`, playerInLeague ? `Found player, ${playerInLeague.recentRatings?.length || 0} ratings` : 'Player not found');
+        
         if (playerInLeague && playerInLeague.recentRatings && playerInLeague.recentRatings.length) {
+            console.log(`Processing ${playerInLeague.recentRatings.length} ratings for ${lg}`);
+            
             // For each rating, find the corresponding match in the schedule
-            playerInLeague.recentRatings.forEach(ratingEntry => {
+            playerInLeague.recentRatings.forEach((ratingEntry, idx) => {
                 // Get the date from the rating
                 const ratingDate = ratingEntry.date;
-                if (!ratingDate) return;
+                
+                if (idx < 3) {
+                    console.log(`Rating ${idx}:`, ratingEntry);
+                }
+                
+                if (!ratingDate) {
+                    console.log('No date for rating');
+                    return;
+                }
                 
                 let matchData = {
                     date: ratingDate,
@@ -2953,11 +2967,26 @@ async function viewPlayer(playerKeyOrName) {
                     hasMatch: false
                 };
                 
-                // Parse the date
-                const parsedDate = new Date(ratingDate);
+                // Parse the date - try multiple formats
+                let parsedDate = new Date(ratingDate);
+                
+                // If invalid, try other common formats
                 if (isNaN(parsedDate.getTime())) {
+                    // Try MM/DD/YYYY
+                    const parts = ratingDate.split('/');
+                    if (parts.length === 3) {
+                        parsedDate = new Date(parts[2], parts[0] - 1, parts[1]);
+                    }
+                }
+                
+                if (isNaN(parsedDate.getTime())) {
+                    console.log('Invalid date format:', ratingDate);
                     allMatchRatings.push(matchData);
                     return;
+                }
+                
+                if (idx < 3) {
+                    console.log(`Parsed date: ${parsedDate.toDateString()}`);
                 }
                 
                 // Find the match in schedule for this league and date
@@ -2969,8 +2998,11 @@ async function viewPlayer(playerKeyOrName) {
                     const mDate = new Date(m.date);
                     if (isNaN(mDate.getTime())) return false;
                     
-                    // Must be same date
-                    if (mDate.toDateString() !== parsedDate.toDateString()) return false;
+                    // Must be same date (compare date strings for more flexibility)
+                    const rateDateStr = parsedDate.toDateString();
+                    const matchDateStr = mDate.toDateString();
+                    
+                    if (rateDateStr !== matchDateStr) return false;
                     
                     // Must include player's team (either home or away)
                     const playerTeamNorm = _normMatch(playerInLeague.team);
@@ -2981,6 +3013,10 @@ async function viewPlayer(playerKeyOrName) {
                 });
                 
                 if (scheduleMatch) {
+                    if (idx < 3) {
+                        console.log('Found schedule match:', scheduleMatch);
+                    }
+                    
                     // Determine if player is home or away
                     const playerTeamNorm = _normMatch(playerInLeague.team);
                     const homeNorm = _normMatch(scheduleMatch.home);
@@ -3013,12 +3049,18 @@ async function viewPlayer(playerKeyOrName) {
                             }
                         }
                     }
+                } else {
+                    if (idx < 3) {
+                        console.log(`No schedule match found for ${parsedDate.toDateString()} in ${lg}`);
+                    }
                 }
                 
                 allMatchRatings.push(matchData);
             });
         }
     }
+    
+    console.log(`Total match ratings collected: ${allMatchRatings.length}`);
     
     // Sort by date descending (most recent first)
     allMatchRatings.sort((a, b) => {
