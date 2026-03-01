@@ -3008,6 +3008,7 @@ async function viewPlayer(playerKeyOrName) {
             
             // Determine if player's team is home or away
             const homeNorm = canonicalTeamName(match.home);
+            const playerTeamNorm = canonicalTeamName(rating.playerTeam);
             const isHome = homeNorm === playerTeamNorm || _normMatch(match.home) === _normMatch(rating.playerTeam);
             
             // Calculate result
