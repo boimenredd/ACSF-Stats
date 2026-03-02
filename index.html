@@ -1672,13 +1672,35 @@ function generateTOTMFromGroup(group, league) {
     const def = [...lb, ...cb, ...rb]; // Left to right
     const fwd = [...lw, ...st, ...rw]; // Left to right
     const formation = [...gk, ...def, ...mid, ...fwd];
-    const topRating = Math.max(...formation.map(p => p.rating));
+    
+    // Find top rating with tiebreaker logic
+    const maxRatingValue = Math.max(...formation.map(p => p.rating));
+    const playersWithTopRating = formation.filter(p => p.rating === maxRatingValue);
+    
+    let topRatedPlayer;
+    if (playersWithTopRating.length === 1) {
+        topRatedPlayer = playersWithTopRating[0];
+    } else {
+        // Tie - prefer attacking positions
+        const attackingPositions = ['LW', 'ST', 'RW', 'LM', 'RM', 'CAM'];
+        const attackersWithTopRating = playersWithTopRating.filter(p => attackingPositions.includes(p.position));
+        
+        if (attackersWithTopRating.length > 0) {
+            // At least one attacker in the tie - pick randomly from attackers
+            topRatedPlayer = attackersWithTopRating[Math.floor(Math.random() * attackersWithTopRating.length)];
+        } else {
+            // No attackers in tie - pick randomly from all tied players
+            topRatedPlayer = playersWithTopRating[Math.floor(Math.random() * playersWithTopRating.length)];
+        }
+    }
+    
+    const topRating = maxRatingValue;
 
     console.log(`Final (${formation.length}): DEF=[${def.map(p => p.name).join(',')}] MID=[${mid.map(p => p.name).join(',')}] FWD=[${fwd.map(p => p.name).join(',')}]`);
-    console.log(`Top rating: ${topRating}`);
+    console.log(`Top rating: ${topRating}, Player: ${topRatedPlayer.name} (${topRatedPlayer.position})`);
 
     const renderPlayer = (p) => {
-        const isTop = p.rating === topRating;
+        const isTop = p === topRatedPlayer; // Compare by object reference
         const ratingClass = isTop ? 'formation-rating formation-rating-top' : 'formation-rating';
         const photoUrl = getPlayerPhotoUrl(p.name, p.team) || p.photoUrl || '';
         const teamLogo = getLogo(p.team);
@@ -3171,10 +3193,21 @@ async function viewPlayer(playerKeyOrName) {
             <div style="display:flex;flex-direction:column;gap:4px;max-height:600px;overflow-y:auto;">
                 ${allMatchRatings.length ? allMatchRatings.map(r => {
                     const resultColor = r.result === 'W' ? '#22c55e' : r.result === 'L' ? '#ef4444' : '#888';
+                    
+                    // Format date as "MMM DD"
+                    let formattedDate = r.date || '-';
+                    if (r.date) {
+                        const dateObj = new Date(r.date);
+                        if (!isNaN(dateObj.getTime())) {
+                            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                            formattedDate = months[dateObj.getMonth()] + ' ' + dateObj.getDate();
+                        }
+                    }
+                    
                     return `
                         <div style="display:flex;align-items:center;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:8px 12px;gap:12px;">
                             <img src="${r.leagueLogo}" style="width:20px;height:20px;object-fit:contain;flex-shrink:0;">
-                            <div style="font-size:11px;color:#666;width:70px;flex-shrink:0;">${r.date || '-'}</div>
+                            <div style="font-size:11px;color:#666;width:50px;flex-shrink:0;">${formattedDate}</div>
                             <div style="flex:1;display:flex;align-items:center;gap:8px;min-width:0;">
                                 <img src="${getLogo(r.opponent)}" style="width:18px;height:18px;object-fit:contain;flex-shrink:0;">
                                 <span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.opponent}</span>
