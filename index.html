@@ -2970,7 +2970,7 @@ async function viewPlayer(playerKeyOrName) {
         'UCL': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/42.png'
     };
 
-    // Collect all match ratings and link with schedule using TOTM_CONFIG + matchday lookup
+    // Collect ALL matches for this player across all leagues, then add ratings where they exist
     const allMatchRatings = [];
     
     console.log('Player stats for:', playerData.name, 'Team:', playerData.team, 'League:', playerData.league);
@@ -2981,134 +2981,87 @@ async function viewPlayer(playerKeyOrName) {
             _normMatch(p.name) === _normMatch(playerData.name)
         );
         
-        console.log(`League ${lg}:`, playerInLeague ? `Found player, ${playerInLeague.recentRatings?.length || 0} ratings` : 'Player not found');
+        if (!playerInLeague) {
+            console.log(`League ${lg}: Player not found`);
+            continue;
+        }
         
-        if (playerInLeague && playerInLeague.recentRatings && playerInLeague.recentRatings.length) {
-            console.log(`Processing ${playerInLeague.recentRatings.length} ratings for ${lg}`);
+        console.log(`League ${lg}: Found player with ${playerInLeague.recentRatings?.length || 0} ratings`);
+        
+        // Find ALL matches for this player's team in the schedule
+        const playerTeamCanonical = canonicalTeamName(playerInLeague.team);
+        const teamMatches = allMatches.filter(m => {
+            if (m.league !== lg) return false;
+            const homeCanonical = canonicalTeamName(m.home);
+            const awayCanonical = canonicalTeamName(m.away);
+            return homeCanonical === playerTeamCanonical || awayCanonical === playerTeamCanonical;
+        });
+        
+        console.log(`Found ${teamMatches.length} total matches for ${playerInLeague.team} in ${lg}`);
+        
+        // For each match, check if there's a rating
+        teamMatches.forEach((match, matchIdx) => {
+            const homeCanonical = canonicalTeamName(match.home);
+            const isHome = homeCanonical === playerTeamCanonical;
+            const opponent = isHome ? match.away : match.home;
             
-            // For each rating, find which matchday it belongs to, then find that match in schedule
-            playerInLeague.recentRatings.forEach((ratingEntry, idx) => {
-                const rowIndex = ratingEntry.rowIndex;
-                const rating = ratingEntry.rating;
-                
-                if (idx < 3) {
-                    console.log(`Rating ${idx}: Row ${rowIndex}, Rating ${rating}`);
-                }
-                
-                // Find which matchday this row belongs to using TOTM_CONFIG
-                let matchdayLabel = null;
-                const config = TOTM_CONFIG[lg] || {};
-                for (const [label, range] of Object.entries(config)) {
-                    if (rowIndex >= range.startRow && rowIndex <= range.endRow) {
-                        matchdayLabel = label;
-                        break;
-                    }
-                }
-                
-                if (!matchdayLabel) {
-                    if (idx < 3) {
-                        console.log(`No matchday found for row ${rowIndex} in ${lg}`);
-                    }
-                    return;
-                }
-                
-                if (idx < 3) {
-                    console.log(`Found matchday: ${matchdayLabel}`);
-                }
-                
-                // Now find the match in the schedule for this team in this matchday
-                // For leagues with "Matchday X" format, we need to find matches for that matchday
-                // For UCL with "Round X" or "R16 PO Leg X", we need different logic
-                
-                const playerTeamCanonical = canonicalTeamName(playerInLeague.team);
-                
-                // Find all matches involving this player's team
-                const teamMatches = allMatches.filter(m => {
-                    if (m.league !== lg) return false;
-                    const homeCanonical = canonicalTeamName(m.home);
-                    const awayCanonical = canonicalTeamName(m.away);
-                    return homeCanonical === playerTeamCanonical || awayCanonical === playerTeamCanonical;
-                });
-                
-                if (idx < 3) {
-                    console.log(`Found ${teamMatches.length} total matches for ${playerInLeague.team} (canonical: ${playerTeamCanonical}) in ${lg}`);
-                    if (teamMatches.length > 0) {
-                        console.log('Sample match:', teamMatches[0]);
-                    }
-                }
-                
-                // For now, since we don't have an exact date or matchday field in schedule,
-                // we'll have to use the first unmatched game or approximate
-                // This is a limitation - ideally schedule CSV would have a matchday column
-                
-                // Let's try to find a match by counting: 
-                // If this is the player's 1st rating, use their 1st match
-                // If this is the player's 2nd rating, use their 2nd match, etc.
-                const ratingIndex = playerInLeague.recentRatings.indexOf(ratingEntry);
-                const scheduleMatch = teamMatches[ratingIndex];
-                
-                let matchData = {
-                    date: matchdayLabel,
-                    opponent: 'Unknown',
-                    rating: rating,
-                    league: lg,
-                    leagueLogo: leagueLogos[lg],
-                    leagueName: leagueNames[lg],
-                    playerTeam: playerInLeague.team,
-                    result: '',
-                    formattedScore: '',
-                    hasMatch: false
-                };
-                
-                if (scheduleMatch) {
-                    // Determine if player is home or away
-                    const homeCanonical = canonicalTeamName(scheduleMatch.home);
-                    const isHome = homeCanonical === playerTeamCanonical;
+            let matchRating = null;
+            
+            // Try to find a rating for this match
+            // We need to determine which row in the ratings CSV this match corresponds to
+            // This is tricky without dates in the ratings log
+            // For now, we'll match by position: 1st match = 1st rating, etc.
+            if (playerInLeague.recentRatings && playerInLeague.recentRatings[matchIdx]) {
+                matchRating = playerInLeague.recentRatings[matchIdx].rating;
+            }
+            
+            // Determine result
+            let result = '';
+            let formattedScore = '';
+            let hasScore = false;
+            
+            if (match.score && match.score !== 'v' && match.score.includes('-')) {
+                const scoreParts = match.score.split('-').map(s => s.trim());
+                if (scoreParts.length === 2) {
+                    const homeScore = parseInt(scoreParts[0]);
+                    const awayScore = parseInt(scoreParts[1]);
                     
-                    // Get opponent
-                    matchData.opponent = isHome ? scheduleMatch.away : scheduleMatch.home;
-                    matchData.date = scheduleMatch.date || matchdayLabel;
-                    matchData.hasMatch = true;
-                    
-                    if (idx < 3) {
-                        console.log(`Matched to schedule: ${scheduleMatch.home} vs ${scheduleMatch.away} on ${scheduleMatch.date}`);
-                    }
-                    
-                    // Parse score and determine W/L/D
-                    if (scheduleMatch.score && scheduleMatch.score !== 'v' && scheduleMatch.score.includes('-')) {
-                        const scoreParts = scheduleMatch.score.split('-').map(s => s.trim());
-                        if (scoreParts.length === 2) {
-                            const homeScore = parseInt(scoreParts[0]);
-                            const awayScore = parseInt(scoreParts[1]);
-                            
-                            if (!isNaN(homeScore) && !isNaN(awayScore)) {
-                                // Determine result
-                                if (isHome) {
-                                    if (homeScore > awayScore) matchData.result = 'W';
-                                    else if (homeScore < awayScore) matchData.result = 'L';
-                                    else matchData.result = 'D';
-                                    matchData.formattedScore = `<strong>${homeScore}</strong> - ${awayScore}`;
-                                } else {
-                                    if (awayScore > homeScore) matchData.result = 'W';
-                                    else if (awayScore < homeScore) matchData.result = 'L';
-                                    else matchData.result = 'D';
-                                    matchData.formattedScore = `${homeScore} - <strong>${awayScore}</strong>`;
-                                }
-                            }
+                    if (!isNaN(homeScore) && !isNaN(awayScore)) {
+                        hasScore = true;
+                        
+                        // Determine W/L/D
+                        if (isHome) {
+                            if (homeScore > awayScore) result = 'W';
+                            else if (homeScore < awayScore) result = 'L';
+                            else result = 'D';
+                            formattedScore = `<strong>${homeScore}</strong> - ${awayScore}`;
+                        } else {
+                            if (awayScore > homeScore) result = 'W';
+                            else if (awayScore < homeScore) result = 'L';
+                            else result = 'D';
+                            formattedScore = `${homeScore} - <strong>${awayScore}</strong>`;
                         }
                     }
-                } else {
-                    if (idx < 3) {
-                        console.log(`No schedule match found for rating index ${ratingIndex}`);
-                    }
                 }
-                
-                allMatchRatings.push(matchData);
+            }
+            
+            allMatchRatings.push({
+                date: match.date,
+                opponent: opponent,
+                rating: matchRating,
+                league: lg,
+                leagueLogo: leagueLogos[lg],
+                leagueName: leagueNames[lg],
+                playerTeam: playerInLeague.team,
+                result: result,
+                formattedScore: formattedScore,
+                hasMatch: true,
+                hasScore: hasScore
             });
-        }
+        });
     }
     
-    console.log(`Total match ratings collected: ${allMatchRatings.length}`);
+    console.log(`Total matches collected: ${allMatchRatings.length}`);
     
     // Sort by date descending
     allMatchRatings.sort((a, b) => {
@@ -3189,7 +3142,7 @@ async function viewPlayer(playerKeyOrName) {
         </div>
 
         <div class="mt-6 stat-card">
-            <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Match Ratings</div>
+            <div class="text-[10px] font-black text-zinc-500 uppercase mb-4">Match History</div>
             <div style="display:flex;flex-direction:column;gap:4px;max-height:600px;overflow-y:auto;">
                 ${allMatchRatings.length ? allMatchRatings.map(r => {
                     const resultColor = r.result === 'W' ? '#22c55e' : r.result === 'L' ? '#ef4444' : '#888';
@@ -3212,18 +3165,24 @@ async function viewPlayer(playerKeyOrName) {
                                 <img src="${getLogo(r.opponent)}" style="width:18px;height:18px;object-fit:contain;flex-shrink:0;">
                                 <span style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.opponent}</span>
                             </div>
-                            ${r.hasMatch && r.result ? `
+                            ${r.hasScore && r.result ? `
                                 <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
                                     <span style="font-size:11px;font-weight:900;color:${resultColor};min-width:12px;">${r.result}</span>
                                     <span style="font-size:13px;font-weight:700;">${r.formattedScore}</span>
                                 </div>
                             ` : ''}
-                            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;background:${r.rating >= 8 ? '#22c55e' : r.rating >= 7 ? '#fbbf24' : r.rating >= 6 ? '#888' : '#ef4444'};padding:4px 8px;border-radius:6px;">
-                                <span style="font-size:14px;font-weight:900;color:#000;">${r.rating ? Number(r.rating).toFixed(1) : '-'}</span>
-                            </div>
+                            ${r.rating ? `
+                                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;background:${r.rating >= 8 ? '#22c55e' : r.rating >= 7 ? '#fbbf24' : r.rating >= 6 ? '#888' : '#ef4444'};padding:4px 8px;border-radius:6px;">
+                                    <span style="font-size:14px;font-weight:900;color:#000;">${Number(r.rating).toFixed(1)}</span>
+                                </div>
+                            ` : `
+                                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;background:#333;padding:4px 8px;border-radius:6px;">
+                                    <span style="font-size:14px;font-weight:900;color:#666;">-</span>
+                                </div>
+                            `}
                         </div>
                     `;
-                }).join('') : '<div style="color:#666;text-align:center;padding:20px;">No match ratings available</div>'}
+                }).join('') : '<div style="color:#666;text-align:center;padding:20px;">No matches found</div>'}
             </div>
         </div>
     `;
