@@ -2998,18 +2998,21 @@ async function viewPlayer(playerKeyOrName) {
                 // For leagues with "Matchday X" format, we need to find matches for that matchday
                 // For UCL with "Round X" or "R16 PO Leg X", we need different logic
                 
-                const playerTeamNorm = _normMatch(playerInLeague.team);
+                const playerTeamCanonical = canonicalTeamName(playerInLeague.team);
                 
                 // Find all matches involving this player's team
                 const teamMatches = allMatches.filter(m => {
                     if (m.league !== lg) return false;
-                    const homeNorm = _normMatch(m.home);
-                    const awayNorm = _normMatch(m.away);
-                    return homeNorm === playerTeamNorm || awayNorm === playerTeamNorm;
+                    const homeCanonical = canonicalTeamName(m.home);
+                    const awayCanonical = canonicalTeamName(m.away);
+                    return homeCanonical === playerTeamCanonical || awayCanonical === playerTeamCanonical;
                 });
                 
                 if (idx < 3) {
-                    console.log(`Found ${teamMatches.length} total matches for ${playerInLeague.team} in ${lg}`);
+                    console.log(`Found ${teamMatches.length} total matches for ${playerInLeague.team} (canonical: ${playerTeamCanonical}) in ${lg}`);
+                    if (teamMatches.length > 0) {
+                        console.log('Sample match:', teamMatches[0]);
+                    }
                 }
                 
                 // For now, since we don't have an exact date or matchday field in schedule,
@@ -3037,8 +3040,8 @@ async function viewPlayer(playerKeyOrName) {
                 
                 if (scheduleMatch) {
                     // Determine if player is home or away
-                    const homeNorm = _normMatch(scheduleMatch.home);
-                    const isHome = homeNorm === playerTeamNorm;
+                    const homeCanonical = canonicalTeamName(scheduleMatch.home);
+                    const isHome = homeCanonical === playerTeamCanonical;
                     
                     // Get opponent
                     matchData.opponent = isHome ? scheduleMatch.away : scheduleMatch.home;
