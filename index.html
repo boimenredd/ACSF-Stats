@@ -2990,14 +2990,25 @@ async function viewPlayer(playerKeyOrName) {
         
         // Find ALL matches for this player's team in the schedule
         const playerTeamCanonical = canonicalTeamName(playerInLeague.team);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
         const teamMatches = allMatches.filter(m => {
             if (m.league !== lg) return false;
+            
+            // Only include past matches
+            const matchDate = new Date(m.date);
+            if (isNaN(matchDate.getTime()) || matchDate > today) return false;
+            
             const homeCanonical = canonicalTeamName(m.home);
             const awayCanonical = canonicalTeamName(m.away);
             return homeCanonical === playerTeamCanonical || awayCanonical === playerTeamCanonical;
         });
         
-        console.log(`Found ${teamMatches.length} total matches for ${playerInLeague.team} in ${lg}`);
+        // Sort matches chronologically (oldest first) to match with ratings
+        teamMatches.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        console.log(`Found ${teamMatches.length} past matches for ${playerInLeague.team} in ${lg}`);
         
         // For each match, check if there's a rating
         teamMatches.forEach((match, matchIdx) => {
@@ -3007,12 +3018,13 @@ async function viewPlayer(playerKeyOrName) {
             
             let matchRating = null;
             
-            // Try to find a rating for this match
-            // We need to determine which row in the ratings CSV this match corresponds to
-            // This is tricky without dates in the ratings log
-            // For now, we'll match by position: 1st match = 1st rating, etc.
+            // Match rating by index: 1st match gets 1st rating, 2nd match gets 2nd rating, etc.
             if (playerInLeague.recentRatings && playerInLeague.recentRatings[matchIdx]) {
                 matchRating = playerInLeague.recentRatings[matchIdx].rating;
+            }
+            
+            if (matchIdx < 3) {
+                console.log(`Match ${matchIdx}: ${match.date} vs ${opponent}, Rating: ${matchRating || 'none'}`);
             }
             
             // Determine result
