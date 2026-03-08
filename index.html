@@ -1245,6 +1245,8 @@ async function init() {
     const keys = ['PREM', 'LALIGA', 'MLS', 'UCL', 'EUROPA'];
     allMatches = [];
     const dateMap = {};
+    
+    console.log('Loading schedules for:', keys);
 
     const pushMatch = (league, date, row, compOverride, colConfig) => {
         if (!date) return;
@@ -1412,6 +1414,14 @@ async function init() {
     }
 
     uniqueDates = Object.keys(dateMap).map(Number).sort((a,b) => a - b);
+    
+    // Log match counts per league
+    const matchCounts = {};
+    allMatches.forEach(m => {
+        matchCounts[m.league] = (matchCounts[m.league] || 0) + 1;
+    });
+    console.log('Loaded matches:', matchCounts);
+    console.log('Total matches:', allMatches.length);
     if (uniqueDates.length > 0) jumpToToday();
     else {
         document.getElementById('dateText').textContent = "NO DATA FOUND";
@@ -2153,13 +2163,20 @@ async function loadStats(league) {
             if (isObj) {
                 console.log(`${league} Ratings Log (object mode) - First 3 rows:`, objRows.slice(0, 3));
                 console.log(`${league} First row keys:`, Object.keys(objRows[0] || {}));
+                console.log(`${league} Processing ${objRows.length} total rows from ratings log`);
+                
+                let ratingsAdded = 0;
+                let ratingsSkipped = { noName: 0, noRating: 0, noPlayer: 0 };
                 
                 // Ratings log has: Name, Position, Rating, Team
                 // NO dates or opponents - those come from schedule
                 // We'll store ratings with their row index for later matching
                 objRows.forEach((r, idx) => {
                     const name = (r.Player || r.Name || r['Player Name'] || r['player'] || '').toString().trim();
-                    if (!name) return;
+                    if (!name) {
+                        ratingsSkipped.noName++;
+                        return;
+                    }
 
                     const team = (r.Team || r.Club || r['team'] || '').toString().trim();
                     const ratingRaw = (r.Rating || r.Score || r['Match Rating'] || r['rating'] || '').toString().trim();
@@ -2169,15 +2186,30 @@ async function loadStats(league) {
                     }
 
                     const rating = parseFloat(ratingRaw);
-                    if (Number.isNaN(rating)) return;
+                    if (Number.isNaN(rating)) {
+                        ratingsSkipped.noRating++;
+                        return;
+                    }
 
                     const p = upsertPlayer(name, team);
-                    if (!p) return;
+                    if (!p) {
+                        ratingsSkipped.noPlayer++;
+                        return;
+                    }
 
                     p.matches = (p.matches || 0) + 1;
                     // Store rating with row index (CSV row = idx + 2 because of header)
                     p.recentRatings.push({ rating, rowIndex: idx + 2, league });
+                    ratingsAdded++;
+                    
+                    // Log Alexander Isak specifically
+                    if (name.toLowerCase().includes('isak')) {
+                        console.log(`${league} ISAK rating added: Row ${idx + 2}, Rating ${rating}, Team: ${team}`);
+                    }
                 });
+                
+                console.log(`${league} Successfully added ${ratingsAdded} ratings across all players`);
+                console.log(`${league} Skipped: ${JSON.stringify(ratingsSkipped)}`);
             } else {
                 const rows = await parseCsv(src.ratingsLog, false);
                 console.log(`${league} Ratings Log - First 3 rows:`, rows.slice(0, 3));
