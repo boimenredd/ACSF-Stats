@@ -3019,6 +3019,7 @@ async function viewPlayer(playerKeyOrName) {
         }
         
         console.log(`League ${lg}: Found player with ${playerInLeague.recentRatings?.length || 0} ratings`);
+        console.log(`${lg} All stored ratings for ${playerInLeague.name}:`, playerInLeague.recentRatings);
         
         // Find ALL matches for this player's team in the schedule
         const playerTeamCanonical = canonicalTeamName(playerInLeague.team);
