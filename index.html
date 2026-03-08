@@ -1446,7 +1446,7 @@ function renderMatches() {
     document.getElementById('dateText').textContent = `${days[dObj.getDay()]}, ${months[dObj.getMonth()]} ${dObj.getDate()}`;
 
     const filtered = allMatches.filter(m => m.date.getTime() === target);
-    const leagueOrder = ['PREM', 'LALIGA', 'MLS'];
+    const leagueOrder = ['PREM', 'LALIGA', 'MLS', 'UCL', 'EUROPA'];
 
     let html = '';
     leagueOrder.forEach(lg => {
@@ -3009,6 +3009,11 @@ async function viewPlayer(playerKeyOrName) {
         teamMatches.sort((a, b) => new Date(a.date) - new Date(b.date));
         
         console.log(`Found ${teamMatches.length} past matches for ${playerInLeague.team} in ${lg}`);
+        console.log(`Player has ${playerInLeague.recentRatings?.length || 0} ratings stored`);
+        
+        if (playerInLeague.recentRatings && playerInLeague.recentRatings.length > 0) {
+            console.log('First 3 ratings:', playerInLeague.recentRatings.slice(0, 3));
+        }
         
         // For each match, check if there's a rating
         teamMatches.forEach((match, matchIdx) => {
