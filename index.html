@@ -2986,6 +2986,12 @@ async function viewPlayer(playerKeyOrName) {
         // Sort matches chronologically (oldest first) to match with ratings
         teamMatches.sort((a, b) => new Date(a.date) - new Date(b.date));
         
+        console.log(`${lg}: ${playerInLeague.team} - ${teamMatches.length} matches, ${playerInLeague.recentRatings?.length || 0} ratings`);
+        if (playerInLeague.recentRatings && playerInLeague.recentRatings.length > 0) {
+            console.log(`${lg}: First 5 rating row indices:`, playerInLeague.recentRatings.slice(0, 5).map(r => r.rowIndex));
+            console.log(`${lg}: First 5 match dates:`, teamMatches.slice(0, 5).map(m => m.date));
+        }
+        
         // For each match, check if there's a rating
         teamMatches.forEach((match, matchIdx) => {
             const homeCanonical = canonicalTeamName(match.home);
