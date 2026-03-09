@@ -989,6 +989,7 @@ const TOTM_CONFIG = {
         'Matchday 4': { startRow: 1476, endRow: 1695 }
     },
     LALIGA: {
+        'Matchday 27': { startRow: 4625, endRow: 4844 },
         'Matchday 26': { startRow: 4405, endRow: 4624 }
     },
     MLS: {
@@ -3040,17 +3041,12 @@ async function viewPlayer(playerKeyOrName) {
                         unmatchedRatings.push({rating: ratingEntry.rating, matchday: matchdayLabel, matchdayIndex, reason: matchdayIndex >= teamMatches.length ? 'index too high' : 'negative index'});
                         console.log(`${lg}: ✗ Rating ${ratingEntry.rating} (${matchdayLabel}, row ${rowIndex}) - matchday index ${matchdayIndex} out of range (only ${teamMatches.length} matches)`);
                     }
-                } else {
-                    unmatchedRatings.push({rating: ratingEntry.rating, row: rowIndex, reason: 'no matchday found'});
-                    console.log(`${lg}: ✗ Rating ${ratingEntry.rating} (row ${rowIndex}) - no matchday found in config`);
                 }
+                // Silently skip ratings that don't match any configured matchday
             });
         }
         
         console.log(`${lg}: Matched ${matchRatings.size} ratings to match indices`);
-        if (unmatchedRatings.length > 0) {
-            console.log(`${lg}: ${unmatchedRatings.length} unmatched ratings:`, unmatchedRatings);
-        }
         
         teamMatches.forEach((match, matchIdx) => {
             const homeCanonical = canonicalTeamName(match.home);
