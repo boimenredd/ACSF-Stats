@@ -2989,10 +2989,22 @@ async function viewPlayer(playerKeyOrName) {
         console.log(`${lg}: ${playerInLeague.team} - ${teamMatches.length} matches, ${playerInLeague.recentRatings?.length || 0} ratings`);
         
         // For each rating, determine which match it corresponds to by using TOTM_CONFIG
-        // Sort matchdays by their startRow (lower row = earlier in season)
+        // Sort matchdays by their numeric value (Matchday 1, 2, 3... or Round 1, 2, 3...)
         const config = TOTM_CONFIG[lg] || {};
+        
+        const extractNumber = (label) => {
+            // Extract first number from label
+            const match = label.match(/\d+/);
+            return match ? parseInt(match[0]) : 999;
+        };
+        
         const matchdayOrder = Object.keys(config).sort((a, b) => {
-            return config[a].startRow - config[b].startRow; // Sort by CSV row position (chronological)
+            // Special handling for UCL R16 PO Legs - they come after regular rounds
+            if (a.includes('PO')) return 1;
+            if (b.includes('PO')) return -1;
+            
+            // Otherwise sort by number
+            return extractNumber(a) - extractNumber(b);
         });
         
         console.log(`${lg}: Matchday order:`, matchdayOrder);
@@ -3020,7 +3032,6 @@ async function viewPlayer(playerKeyOrName) {
                     if (matchdayIndex >= 0 && matchdayIndex < teamMatches.length) {
                         // Assign this rating to the match at this index
                         matchRatings.set(matchdayIndex, ratingEntry.rating);
-                        console.log(`${lg}: Rating ${ratingEntry.rating} (row ${rowIndex}, ${matchdayLabel}) → match index ${matchdayIndex}`);
                     }
                 }
             });
