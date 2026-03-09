@@ -1247,8 +1247,6 @@ async function init() {
     const keys = ['PREM', 'LALIGA', 'MLS', 'UCL', 'EUROPA'];
     allMatches = [];
     const dateMap = {};
-    
-    console.log('Loading schedules for:', keys);
 
     const pushMatch = (league, date, row, compOverride, colConfig) => {
         if (!date) return;
@@ -1417,13 +1415,6 @@ async function init() {
 
     uniqueDates = Object.keys(dateMap).map(Number).sort((a,b) => a - b);
     
-    // Log match counts per league
-    const matchCounts = {};
-    allMatches.forEach(m => {
-        matchCounts[m.league] = (matchCounts[m.league] || 0) + 1;
-    });
-    console.log('Loaded matches:', matchCounts);
-    console.log('Total matches:', allMatches.length);
     if (uniqueDates.length > 0) jumpToToday();
     else {
         document.getElementById('dateText').textContent = "NO DATA FOUND";
@@ -2163,76 +2154,38 @@ async function loadStats(league) {
             const isObj = objRows.length && typeof objRows[0] === 'object' && !Array.isArray(objRows[0]);
 
             if (isObj) {
-                console.log(`${league} Ratings Log (object mode) - First 3 rows:`, objRows.slice(0, 3));
-                console.log(`${league} First row keys:`, Object.keys(objRows[0] || {}));
-                console.log(`${league} Processing ${objRows.length} total rows from ratings log`);
-                
-                let ratingsAdded = 0;
-                let ratingsSkipped = { noName: 0, noRating: 0, noPlayer: 0 };
-                
                 // Ratings log has: Name, Position, Rating, Team
                 // NO dates or opponents - those come from schedule
                 // We'll store ratings with their row index for later matching
                 objRows.forEach((r, idx) => {
                     const name = (r.Player || r.Name || r['Player Name'] || r['player'] || '').toString().trim();
-                    if (!name) {
-                        ratingsSkipped.noName++;
-                        return;
-                    }
+                    if (!name) return;
 
                     const team = (r.Team || r.Club || r['team'] || '').toString().trim();
                     const ratingRaw = (r.Rating || r.Score || r['Match Rating'] || r['rating'] || '').toString().trim();
 
-                    if (idx < 3) {
-                        console.log(`${league} Row ${idx} parsed - Name:${name} Team:${team} Rating:${ratingRaw} RowIndex:${idx + 2}`);
-                    }
-
                     const rating = parseFloat(ratingRaw);
-                    if (Number.isNaN(rating)) {
-                        ratingsSkipped.noRating++;
-                        return;
-                    }
+                    if (Number.isNaN(rating)) return;
 
                     const p = upsertPlayer(name, team);
-                    if (!p) {
-                        ratingsSkipped.noPlayer++;
-                        return;
-                    }
+                    if (!p) return;
 
                     p.matches = (p.matches || 0) + 1;
                     // Store rating with row index (CSV row = idx + 2 because of header)
                     p.recentRatings.push({ rating, rowIndex: idx + 2, league });
-                    ratingsAdded++;
-                    
-                    // Log Alexander Isak specifically
-                    if (name.toLowerCase().includes('isak')) {
-                        console.log(`${league} ISAK rating added: Row ${idx + 2}, Rating ${rating}, Team: ${team}`);
-                    }
                 });
-                
-                console.log(`${league} Successfully added ${ratingsAdded} ratings across all players`);
-                console.log(`${league} Skipped: ${JSON.stringify(ratingsSkipped)}`);
             } else {
                 const rows = await parseCsv(src.ratingsLog, false);
-                console.log(`${league} Ratings Log - First 3 rows:`, rows.slice(0, 3));
                 rows.forEach((row, i) => {
                     if (!Array.isArray(row)) return;
                     
-                    if (i < 3) {
-                        console.log(`${league} Row ${i}:`, row);
-                    }
-                    
-                    const name = (row[0] || '').toString().trim(); // A
-                    const position = (row[1] || '').toString().trim(); // B
-                    const ratingRaw = (row[2] || '').toString().trim(); // C
-                    const team = (row[3] || '').toString().trim(); // D
-                    const date = (row[4] || '').toString().trim(); // E
-                    const opp = (row[5] || '').toString().trim(); // F
-                    const score = (row[6] || '').toString().trim(); // G
-                    
-                    if (i < 3) {
-                        console.log(`${league} Parsed - Name:${name} Pos:${position} Rating:${ratingRaw} Team:${team} Date:${date} Opp:${opp}`);
-                    }
+                    const name = (row[0] || '').toString().trim();
+                    const position = (row[1] || '').toString().trim();
+                    const ratingRaw = (row[2] || '').toString().trim();
+                    const team = (row[3] || '').toString().trim();
+                    const date = (row[4] || '').toString().trim();
+                    const opp = (row[5] || '').toString().trim();
+                    const score = (row[6] || '').toString().trim();
                     
                     if (!name) return;
                     if (i === 0 && (name.toLowerCase() === 'player' || name.toLowerCase().includes('name'))) return;
@@ -2283,7 +2236,7 @@ async function loadStats(league) {
 
         Object.values(data.players).forEach(p => {
             if (!p || !p.recentRatings) return;
-            if (p.recentRatings.length > 5) p.recentRatings = p.recentRatings.slice(-5);
+            // Keep all ratings - don't truncate
         });
 
         data.loaded = true;
@@ -2950,10 +2903,6 @@ async function viewPlayer(playerKeyOrName) {
     // Calculate per-competition stats
     const allLeagues = ['PREM', 'LALIGA', 'MLS', 'UCL'];
     
-    console.log('=== STARTING PLAYER PAGE RENDER ===');
-    console.log('PlayerData:', playerData);
-    console.log('StatsData available:', Object.keys(statsData));
-    
     const competitionStats = {};
     let totalGoals = 0, totalAssists = 0, totalCS = 0, totalMatches = 0;
     
@@ -3007,8 +2956,6 @@ async function viewPlayer(playerKeyOrName) {
     // Collect ALL matches for this player across all leagues, then add ratings where they exist
     const allMatchRatings = [];
     
-    console.log('Player stats for:', playerData.name, 'Team:', playerData.team, 'League:', playerData.league);
-    
     for (const lg of allLeagues) {
         const pool = statsData[lg].players || {};
         const playerInLeague = Object.values(pool).find(p => 
@@ -3016,12 +2963,8 @@ async function viewPlayer(playerKeyOrName) {
         );
         
         if (!playerInLeague) {
-            console.log(`League ${lg}: Player not found`);
             continue;
         }
-        
-        console.log(`League ${lg}: Found player with ${playerInLeague.recentRatings?.length || 0} ratings`);
-        console.log(`${lg} All stored ratings for ${playerInLeague.name}:`, playerInLeague.recentRatings);
         
         // Find ALL matches for this player's team in the schedule
         const playerTeamCanonical = canonicalTeamName(playerInLeague.team);
@@ -3043,13 +2986,6 @@ async function viewPlayer(playerKeyOrName) {
         // Sort matches chronologically (oldest first) to match with ratings
         teamMatches.sort((a, b) => new Date(a.date) - new Date(b.date));
         
-        console.log(`Found ${teamMatches.length} past matches for ${playerInLeague.team} in ${lg}`);
-        console.log(`Player has ${playerInLeague.recentRatings?.length || 0} ratings stored`);
-        
-        if (playerInLeague.recentRatings && playerInLeague.recentRatings.length > 0) {
-            console.log('First 3 ratings:', playerInLeague.recentRatings.slice(0, 3));
-        }
-        
         // For each match, check if there's a rating
         teamMatches.forEach((match, matchIdx) => {
             const homeCanonical = canonicalTeamName(match.home);
@@ -3061,10 +2997,6 @@ async function viewPlayer(playerKeyOrName) {
             // Match rating by index: 1st match gets 1st rating, 2nd match gets 2nd rating, etc.
             if (playerInLeague.recentRatings && playerInLeague.recentRatings[matchIdx]) {
                 matchRating = playerInLeague.recentRatings[matchIdx].rating;
-            }
-            
-            if (matchIdx < 3) {
-                console.log(`Match ${matchIdx}: ${match.date} vs ${opponent}, Rating: ${matchRating || 'none'}`);
             }
             
             // Determine result
@@ -3113,9 +3045,7 @@ async function viewPlayer(playerKeyOrName) {
         });
     }
     
-    console.log(`Total matches collected: ${allMatchRatings.length}`);
-    
-    // Sort by date descending
+    // Sort by date descending (most recent first)
     allMatchRatings.sort((a, b) => {
         const dateA = new Date(a.date);
         const dateB = new Date(b.date);
@@ -3124,8 +3054,6 @@ async function viewPlayer(playerKeyOrName) {
         }
         return 0;
     });
-
-    console.log('About to render player page HTML');
 
     try {
         content.innerHTML = `
