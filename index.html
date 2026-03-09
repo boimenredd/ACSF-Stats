@@ -3029,19 +3029,22 @@ async function viewPlayer(playerKeyOrName) {
                 }
             }
             
-            allMatchRatings.push({
-                date: match.date,
-                opponent: opponent,
-                rating: matchRating,
-                league: lg,
-                leagueLogo: leagueLogos[lg],
-                leagueName: leagueNames[lg],
-                playerTeam: playerInLeague.team,
-                result: result,
-                formattedScore: formattedScore,
-                hasMatch: true,
-                hasScore: hasScore
-            });
+            // Only add to display if this match has a rating
+            if (matchRating !== null) {
+                allMatchRatings.push({
+                    date: match.date,
+                    opponent: opponent,
+                    rating: matchRating,
+                    league: lg,
+                    leagueLogo: leagueLogos[lg],
+                    leagueName: leagueNames[lg],
+                    playerTeam: playerInLeague.team,
+                    result: result,
+                    formattedScore: formattedScore,
+                    hasMatch: true,
+                    hasScore: hasScore
+                });
+            }
         });
     }
     
@@ -3151,18 +3154,12 @@ async function viewPlayer(playerKeyOrName) {
                                     <span style="font-size:13px;font-weight:700;">${r.formattedScore}</span>
                                 </div>
                             ` : ''}
-                            ${r.rating ? `
-                                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;background:${r.rating >= 8 ? '#22c55e' : r.rating >= 7 ? '#fbbf24' : r.rating >= 6 ? '#888' : '#ef4444'};padding:4px 8px;border-radius:6px;">
-                                    <span style="font-size:14px;font-weight:900;color:#000;">${Number(r.rating).toFixed(1)}</span>
-                                </div>
-                            ` : `
-                                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;background:#333;padding:4px 8px;border-radius:6px;">
-                                    <span style="font-size:14px;font-weight:900;color:#666;">-</span>
-                                </div>
-                            `}
+                            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;background:${r.rating >= 7.0 ? '#22c55e' : r.rating >= 6.0 ? '#fbbf24' : '#ef4444'};padding:4px 8px;border-radius:6px;">
+                                <span style="font-size:14px;font-weight:900;color:#000;">${Number(r.rating).toFixed(1)}</span>
+                            </div>
                         </div>
                     `;
-                }).join('') : '<div style="color:#666;text-align:center;padding:20px;">No matches found</div>'}
+                }).join('') : '<div style="color:#666;text-align:center;padding:20px;">No match ratings available</div>'}
             </div>
         </div>
     `;
