@@ -2983,27 +2983,57 @@ async function viewPlayer(playerKeyOrName) {
             return homeCanonical === playerTeamCanonical || awayCanonical === playerTeamCanonical;
         });
         
-        // Sort matches chronologically (oldest first) to match with ratings
+        // Sort matches chronologically (oldest first)
         teamMatches.sort((a, b) => new Date(a.date) - new Date(b.date));
         
         console.log(`${lg}: ${playerInLeague.team} - ${teamMatches.length} matches, ${playerInLeague.recentRatings?.length || 0} ratings`);
-        if (playerInLeague.recentRatings && playerInLeague.recentRatings.length > 0) {
-            console.log(`${lg}: First 5 rating row indices:`, playerInLeague.recentRatings.slice(0, 5).map(r => r.rowIndex));
-            console.log(`${lg}: First 5 match dates:`, teamMatches.slice(0, 5).map(m => m.date));
+        
+        // For each rating, determine which match it corresponds to by using TOTM_CONFIG
+        // to figure out the matchday, then finding that team's match around that time
+        const config = TOTM_CONFIG[lg] || {};
+        const matchdayOrder = Object.keys(config).sort((a, b) => {
+            const numA = parseInt(a.match(/\d+/)?.[0] || 0);
+            const numB = parseInt(b.match(/\d+/)?.[0] || 0);
+            return numA - numB; // Ascending order: 1, 2, 3...
+        });
+        
+        // Build a map of match index to rating
+        const matchRatings = new Map();
+        
+        if (playerInLeague.recentRatings) {
+            playerInLeague.recentRatings.forEach(ratingEntry => {
+                const rowIndex = ratingEntry.rowIndex;
+                
+                // Find which matchday this rating belongs to
+                let matchdayLabel = null;
+                for (const [label, range] of Object.entries(config)) {
+                    if (rowIndex >= range.startRow && rowIndex <= range.endRow) {
+                        matchdayLabel = label;
+                        break;
+                    }
+                }
+                
+                if (matchdayLabel) {
+                    // Find the position of this matchday in chronological order
+                    const matchdayIndex = matchdayOrder.indexOf(matchdayLabel);
+                    
+                    if (matchdayIndex >= 0 && matchdayIndex < teamMatches.length) {
+                        // Assign this rating to the match at this index
+                        matchRatings.set(matchdayIndex, ratingEntry.rating);
+                    }
+                }
+            });
         }
         
-        // For each match, check if there's a rating
+        console.log(`${lg}: Matched ${matchRatings.size} ratings to match indices`);
+        
         teamMatches.forEach((match, matchIdx) => {
             const homeCanonical = canonicalTeamName(match.home);
             const isHome = homeCanonical === playerTeamCanonical;
             const opponent = isHome ? match.away : match.home;
             
-            let matchRating = null;
-            
-            // Match rating by index: 1st match gets 1st rating, 2nd match gets 2nd rating, etc.
-            if (playerInLeague.recentRatings && playerInLeague.recentRatings[matchIdx]) {
-                matchRating = playerInLeague.recentRatings[matchIdx].rating;
-            }
+            // Get rating for this match index from our map
+            const matchRating = matchRatings.get(matchIdx) || null;
             
             // Determine result
             let result = '';
