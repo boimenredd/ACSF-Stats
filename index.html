@@ -3011,6 +3011,7 @@ async function viewPlayer(playerKeyOrName) {
         
         // Build a map of match index to rating
         const matchRatings = new Map();
+        let unmatchedRatings = [];
         
         if (playerInLeague.recentRatings) {
             playerInLeague.recentRatings.forEach(ratingEntry => {
@@ -3032,12 +3033,22 @@ async function viewPlayer(playerKeyOrName) {
                     if (matchdayIndex >= 0 && matchdayIndex < teamMatches.length) {
                         // Assign this rating to the match at this index
                         matchRatings.set(matchdayIndex, ratingEntry.rating);
+                        console.log(`${lg}: ✓ Rating ${ratingEntry.rating} (${matchdayLabel}, row ${rowIndex}) → match ${matchdayIndex}`);
+                    } else {
+                        unmatchedRatings.push({rating: ratingEntry.rating, matchday: matchdayLabel, matchdayIndex, reason: matchdayIndex >= teamMatches.length ? 'index too high' : 'negative index'});
+                        console.log(`${lg}: ✗ Rating ${ratingEntry.rating} (${matchdayLabel}, row ${rowIndex}) - matchday index ${matchdayIndex} out of range (only ${teamMatches.length} matches)`);
                     }
+                } else {
+                    unmatchedRatings.push({rating: ratingEntry.rating, row: rowIndex, reason: 'no matchday found'});
+                    console.log(`${lg}: ✗ Rating ${ratingEntry.rating} (row ${rowIndex}) - no matchday found in config`);
                 }
             });
         }
         
         console.log(`${lg}: Matched ${matchRatings.size} ratings to match indices`);
+        if (unmatchedRatings.length > 0) {
+            console.log(`${lg}: ${unmatchedRatings.length} unmatched ratings:`, unmatchedRatings);
+        }
         
         teamMatches.forEach((match, matchIdx) => {
             const homeCanonical = canonicalTeamName(match.home);
