@@ -403,7 +403,7 @@ const LOGOS = {
     "Osasuna": "https://ssl.gstatic.com/onebox/media/sports/logos/pk-hNCNpGM_JDoHHvLVF-Q_48x48.png",
     "Villarreal": "https://ssl.gstatic.com/onebox/media/sports/logos/WKH7Ak5cYD6Qm1EEqXzmVw_48x48.png",
     "Levante": "https://ssl.gstatic.com/onebox/media/sports/logos/SQB-jlVosxVV1Ce79FhbOA_48x48.png",
-    "Las Palmas": "https://upload.wikimedia.org/wikipedia/sco/thumb/2/20/UD_Las_Palmas_logo.svg/1188px-UD_Las_Palmas_logo.svg.png",
+    "Las Palmas": "https://upload.wikimedia.org/wikipedia/en/thumb/2/20/UD_Las_Palmas_logo.svg/960px-UD_Las_Palmas_logo.svg.png",
     "Mallorca": "https://ssl.gstatic.com/onebox/media/sports/logos/Ss21P4CUmigjrEtcoapjVg_48x48.png",
     "Espanyol": "https://ssl.gstatic.com/onebox/media/sports/logos/TKitIqelDyN6M-kYt4Uc0g_48x48.png",
     "Valencia": "https://ssl.gstatic.com/onebox/media/sports/logos/QPbjvDwI_0Wuu4tCS2O6uw_48x48.png",
@@ -964,6 +964,7 @@ function goToStandingsFromTeam(lg) {
 // Format: { league: { 'Matchday Label': { startRow: X, endRow: Y } } }
 const TOTM_CONFIG = {
     PREM: {
+        'Matchday 30': { startRow: 5524, endRow: 5732 },
         'Matchday 29': { startRow: 5304, endRow: 5523 },
         'Matchday 28': { startRow: 5084, endRow: 5303 },
         'Matchday 27': { startRow: 4864, endRow: 5061 },
@@ -992,10 +993,12 @@ const TOTM_CONFIG = {
         'Matchday 4': { startRow: 1476, endRow: 1695 }
     },
     LALIGA: {
+        'Matchday 28': { startRow: 4845, endRow: 5064 },
         'Matchday 27': { startRow: 4625, endRow: 4844 },
         'Matchday 26': { startRow: 4405, endRow: 4624 }
     },
     MLS: {
+        'Matchday 6': { startRow: 1102, endRow: 1310 },
         'Matchday 5': { startRow: 882, endRow: 1101 },
         'Matchday 4': { startRow: 662, endRow: 881 },
         'Matchday 3': { startRow: 442, endRow: 661 },
