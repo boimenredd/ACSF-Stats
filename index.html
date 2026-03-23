@@ -1014,6 +1014,66 @@ const TOTM_CONFIG = {
     }
 };
 
+// ===== MATCHDAY DATE MAPPINGS =====
+// Maps matchday numbers to their start dates for proper rating-to-match assignment
+const MATCHDAY_DATES = {
+    PREM: {
+        1: '2025-08-15', 2: '2025-08-22', 3: '2025-08-29', 4: '2025-09-13', 5: '2025-09-20',
+        6: '2025-09-27', 7: '2025-10-04', 8: '2025-10-18', 9: '2025-10-25', 10: '2025-11-01',
+        11: '2025-11-08', 12: '2025-11-22', 13: '2025-11-29', 14: '2025-12-03', 15: '2025-12-06',
+        16: '2025-12-13', 17: '2025-12-20', 18: '2025-12-27', 19: '2025-12-30', 20: '2026-01-03',
+        21: '2026-01-07', 22: '2026-01-17', 23: '2026-01-24', 24: '2026-01-31', 25: '2026-02-07',
+        26: '2026-02-11', 27: '2026-02-21', 28: '2026-02-28', 29: '2026-03-04', 30: '2026-03-14',
+        31: '2026-03-21', 32: '2026-04-11', 33: '2026-04-18', 34: '2026-04-25', 35: '2026-05-02',
+        36: '2026-05-09', 37: '2026-05-17', 38: '2026-05-24'
+    },
+    LALIGA: {
+        1: '2025-08-15', 2: '2025-08-22', 3: '2025-08-29', 4: '2025-09-13', 5: '2025-09-20',
+        6: '2025-09-23', 7: '2025-09-27', 8: '2025-10-04', 9: '2025-10-18', 10: '2025-10-25',
+        11: '2025-11-01', 12: '2025-11-08', 13: '2025-11-22', 14: '2025-11-29', 15: '2025-12-06',
+        16: '2025-12-13', 17: '2025-12-20', 18: '2026-01-03', 19: '2026-01-10', 20: '2026-01-17',
+        21: '2026-01-24', 22: '2026-01-31', 23: '2026-02-07', 24: '2026-02-14', 25: '2026-02-21',
+        26: '2026-02-28', 27: '2026-03-07', 28: '2026-03-14', 29: '2026-03-21', 30: '2026-04-04',
+        31: '2026-04-11', 32: '2026-04-18', 33: '2026-04-21', 34: '2026-05-02', 35: '2026-05-09',
+        36: '2026-05-12', 37: '2026-05-16', 38: '2026-05-23'
+    },
+    MLS: {
+        1: '2026-02-21', 2: '2026-02-28', 3: '2026-03-04', 4: '2026-03-07', 5: '2026-03-14',
+        6: '2026-03-21', 7: '2026-04-01', 8: '2026-04-11', 9: '2026-04-18', 10: '2026-04-22',
+        11: '2026-04-25', 12: '2026-05-02', 13: '2026-05-09', 14: '2026-05-13', 15: '2026-05-16',
+        16: '2026-05-23', 17: '2026-05-30', 18: '2026-06-06', 19: '2026-07-22', 20: '2026-07-25',
+        21: '2026-07-29', 22: '2026-08-01', 23: '2026-08-08', 24: '2026-08-15', 25: '2026-08-19',
+        26: '2026-08-22', 27: '2026-08-29', 28: '2026-09-05', 29: '2026-09-12', 30: '2026-09-16',
+        31: '2026-09-19', 32: '2026-09-26', 33: '2026-10-10', 34: '2026-10-14', 35: '2026-10-17',
+        36: '2026-10-24', 37: '2026-10-31', 38: '2026-11-07'
+    }
+};
+
+// Helper function to determine which matchday a game date belongs to
+function getMatchdayFromDate(league, gameDate) {
+    const dates = MATCHDAY_DATES[league];
+    if (!dates) return null;
+    
+    const gameDateObj = new Date(gameDate);
+    if (isNaN(gameDateObj.getTime())) return null;
+    
+    // Find the matchday by checking if game date is >= matchday date and < next matchday date
+    const matchdayNumbers = Object.keys(dates).map(Number).sort((a, b) => a - b);
+    
+    for (let i = 0; i < matchdayNumbers.length; i++) {
+        const currentMD = matchdayNumbers[i];
+        const currentMDDate = new Date(dates[currentMD]);
+        const nextMD = matchdayNumbers[i + 1];
+        const nextMDDate = nextMD ? new Date(dates[nextMD]) : new Date('2099-12-31');
+        
+        if (gameDateObj >= currentMDDate && gameDateObj < nextMDDate) {
+            return currentMD;
+        }
+    }
+    
+    return null;
+}
+
 // ===== PLAYER PROFILE & MARKET VALUE DATA =====
 const PLAYER_PROFILES_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQx45oCCfdTzFKGbhmn8_p8Fi3NUeWPzjExDv7RAJ-NHHZ1xtopvSaVdZ9kFbAf4LAsrDL2Bx7Mo2FD/pub?gid=1254562161&single=true&output=csv';
 const MARKET_VALUES_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSMfxDU_MQ34V8YoaWHE-AIeiLSIDjdZrbK03C8vPXWTtRJzFHDr4fiZqZ4-mQyRSuDbvxO0bzmRyyw/pub?gid=1989972054&single=true&output=csv';
@@ -3000,9 +3060,11 @@ async function viewPlayer(playerKeyOrName) {
         
         console.log(`${lg}: ${playerInLeague.team} - ${teamMatches.length} matches, ${playerInLeague.recentRatings?.length || 0} ratings`);
         
-        // For each rating, determine which match it corresponds to by using TOTM_CONFIG
-        // Sort matchdays by their numeric value (Matchday 1, 2, 3... or Round 1, 2, 3...)
+        // Build a map: matchday number → rating value
+        // For leagues with MATCHDAY_DATES (PREM, LALIGA, MLS), we'll use date-based matching
+        // For UCL/EUROPA, we'll continue using chronological index matching
         const config = TOTM_CONFIG[lg] || {};
+        const useDateBasedMatching = MATCHDAY_DATES[lg] !== undefined;
         
         const extractNumber = (label) => {
             // Extract first number from label
@@ -3010,20 +3072,8 @@ async function viewPlayer(playerKeyOrName) {
             return match ? parseInt(match[0]) : 999;
         };
         
-        const matchdayOrder = Object.keys(config).sort((a, b) => {
-            // Special handling for UCL R16 PO Legs - they come after regular rounds
-            if (a.includes('PO')) return 1;
-            if (b.includes('PO')) return -1;
-            
-            // Otherwise sort by number
-            return extractNumber(a) - extractNumber(b);
-        });
-        
-        console.log(`${lg}: Matchday order:`, matchdayOrder);
-        
-        // Build a map of match index to rating
-        const matchRatings = new Map();
-        let unmatchedRatings = [];
+        // Build rating map by matchday number (not index)
+        const ratingsByMatchday = new Map(); // matchday number → rating value
         
         if (playerInLeague.recentRatings) {
             playerInLeague.recentRatings.forEach(ratingEntry => {
@@ -3039,31 +3089,36 @@ async function viewPlayer(playerKeyOrName) {
                 }
                 
                 if (matchdayLabel) {
-                    // Find the position of this matchday in chronological order
-                    const matchdayIndex = matchdayOrder.indexOf(matchdayLabel);
-                    
-                    if (matchdayIndex >= 0 && matchdayIndex < teamMatches.length) {
-                        // Assign this rating to the match at this index
-                        matchRatings.set(matchdayIndex, ratingEntry.rating);
-                        console.log(`${lg}: ✓ Rating ${ratingEntry.rating} (${matchdayLabel}, row ${rowIndex}) → match ${matchdayIndex}`);
-                    } else {
-                        unmatchedRatings.push({rating: ratingEntry.rating, matchday: matchdayLabel, matchdayIndex, reason: matchdayIndex >= teamMatches.length ? 'index too high' : 'negative index'});
-                        console.log(`${lg}: ✗ Rating ${ratingEntry.rating} (${matchdayLabel}, row ${rowIndex}) - matchday index ${matchdayIndex} out of range (only ${teamMatches.length} matches)`);
-                    }
+                    const matchdayNumber = extractNumber(matchdayLabel);
+                    ratingsByMatchday.set(matchdayNumber, ratingEntry.rating);
+                    console.log(`${lg}: ✓ Rating ${ratingEntry.rating} (${matchdayLabel}, row ${rowIndex}) stored for matchday ${matchdayNumber}`);
                 }
                 // Silently skip ratings that don't match any configured matchday
             });
         }
         
-        console.log(`${lg}: Matched ${matchRatings.size} ratings to match indices`);
+        console.log(`${lg}: Stored ${ratingsByMatchday.size} ratings by matchday number`);
         
+        // Now match ratings to actual games
         teamMatches.forEach((match, matchIdx) => {
             const homeCanonical = canonicalTeamName(match.home);
             const isHome = homeCanonical === playerTeamCanonical;
             const opponent = isHome ? match.away : match.home;
             
-            // Get rating for this match index from our map
-            const matchRating = matchRatings.get(matchIdx) || null;
+            // Get rating for this match
+            let matchRating = null;
+            
+            if (useDateBasedMatching) {
+                // For PREM, LALIGA, MLS: determine matchday from match date
+                const matchdayNumber = getMatchdayFromDate(lg, match.date);
+                if (matchdayNumber && ratingsByMatchday.has(matchdayNumber)) {
+                    matchRating = ratingsByMatchday.get(matchdayNumber);
+                    console.log(`${lg}: Match on ${match.date} → MD${matchdayNumber} → rating ${matchRating}`);
+                }
+            } else {
+                // For UCL/EUROPA: use chronological index (fallback to old method)
+                matchRating = ratingsByMatchday.get(matchIdx + 1) || null;
+            }
             
             // Determine result
             let result = '';
