@@ -158,6 +158,11 @@
         .player-picker-avatar { width: 44px; height: 44px; border-radius: 50%; background: #222; object-fit: cover; border: 1px solid #2a2a2a; flex-shrink: 0; }
         .player-picker-initials { width: 44px; height: 44px; border-radius: 50%; background: #222; border: 1px solid #2a2a2a; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; color: #666; }
         .player-picker-info { flex: 1; min-width: 0; }
+
+        /* Articles */
+        .article-content { font-size: 15px; line-height: 1.8; }
+        .article-content p { margin-bottom: 1em; }
+        .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
         .player-picker-name { font-size: 13px; font-weight: 700; }
         .player-picker-team { font-size: 11px; color: #888; margin-top: 2px; }
 
@@ -278,6 +283,18 @@
                 <div id="totmContent" class="px-4"></div>
             </div>
 
+            <div id="articles-tab" class="hidden" style="padding-top:16px; padding-bottom:24px;">
+                <div class="px-4">
+                    <h2 class="text-xl font-black uppercase mb-6 text-center">Articles</h2>
+                    <div id="articlesContent"></div>
+                </div>
+            </div>
+
+            <div id="article-detail-tab" class="hidden" style="padding:16px;">
+                <button onclick="backToArticles()" class="text-[10px] font-black text-[#00ff85] mb-4 block">← BACK TO ARTICLES</button>
+                <div id="articleDetailContent"></div>
+            </div>
+
             <div id="league-overview-tab" class="hidden" style="padding:16px;">
                 <button onclick="backToHub()" class="text-[10px] font-black text-[#00ff85] mb-4 block">← BACK TO HUB</button>
                 <div id="leagueOverviewContent"></div>
@@ -362,6 +379,10 @@
             <div class="nav-item" onclick="switchTab('totm')">
                 <span class="text-lg">⭐</span>
                 <span>TEAM OF MD</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('articles')">
+                <span class="text-lg">📰</span>
+                <span>ARTICLES</span>
             </div>
         </div>
     </nav>
@@ -881,6 +902,9 @@ const STANDINGS_URLS = {
     UCL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=474382009&single=true&output=csv',
     EUROPA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1627277990&single=true&output=csv'
 };
+
+// Articles URL - CSV format: Column A = Date, Column B = Title, Column C = Author, Column D = Content
+const ARTICLES_URL = 'YOUR_GOOGLE_SHEETS_CSV_URL_HERE';;
 
 // --- Standings cache + helpers (for Team page table snapshot) ---
 let standingsCache = {};
@@ -1860,13 +1884,13 @@ function changeDate(step) {
 
 function switchTab(t) {
     currentView = t;
-    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
+    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','articles-tab','article-detail-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
     allTabs.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
     });
 
-    const tabMap = { hub: 'hub-tab', standings: 'standings-tab', stats: 'stats-tab', totm: 'totm-tab' };
+    const tabMap = { hub: 'hub-tab', standings: 'standings-tab', stats: 'stats-tab', totm: 'totm-tab', articles: 'articles-tab' };
     const showId = tabMap[t] || 'hub-tab';
     const show = document.getElementById(showId);
     if (show) show.classList.remove('hidden');
@@ -1876,13 +1900,15 @@ function switchTab(t) {
         const isActive = (t === 'hub' && spanText === 'MAIN HUB') ||
                          (t === 'standings' && spanText === 'STANDINGS') ||
                          (t === 'stats' && spanText === 'STATS') ||
-                         (t === 'totm' && spanText === 'TEAM OF MD');
+                         (t === 'totm' && spanText === 'TEAM OF MD') ||
+                         (t === 'articles' && spanText === 'ARTICLES');
         el.classList.toggle('active', isActive);
     });
 
     if (t === 'standings') renderStandings('PREM');
     if (t === 'stats') renderStats('PREM');
     if (t === 'totm') renderTOTMTab('PREM');
+    if (t === 'articles') renderArticles();
 }
 
 function backToView() {
@@ -1890,6 +1916,11 @@ function backToView() {
     else if (currentView === 'standings') switchTab('standings');
     else if (currentView === 'stats') switchTab('stats');
     else if (currentView === 'totm') switchTab('totm');
+    else if (currentView === 'articles') switchTab('articles');
+}
+
+function backToArticles() {
+    switchTab('articles');
 }
 
 function getQualifyColor(lg, pos) {
@@ -4255,6 +4286,112 @@ ADD-ONLY: DOMESTIC CUPS (COMPETITION-FIRST, SAFE LOAD)
     };
   }
 })();
+
+// ===== ARTICLES SECTION =====
+let articlesCache = null;
+
+async function loadArticles() {
+    if (articlesCache) return articlesCache;
+    
+    return new Promise((resolve) => {
+        Papa.parse(ARTICLES_URL, {
+            download: true,
+            header: true,
+            complete: (result) => {
+                const articles = (result.data || [])
+                    .filter(row => row.Date && row.Title && row.Author && row.Content)
+                    .map((row, idx) => ({
+                        id: idx,
+                        date: row.Date.trim(),
+                        title: row.Title.trim(),
+                        author: row.Author.trim(),
+                        content: row.Content.trim()
+                    }))
+                    .sort((a, b) => new Date(b.date) - new Date(a.date)); // Newest first
+                
+                articlesCache = articles;
+                resolve(articles);
+            },
+            error: () => {
+                articlesCache = [];
+                resolve([]);
+            }
+        });
+    });
+}
+
+async function renderArticles() {
+    const content = document.getElementById('articlesContent');
+    content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading articles...</div>';
+    
+    const articles = await loadArticles();
+    
+    if (!articles || articles.length === 0) {
+        content.innerHTML = '<div class="text-center text-zinc-500 py-8">No articles found</div>';
+        return;
+    }
+    
+    const formatDate = (dateStr) => {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    };
+    
+    const articlesHTML = articles.map(article => {
+        const excerpt = article.content.substring(0, 150) + (article.content.length > 150 ? '...' : '');
+        return `
+            <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 p-4 mb-4 cursor-pointer hover:border-[#00ff85] transition-all" onclick="viewArticle(${article.id})">
+                <div class="flex items-center gap-2 text-[10px] text-zinc-500 mb-2">
+                    <span>${formatDate(article.date)}</span>
+                    <span>•</span>
+                    <span>By ${article.author}</span>
+                </div>
+                <h3 class="text-lg font-black mb-2">${article.title}</h3>
+                <p class="text-sm text-zinc-400 line-clamp-3">${excerpt}</p>
+                <div class="text-[10px] text-[#00ff85] font-black mt-3">READ MORE →</div>
+            </div>
+        `;
+    }).join('');
+    
+    content.innerHTML = articlesHTML;
+}
+
+async function viewArticle(articleId) {
+    const articles = await loadArticles();
+    const article = articles.find(a => a.id === articleId);
+    
+    if (!article) return;
+    
+    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','articles-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
+    allTabs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+    
+    document.getElementById('article-detail-tab').classList.remove('hidden');
+    currentView = 'articles';
+    
+    const formatDate = (dateStr) => {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+    };
+    
+    const content = document.getElementById('articleDetailContent');
+    content.innerHTML = `
+        <article class="max-w-3xl mx-auto">
+            <div class="flex items-center gap-2 text-[10px] text-zinc-500 mb-4">
+                <span>${formatDate(article.date)}</span>
+                <span>•</span>
+                <span>By ${article.author}</span>
+            </div>
+            <h1 class="text-3xl font-black mb-6">${article.title}</h1>
+            <div class="article-content text-zinc-300 leading-relaxed" style="white-space: pre-wrap;">${article.content}</div>
+        </article>
+    `;
+}
 </script>
 
 </body>
