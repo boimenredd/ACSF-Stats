@@ -903,10 +903,17 @@ const STANDINGS_URLS = {
     EUROPA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1627277990&single=true&output=csv'
 };
 
-// Articles Configuration
-// ARTICLES_INDEX_URL should be a Google Sheet CSV with columns: Date, Title, Author, DocURL
-// Each DocURL should be a published Google Doc link
-const ARTICLES_INDEX_URL = 'YOUR_GOOGLE_SHEETS_CSV_URL_HERE';
+// ===== ARTICLES CONFIGURATION =====
+// Add new articles here - they will appear in the Articles tab
+const ARTICLES = [
+    {
+        date: '2026-03-16',
+        title: 'Things continue to crumble for Columbus as draws rule supreme | Matchday 5',
+        author: 'boimenred',
+        docUrl: 'https://docs.google.com/document/d/e/2PACX-1vRu2vef02mIeRFBs-PND1KltRgqz2OVkHmPsPM9kVqzC_VL7v7VO91WjkOJbczVFirj5OiM8-JsFJLB/pub'
+    }
+    // Add more articles here in the same format
+];
 
 
 // --- Standings cache + helpers (for Team page table snapshot) ---
@@ -4296,31 +4303,19 @@ let articlesCache = null;
 async function loadArticles() {
     if (articlesCache) return articlesCache;
     
-    return new Promise((resolve) => {
-        Papa.parse(ARTICLES_INDEX_URL, {
-            download: true,
-            header: true,
-            complete: (result) => {
-                const articles = (result.data || [])
-                    .filter(row => row.Date && row.Title && row.Author && row.DocURL)
-                    .map((row, idx) => ({
-                        id: idx,
-                        date: row.Date.trim(),
-                        title: row.Title.trim(),
-                        author: row.Author.trim(),
-                        docUrl: row.DocURL.trim()
-                    }))
-                    .sort((a, b) => new Date(b.date) - new Date(a.date)); // Newest first
-                
-                articlesCache = articles;
-                resolve(articles);
-            },
-            error: () => {
-                articlesCache = [];
-                resolve([]);
-            }
-        });
-    });
+    // Process and sort the hardcoded articles array
+    const articles = ARTICLES
+        .map((article, idx) => ({
+            id: idx,
+            date: article.date,
+            title: article.title,
+            author: article.author,
+            docUrl: article.docUrl
+        }))
+        .sort((a, b) => new Date(b.date) - new Date(a.date)); // Newest first
+    
+    articlesCache = articles;
+    return articles;
 }
 
 async function fetchGoogleDocContent(docUrl) {
