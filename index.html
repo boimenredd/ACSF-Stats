@@ -903,8 +903,11 @@ const STANDINGS_URLS = {
     EUROPA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1627277990&single=true&output=csv'
 };
 
-// Articles URL - CSV format: Column A = Date, Column B = Title, Column C = Author, Column D = Content
-const ARTICLES_URL = 'YOUR_GOOGLE_SHEETS_CSV_URL_HERE';;
+// Articles Configuration
+// ARTICLES_INDEX_URL should be a Google Sheet CSV with columns: Date, Title, Author, DocURL
+// Each DocURL should be a published Google Doc link
+const ARTICLES_INDEX_URL = 'YOUR_GOOGLE_SHEETS_CSV_URL_HERE';
+
 
 // --- Standings cache + helpers (for Team page table snapshot) ---
 let standingsCache = {};
@@ -4294,18 +4297,18 @@ async function loadArticles() {
     if (articlesCache) return articlesCache;
     
     return new Promise((resolve) => {
-        Papa.parse(ARTICLES_URL, {
+        Papa.parse(ARTICLES_INDEX_URL, {
             download: true,
             header: true,
             complete: (result) => {
                 const articles = (result.data || [])
-                    .filter(row => row.Date && row.Title && row.Author && row.Content)
+                    .filter(row => row.Date && row.Title && row.Author && row.DocURL)
                     .map((row, idx) => ({
                         id: idx,
                         date: row.Date.trim(),
                         title: row.Title.trim(),
                         author: row.Author.trim(),
-                        content: row.Content.trim()
+                        docUrl: row.DocURL.trim()
                     }))
                     .sort((a, b) => new Date(b.date) - new Date(a.date)); // Newest first
                 
@@ -4318,6 +4321,52 @@ async function loadArticles() {
             }
         });
     });
+}
+
+async function fetchGoogleDocContent(docUrl) {
+    try {
+        const response = await fetch(docUrl);
+        const html = await response.text();
+        
+        // Parse the HTML to extract text content
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        // Google Docs published content is in the body
+        const contentDiv = doc.querySelector('body');
+        if (!contentDiv) return '';
+        
+        // Extract text while preserving some formatting
+        let content = '';
+        const processNode = (node) => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                content += node.textContent;
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                const tagName = node.tagName.toLowerCase();
+                
+                // Add paragraph breaks
+                if (tagName === 'p' || tagName === 'div') {
+                    Array.from(node.childNodes).forEach(processNode);
+                    content += '\n\n';
+                }
+                // Add line breaks
+                else if (tagName === 'br') {
+                    content += '\n';
+                }
+                // Process other elements recursively
+                else {
+                    Array.from(node.childNodes).forEach(processNode);
+                }
+            }
+        };
+        
+        Array.from(contentDiv.childNodes).forEach(processNode);
+        
+        return content.trim();
+    } catch (error) {
+        console.error('Error fetching Google Doc:', error);
+        return 'Error loading article content.';
+    }
 }
 
 async function renderArticles() {
@@ -4339,7 +4388,6 @@ async function renderArticles() {
     };
     
     const articlesHTML = articles.map(article => {
-        const excerpt = article.content.substring(0, 150) + (article.content.length > 150 ? '...' : '');
         return `
             <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 p-4 mb-4 cursor-pointer hover:border-[#00ff85] transition-all" onclick="viewArticle(${article.id})">
                 <div class="flex items-center gap-2 text-[10px] text-zinc-500 mb-2">
@@ -4348,8 +4396,7 @@ async function renderArticles() {
                     <span>By ${article.author}</span>
                 </div>
                 <h3 class="text-lg font-black mb-2">${article.title}</h3>
-                <p class="text-sm text-zinc-400 line-clamp-3">${excerpt}</p>
-                <div class="text-[10px] text-[#00ff85] font-black mt-3">READ MORE →</div>
+                <div class="text-[10px] text-[#00ff85] font-black mt-3">READ ARTICLE →</div>
             </div>
         `;
     }).join('');
@@ -4388,9 +4435,16 @@ async function viewArticle(articleId) {
                 <span>By ${article.author}</span>
             </div>
             <h1 class="text-3xl font-black mb-6">${article.title}</h1>
-            <div class="article-content text-zinc-300 leading-relaxed" style="white-space: pre-wrap;">${article.content}</div>
+            <div class="article-content text-zinc-300 leading-relaxed">
+                <div class="text-center text-zinc-500 py-8">Loading article...</div>
+            </div>
         </article>
     `;
+    
+    // Fetch and display the article content
+    const articleContent = await fetchGoogleDocContent(article.docUrl);
+    const articleContentDiv = content.querySelector('.article-content');
+    articleContentDiv.innerHTML = `<div style="white-space: pre-wrap;">${articleContent}</div>`;
 }
 </script>
 
