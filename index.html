@@ -4318,52 +4318,6 @@ async function loadArticles() {
     return articles;
 }
 
-async function fetchGoogleDocContent(docUrl) {
-    try {
-        const response = await fetch(docUrl);
-        const html = await response.text();
-        
-        // Parse the HTML to extract text content
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        // Google Docs published content is in the body
-        const contentDiv = doc.querySelector('body');
-        if (!contentDiv) return '';
-        
-        // Extract text while preserving some formatting
-        let content = '';
-        const processNode = (node) => {
-            if (node.nodeType === Node.TEXT_NODE) {
-                content += node.textContent;
-            } else if (node.nodeType === Node.ELEMENT_NODE) {
-                const tagName = node.tagName.toLowerCase();
-                
-                // Add paragraph breaks
-                if (tagName === 'p' || tagName === 'div') {
-                    Array.from(node.childNodes).forEach(processNode);
-                    content += '\n\n';
-                }
-                // Add line breaks
-                else if (tagName === 'br') {
-                    content += '\n';
-                }
-                // Process other elements recursively
-                else {
-                    Array.from(node.childNodes).forEach(processNode);
-                }
-            }
-        };
-        
-        Array.from(contentDiv.childNodes).forEach(processNode);
-        
-        return content.trim();
-    } catch (error) {
-        console.error('Error fetching Google Doc:', error);
-        return 'Error loading article content.';
-    }
-}
-
 async function renderArticles() {
     const content = document.getElementById('articlesContent');
     content.innerHTML = '<div class="text-center text-zinc-500 py-8">Loading articles...</div>';
@@ -4405,7 +4359,7 @@ async function viewArticle(articleId) {
     
     if (!article) return;
     
-    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','articles-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
+    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','articles-tab','article-detail-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
     allTabs.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
@@ -4423,23 +4377,22 @@ async function viewArticle(articleId) {
     
     const content = document.getElementById('articleDetailContent');
     content.innerHTML = `
-        <article class="max-w-3xl mx-auto">
+        <div class="max-w-5xl mx-auto">
             <div class="flex items-center gap-2 text-[10px] text-zinc-500 mb-4">
                 <span>${formatDate(article.date)}</span>
                 <span>•</span>
                 <span>By ${article.author}</span>
             </div>
             <h1 class="text-3xl font-black mb-6">${article.title}</h1>
-            <div class="article-content text-zinc-300 leading-relaxed">
-                <div class="text-center text-zinc-500 py-8">Loading article...</div>
+            <div class="bg-white rounded-lg overflow-hidden" style="height: calc(100vh - 250px); min-height: 600px;">
+                <iframe 
+                    src="${article.docUrl}" 
+                    style="width: 100%; height: 100%; border: none;"
+                    title="${article.title}"
+                ></iframe>
             </div>
-        </article>
+        </div>
     `;
-    
-    // Fetch and display the article content
-    const articleContent = await fetchGoogleDocContent(article.docUrl);
-    const articleContentDiv = content.querySelector('.article-content');
-    articleContentDiv.innerHTML = `<div style="white-space: pre-wrap;">${articleContent}</div>`;
 }
 </script>
 
