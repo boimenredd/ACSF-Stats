@@ -904,40 +904,138 @@ const STANDINGS_URLS = {
 };
 
 // ===== ARTICLES CONFIGURATION =====
-// Add new articles here - they will appear in the Articles tab
 const ARTICLES = [
+    {
+        date: '2026-04-05',
+        title: 'Around The Federation',
+        author: 'therios',
+        content: `
+            <p class="mb-4 italic text-zinc-400">A weekly round-up of all things Armchair Soccer</p>
+            
+            <p class="mb-4">Welcome back. Did you enjoy the international break? If you watched the USMNT, of course you didn't. But we're back to the matches that actually matter, and if this week was any indication, some of you spent the time off studying tactical masterclasses, while others clearly spent it forgetting how to send in a lineup sheet. With title races heating up, European spots on the line, and the relegation swamp getting deeper, let's dive into the chaos that was.</p>
+            
+            <h3 class="text-2xl font-black mt-8 mb-4">MLS</h3>
+            
+            <p class="mb-4">San Diego continues to set the early pace in the league, with Doom's squad taking down Vancouver 2-1 behind Lee Jae Sung's fifth of the year and a dominant performance from country star Brian White. They've still only conceded three goals all season, though Miami remains a persistent shadow just three points back after Rodrigo De Paul dismantled Cincinnati in a 2-0 win. Maybe having proven World Cup winners is a good formula after all.</p>
+            
+            <p class="mb-4">Meanwhile, Splasher's Columbus Crew have suddenly remembered how to play football! Since that scathing article about their struggles went live, they've now collected two wins in a row, blanking the ownerless LA Galaxy 2-0 behind goals from Daniel Arzani and Sean Zawadzki. And with one more win next week, it's called a winning streak...It has happened before!</p>
+            
+            <p class="mb-4">However, the question on everyone's minds…What is going on in the Pacific Northwest? The Zombie Sounders aren't just dead; they're being dismantled. Last year's top seed in the West fell 4-0 to a much improved Charlotte side, and the stats are truly head scratching. One win in seven games, three goals scored total, and a defense that has conceded 22 goals—which is eight more than the second-worst defense in the league. Coco, we're only seven games in, but the panic button is officially blinking red, ready for you to press.</p>
+            
+            <p class="mb-4"><strong>Other League Snapshots</strong><br>
+            The rest of the slate was a festival of "almosts" and stalemates:</p>
+            <ul class="list-none mb-4 text-zinc-300">
+                <li>MIN 0-0 MON</li>
+                <li>NE 0-0 DC</li>
+                <li>LAFC 1-1 SJ</li>
+                <li>CHI 1-0 COL</li>
+                <li>RSL 1-1 TOR</li>
+                <li>ATL 2-1 ORL</li>
+            </ul>
+            
+            <h3 class="text-xl font-black mt-6 mb-3">US Open Cup</h3>
+            
+            <p class="mb-4">The Cup brought the drama we crave. While some usual suspects like LAFC, Miami, and San Jose moved on, some MLS 2 clubs decided they weren't interested in following the script. Philadelphia Union dumped more salt in the wound for Seattle with a 1-0 win, while NYCFC survived a shootout to knock out Minnesota.</p>
+            
+            <p class="mb-4">The biggest shocker, however, came from a lowly Austin FC, who managed to stun the league-leading "Fighting Ron Burgundys" of San Diego thanks to a late Jayden Nelson strike. Apparently, San Diego can bleed, they just prefer to do it in the Cup.</p>
+            
+            <p class="mb-4"><strong>Looking Ahead to Next Week</strong></p>
+            <ul class="list-disc list-inside mb-4 text-zinc-300">
+                <li><strong>San Jose vs. Vancouver:</strong> It's Son vs. Thomas Muller. We're also continuing to keep tabs on San Jose's experiments with "cloning technology".</li>
+                <li><strong>Columbus vs. Minnesota:</strong> Can the Crew stay hot?</li>
+                <li><strong>San Diego vs. LAFC:</strong> The leaders look to bounce back from their Cup exit and stay top of MLS 1 against a heavyweight rival.</li>
+            </ul>
+            
+            <h3 class="text-2xl font-black mt-8 mb-4">La Liga</h3>
+            
+            <p class="mb-4">Barcelona is currently checking their watch and wondering when the trophy presentation starts. While the rest of the league is busy tripping over their own laces, the Blaugrana have extended their lead at the top and are one step closer to lifting the title. They received a massive assist from las Piratas, as Mallorca managed to steal two points from a toothless Real Madrid in a 0-0 draw.</p>
+            
+            <p class="mb-4">That stalemate allowed Sevilla to leapfrog Madrid into second place following a 5-0 demolition of Real Oviedo. This particular thrashing likely felt like a personal vendetta for Sevilla director Therios; after building the ship at Oviedo only to watch the new management sink it, this was less of a football match and more of a 90-minute "I told you so". Despite the movement in the standings, Barcelona still sits on a comfortable 10-point cushion with only eight matches to play.</p>
+            
+            <p class="mb-4">The real entertainment, however, was found in San Sebastian. Real Sociedad trailed Levante 0-1 for the first 70 minutes of their match before both teams exploded for four goals in the final 20. Jonathan David turned into a one-man wrecking crew, finishing off a hat-trick in the 89th minute to secure a clutch 3-2 victory. That result keeps Sociedad's Champions League dreams very much alive, leaving them just a single point behind Atletico Madrid in fourth.</p>
+            
+            <p class="mb-4"><strong>Other League Snapshots</strong><br>
+            The relegation swamp is officially reaching chest-height for Vallecano and Alaves as the season nears its end:</p>
+            <ul class="list-none mb-4 text-zinc-300">
+                <li>Alaves 1-1 Osasuna</li>
+                <li>Real Betis 2-1 Espanyol</li>
+                <li>Villareal 4-2 Girona</li>
+                <li>Las Palmas 1-1 Bilbao</li>
+                <li>Valencia 2-2 Celta Vigo</li>
+                <li>Rayo Vallecano 1-2 Elche</li>
+            </ul>
+            
+            <p class="mb-4"><strong>Looking Ahead to Next Week</strong></p>
+            <ul class="list-disc list-inside mb-4 text-zinc-300">
+                <li><strong>Real Sociedad vs. Alaves:</strong> A high-stakes clash between Splasher and Coco. One is fighting for the Champions League, the other is fighting to keep their head above the relegation water.</li>
+                <li><strong>Las Palmas vs. Levante:</strong> Depending on how Alaves fares, the loser of this match will spend the rest of the week sweating profusely just one spot away from the drop. The winner could do a lot towards securing their safety.</li>
+                <li><strong>European Heavyweights:</strong> The battle for continental spots hits a fever pitch as Sevilla hosts Atletico Madrid and Real Madrid tries to find their scoring boots against a fading Girona.</li>
+            </ul>
+            
+            <h3 class="text-xl font-black mt-6 mb-3">Copa del Rey Final</h3>
+            
+            <p class="mb-4">It was a win for the ACSF streamers in the Copa del Rey final, as Athletic Bilbao beat Barcelona 2-1 securing their 25th-ever Copa del Rey trophy. The scoring did open without a surprise as Viktor Gyökeres finished off an excellent Barcelona team move to make it 1-0. However, Bilbao kept the pressure on throughout the first half and in the 44th minute tied the match with a piece of EA magic and a double headed Barcelona own goal.</p>
+            
+            <p class="mb-4">Both teams had chances and threw punches all second second half, but in the 68th minute it was none other than Oihan Sancet to land the killer blow with the goal off an assist from Nico Williams to seal victory for the Basque club, sending Barcelona home with nothing to show for. Both teams had their opportunities, but it was Athletic Bilbao who seized the one that mattered most. At least you've got the league wrapped up, Lego.</p>
+            
+            <h3 class="text-xl font-black mt-6 mb-3">FA Cup Quarterfinals</h3>
+            
+            <p class="mb-4">A true cupset on the road for Sunderland as they knocked out the English giants Manchester United 7-6 on penalties after an entertaining 120 minutes that ended 1-1. The big moment came in pens as new United signing Lukas Nmecha stepped up ahead 4-3 with a chance to advance, and hit it right at Luiz Junior who easily saved it and kept Sunderland alive. The rest is history and the black cats are onto the semifinals</p>
+            
+            <p class="mb-4">Next up was an absolute spectacle of English football as Newcastle traveled to the south coast to play Championship side Portsmouth in the heavy rain. And Portsmouth absolutely fought til the end, giving the magpies hell for 89 minutes but missing some big chances. However, it was Tim Kleindienst right at the end with an absolute screamer to save the day for Newcastle and keep their FA Cup dreams alive.</p>
+            
+            <p class="mb-4">The match that followed what might end up being the game of the season across the federation, Brentford and Leeds United. Rebound goals aside, this turned out to be an epic match to watch. Amazing to win, but a true heartbreaker to lose.</p>
+            
+            <p class="mb-4">A classic Leeds press led to Daizen Maeda opening the scoring for the whites in the 6th minute and we were off and running. What followed was back and forth action for 90 minutes, 2 goals from both teams leading to extra time, a combined 30 shots evenly over 120 minutes, 4 goals in extra time alone, and it all ended with drama in penalties.</p>
+            
+            <p class="mb-4">Ao Tanaka stepped up with a chance to send Leeds to the Semifinals but the pressure got to him as he sliced it into the elated Brentford supporters. A few pens later it was Caoimhin Kelleher saving a Mahdi Camara penalty and how fitting was it that the Irish keeper was the hero to send Brentford on. It was an amazing display from him denying Leeds in regular time, extra time and pens. And now, the bees have a chance to make history. This FA Cup semifinal appearance is already the furthest the club has ever made it in the competition.</p>
+            
+            <p class="mb-4">Finally, we saw two clubs that are not even 2 miles apart, Chelsea and Fulham, face off. They proved that the FA Cup is still full of magic, as if it wasn't proven already on the day. Fulham defended the Craven Cottage with honor and pride as Raul Jimenez got the loan goal and sent them to Wembley, beating the mighty Chelsea 1-0.</p>
+            
+            <p class="mb-4"><strong>Looking Ahead to Next Week</strong><br>
+            The Premier League and Champions League both return this next week. Everybody set your lineups. Things are getting real tense and spicy down the stretch. Squeaky Bum Time is officially here.</p>
+        `
+    },
     {
         date: '2026-03-16',
         title: 'Things continue to crumble for Columbus as draws rule supreme | Matchday 5',
         author: 'boimenred',
-        docUrl: 'https://docs.google.com/document/d/e/2PACX-1vRu2vef02mIeRFBs-PND1KltRgqz2OVkHmPsPM9kVqzC_VL7v7VO91WjkOJbczVFirj5OiM8-JsFJLB/pub'
+        content: `
+            <p class="mb-4">It took five matches into the MLS season for me to write another article.</p>
+            
+            <p class="mb-4">Five weeks into the MLS season, and the table is starting to separate, just a little bit, just not quite in the way many expected. San Diego FC and Inter Miami CF have emerged as early MLS Cup favorites, though the emphasis should definitely be on the word <em>early</em>. Teams like Cincy, Charlotte, and New England have quietly put together strong starts, while for others, things have unraveled much faster than expected. The most notable example is the Columbus Crew, who finished second in the Supporters' Shield race last season but now sit at 0-0-5 in 18th place, only avoiding the bottom spots because of the points deductions currently facing LAFC and RSL.</p>
+            
+            <h3 class="text-xl font-black mt-6 mb-3">What's Up with the Crew:</h3>
+            
+            <p class="mb-4">Seriously, what is up with them?</p>
+            
+            <p class="mb-4">Look, this roster is really, really, really loaded with talent. Yet, they're pretty much dead last in MLS with no wins to their name. The only reason they aren't last is because of the points penalties that LAFC and RSL have imposed on themselves. The Crew had finished second in the Supporters Shield race just a few months ago, and still have pretty much every one of those pieces that got them there in their current squad. But alas, the results still aren't there for whatever reason. They've been utilizing a similar system that HC Splasher has been known to use with his clubs, alternating between different types of formations utilizing at least 4 attackers on the field at all times. But, the defense has been struggling, giving up 13 goals, which is second worst in the MLS. The attack hasn't looked clinical either, and the team is simply lacking the consistency that made them a threat last year. The good news for Columbus is that it's still very early in the season and there's plenty of time to crawl out of the hole they've dug for themselves. The bad news is that five matches without a single point gained puts them in a hole that gets harder to climb out of every week, especially when your next 4 matches in MLS consist of LAFC, LA Galaxy, Minnesota, and Seattle, with a USOC match against Miami thrown in between those.</p>
+            
+            <h3 class="text-xl font-black mt-6 mb-3">The Draw Epidemic of Matchday 5:</h3>
+            
+            <p class="mb-4">You get a draw! You get a draw! You get a draw!</p>
+            
+            <p class="mb-4">Out of the 10 matches played this weekend, half of them, or five of them, if you're bad at math, resulted in both teams scoring the same amount of goals, which results in a draw if you aren't familiar with the lingo. The marquee match of the weekend even ended in a draw, with reigning MLS Cup Champions <em>presented by boimenred</em>, Atlanta United drawing with the post MD4 league leaders San Diego FC 1-1, who now drops down to 2nd after Miami's 3-2 comeback win over Chicago. It's worth noting that Atlanta United had semi-rotated their lineup for the game in preparation for their Continental Cup Final match against Elche on Wednesday, but most starters still did play, and it was a possible preview of what's to come in the MLS Cup Final <em>presented by boimenred</em> at the end of the season. Elsewhere, the matches between Montreal and Colorado and Toronto and LAFC both resulted in 2-2 draws, while the matches between Orlando City and Vancouver and RSL and Cincy resulted in 0-0 draws. I thought an impressive takeaway for me from this matchday was the parity that has seemed to come across MLS this season, I know it's early to make the call here but half of the matches being draws in a matchday has to mean something…</p>
+            
+            <h3 class="text-xl font-black mt-6 mb-3">MD6 Score Predictions:</h3>
+            
+            <p class="mb-4">I'll leak the script for you guys to save yall a watch next week.</p>
+            
+            <ul class="list-none mb-4 text-zinc-300">
+                <li>Revs over RSL 2-0</li>
+                <li>LAFC draw Columbus 1-1</li>
+                <li>Atlanta over Cincy 2-1</li>
+                <li>Miami over Colorado 3-0</li>
+                <li>Vancouver over LA Galaxy 1-0</li>
+                <li>San Jose draw DC United 2-2</li>
+                <li>Charlotte over Toronto 2-1</li>
+                <li>San Diego over Orlando 3-1</li>
+                <li>Minnesota over Seattle 3-0</li>
+                <li>Chicago over Montreal 1-0</li>
+            </ul>
+        `
     }
-    // Add more articles here in the same format
 ];
-
-
-// --- Standings cache + helpers (for Team page table snapshot) ---
-let standingsCache = {};
-
-// Loads standings rows for a league once, returns sorted array by position.
-// Each row: { pos:number, team:string, wdl:string, pts:number, mp:number }
-function loadStandingsData(lg) {
-    if (standingsCache[lg] && standingsCache[lg].loaded) return Promise.resolve(standingsCache[lg].rows);
-
-    standingsCache[lg] = { loaded: false, rows: [] };
-
-    return new Promise((resolve) => {
-        Papa.parse(STANDINGS_URLS[lg], {
-            download: true,
-            header: true,
-            complete: (res) => {
-                const rows = (res.data || []).map(r => {
-                    let pos = r.Position || r.position || r['#'] || '';
-                    let team = r.Team || r.team || '';
-                    const fixed = _stripLeadingPosFromTeam(pos, team);
-                    pos = fixed.pos;
-                    team = fixed.team;
-
                     const mp = parseInt((r.MP || r.mp || 0), 10);
                     const pts = parseInt((r.Points || r.Pts || r.points || 0), 10);
                     const wdl = (r['W-D-L'] || r['WDL'] || r['WDL '] || '').toString().trim();
@@ -4310,7 +4408,7 @@ async function loadArticles() {
             date: article.date,
             title: article.title,
             author: article.author,
-            docUrl: article.docUrl
+            content: article.content
         }))
         .sort((a, b) => new Date(b.date) - new Date(a.date)); // Newest first
     
@@ -4384,58 +4482,11 @@ async function viewArticle(articleId) {
                 <span>By ${article.author}</span>
             </div>
             <h1 class="text-3xl font-black mb-6">${article.title}</h1>
-            <div class="article-content text-zinc-300 leading-relaxed">
-                <div class="text-center text-zinc-500 py-8">Loading article...</div>
+            <div class="article-content text-zinc-300 leading-relaxed text-[15px]">
+                ${article.content}
             </div>
         </article>
     `;
-    
-    // Fetch the article content using CORS proxy
-    try {
-        const proxyUrl = 'https://api.allorigins.win/raw?url=';
-        const response = await fetch(proxyUrl + encodeURIComponent(article.docUrl));
-        const html = await response.text();
-        
-        // Parse HTML to extract text
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        // Google Docs puts content in specific divs
-        const contentElement = doc.querySelector('#contents') || doc.querySelector('body');
-        
-        if (contentElement) {
-            // Extract text while preserving paragraphs
-            let articleText = '';
-            const paragraphs = contentElement.querySelectorAll('p, h1, h2, h3, h4, h5, h6');
-            
-            if (paragraphs.length > 0) {
-                paragraphs.forEach(p => {
-                    const text = p.textContent.trim();
-                    if (text) {
-                        const tag = p.tagName.toLowerCase();
-                        if (tag.startsWith('h')) {
-                            articleText += `<h3 class="text-xl font-black mt-6 mb-3">${text}</h3>`;
-                        } else {
-                            articleText += `<p class="mb-4">${text}</p>`;
-                        }
-                    }
-                });
-            } else {
-                // Fallback: get all text
-                articleText = `<p class="mb-4">${contentElement.textContent.trim().replace(/\n\n+/g, '</p><p class="mb-4">')}</p>`;
-            }
-            
-            const articleContentDiv = content.querySelector('.article-content');
-            articleContentDiv.innerHTML = articleText;
-        } else {
-            const articleContentDiv = content.querySelector('.article-content');
-            articleContentDiv.innerHTML = '<p class="text-zinc-500">Unable to load article content.</p>';
-        }
-    } catch (error) {
-        console.error('Error loading article:', error);
-        const articleContentDiv = content.querySelector('.article-content');
-        articleContentDiv.innerHTML = '<p class="text-zinc-500">Error loading article. Please try again later.</p>';
-    }
 }
 </script>
 
