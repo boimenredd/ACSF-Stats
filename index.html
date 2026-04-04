@@ -904,6 +904,8 @@ const STANDINGS_URLS = {
 };
 
 // ===== ARTICLES CONFIGURATION =====
+// Add new articles here - they will appear in the Articles tab
+// Use HTML for formatting: <p>, <strong>, <em>, <img>, <h3>, etc.
 const ARTICLES = [
     {
         date: '2026-04-05',
@@ -1036,6 +1038,30 @@ const ARTICLES = [
         `
     }
 ];
+
+
+// --- Standings cache + helpers (for Team page table snapshot) ---
+let standingsCache = {};
+
+// Loads standings rows for a league once, returns sorted array by position.
+// Each row: { pos:number, team:string, wdl:string, pts:number, mp:number }
+function loadStandingsData(lg) {
+    if (standingsCache[lg] && standingsCache[lg].loaded) return Promise.resolve(standingsCache[lg].rows);
+
+    standingsCache[lg] = { loaded: false, rows: [] };
+
+    return new Promise((resolve) => {
+        Papa.parse(STANDINGS_URLS[lg], {
+            download: true,
+            header: true,
+            complete: (res) => {
+                const rows = (res.data || []).map(r => {
+                    let pos = r.Position || r.position || r['#'] || '';
+                    let team = r.Team || r.team || '';
+                    const fixed = _stripLeadingPosFromTeam(pos, team);
+                    pos = fixed.pos;
+                    team = fixed.team;
+
                     const mp = parseInt((r.MP || r.mp || 0), 10);
                     const pts = parseInt((r.Points || r.Pts || r.points || 0), 10);
                     const wdl = (r['W-D-L'] || r['WDL'] || r['WDL '] || '').toString().trim();
