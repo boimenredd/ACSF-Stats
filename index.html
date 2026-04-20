@@ -2243,7 +2243,7 @@ function generateTOTMWithNav(group, league, currentIdx, totalMatchdays) {
 }
 
 function generateTOTMFromGroup(group, league) {
-    const players = group.players.slice(); // Don't sort overall yet
+    const players = group.players.slice();
     const data = statsData[league];
 
     console.log(`Building TOTM for ${group.label}: ${players.length} total players`);
@@ -2255,8 +2255,8 @@ function generateTOTMFromGroup(group, league) {
         labelStr = `${months[parsedDate.getMonth()]} ${parsedDate.getDate()}, ${parsedDate.getFullYear()}`;
     }
 
-    // Categorize by SPECIFIC positions
-    const categorized = { gk: [], lb: [], cb: [], rb: [], cdm: [], cm: [], cam: [], lw: [], rw: [], st: [] };
+    // Categorize by positions for 4-2-3-1
+    const categorized = { gk: [], lb: [], cb: [], rb: [], lcdm: [], rcdm: [], lm: [], rm: [], cam: [], st: [] };
     
     players.forEach(p => {
         const playerData = data && data.players ? Object.values(data.players).find(pl =>
@@ -2268,38 +2268,39 @@ function generateTOTMFromGroup(group, league) {
         const photoUrl = playerData ? (playerData.photoUrl || '') : '';
         const entry = { ...p, pos, key, photoUrl };
         
-        // Position-specific categorization with mappings
+        // Position mapping for 4-2-3-1
         if (pos === 'GK') categorized.gk.push(entry);
         else if (pos === 'LB' || pos === 'LWB') categorized.lb.push(entry);
         else if (pos === 'CB') categorized.cb.push(entry);
         else if (pos === 'RB' || pos === 'RWB') categorized.rb.push(entry);
-        else if (pos === 'CDM') categorized.cdm.push(entry);
-        else if (pos === 'CM') categorized.cm.push(entry);
+        else if (pos === 'CDM' || pos === 'CM') {
+            // Split CDM/CM between LCDM and RCDM
+            if (categorized.lcdm.length <= categorized.rcdm.length) categorized.lcdm.push(entry);
+            else categorized.rcdm.push(entry);
+        }
+        else if (pos === 'LM' || pos === 'LW') categorized.lm.push(entry);
+        else if (pos === 'RM' || pos === 'RW') categorized.rm.push(entry);
         else if (pos === 'CAM') categorized.cam.push(entry);
-        else if (pos === 'LW' || pos === 'LM') categorized.lw.push(entry);
-        else if (pos === 'RW' || pos === 'RM') categorized.rw.push(entry);
-        else if (pos === 'ST') categorized.st.push(entry);
+        else if (pos === 'ST' || pos === 'CF') categorized.st.push(entry);
         else categorized.st.push(entry); // Unknown → striker
     });
-
-    console.log(`Categorized: GK=${categorized.gk.length} LB=${categorized.lb.length} CB=${categorized.cb.length} RB=${categorized.rb.length} CDM=${categorized.cdm.length} CM=${categorized.cm.length} CAM=${categorized.cam.length} LW=${categorized.lw.length} RW=${categorized.rw.length} ST=${categorized.st.length}`);
 
     // Pick best from each position
     const pickBest = (arr, count) => arr.sort((a, b) => b.rating - a.rating).slice(0, count);
     
-    let gk  = pickBest(categorized.gk.slice(), 1);
-    let lb  = pickBest(categorized.lb.slice(), 1);
-    let cb  = pickBest(categorized.cb.slice(), 2);
-    let rb  = pickBest(categorized.rb.slice(), 1);
-    let mid = [...pickBest(categorized.cdm.slice(), 1), ...pickBest(categorized.cm.slice(), 1), ...pickBest(categorized.cam.slice(), 1)];
-    let lw  = pickBest(categorized.lw.slice(), 1);
-    let st  = pickBest(categorized.st.slice(), 1);
-    let rw  = pickBest(categorized.rw.slice(), 1);
-
-    console.log(`Picked: GK=${gk.length} LB=${lb.length} CB=${cb.length} RB=${rb.length} MID=${mid.length} LW=${lw.length} ST=${st.length} RW=${rw.length}`);
+    let gk   = pickBest(categorized.gk.slice(), 1);
+    let lb   = pickBest(categorized.lb.slice(), 1);
+    let cb   = pickBest(categorized.cb.slice(), 2);
+    let rb   = pickBest(categorized.rb.slice(), 1);
+    let lcdm = pickBest(categorized.lcdm.slice(), 1);
+    let rcdm = pickBest(categorized.rcdm.slice(), 1);
+    let lm   = pickBest(categorized.lm.slice(), 1);
+    let rm   = pickBest(categorized.rm.slice(), 1);
+    let cam  = pickBest(categorized.cam.slice(), 1);
+    let st   = pickBest(categorized.st.slice(), 1);
     
     // Fill missing positions from remaining players
-    const allSelected = [...gk, ...lb, ...cb, ...rb, ...mid, ...lw, ...st, ...rw];
+    const allSelected = [...gk, ...lb, ...cb, ...rb, ...lcdm, ...rcdm, ...lm, ...rm, ...cam, ...st];
     const selectedNames = new Set(allSelected.map(p => p.name));
     const remaining = players.filter(p => !selectedNames.has(p.name)).sort((a, b) => b.rating - a.rating);
     
@@ -2308,17 +2309,17 @@ function generateTOTMFromGroup(group, league) {
     while (lb.length < 1 && idx < remaining.length) lb.push(remaining[idx++]);
     while (cb.length < 2 && idx < remaining.length) cb.push(remaining[idx++]);
     while (rb.length < 1 && idx < remaining.length) rb.push(remaining[idx++]);
-    while (mid.length < 3 && idx < remaining.length) mid.push(remaining[idx++]);
-    while (lw.length < 1 && idx < remaining.length) lw.push(remaining[idx++]);
+    while (lcdm.length < 1 && idx < remaining.length) lcdm.push(remaining[idx++]);
+    while (rcdm.length < 1 && idx < remaining.length) rcdm.push(remaining[idx++]);
+    while (lm.length < 1 && idx < remaining.length) lm.push(remaining[idx++]);
+    while (rm.length < 1 && idx < remaining.length) rm.push(remaining[idx++]);
+    while (cam.length < 1 && idx < remaining.length) cam.push(remaining[idx++]);
     while (st.length < 1 && idx < remaining.length) st.push(remaining[idx++]);
-    while (rw.length < 1 && idx < remaining.length) rw.push(remaining[idx++]);
     
-    // Build lines in proper position order: LB-CB-CB-RB, CDM-CM-CAM, LW-ST-RW
-    const def = [...lb, ...cb, ...rb]; // Left to right
-    const fwd = [...lw, ...st, ...rw]; // Left to right
-    const formation = [...gk, ...def, ...mid, ...fwd];
+    // Build formation 4-2-3-1
+    const formation = [...gk, ...lb, ...cb, ...rb, ...lcdm, ...rcdm, ...lm, ...cam, ...rm, ...st];
     
-    // Find top rating with tiebreaker logic
+    // Find top rating
     const maxRatingValue = Math.max(...formation.map(p => p.rating));
     const playersWithTopRating = formation.filter(p => p.rating === maxRatingValue);
     
@@ -2326,69 +2327,193 @@ function generateTOTMFromGroup(group, league) {
     if (playersWithTopRating.length === 1) {
         topRatedPlayer = playersWithTopRating[0];
     } else {
-        // Tie - prefer attacking positions
-        const attackingPositions = ['LW', 'ST', 'RW', 'LM', 'RM', 'CAM'];
+        const attackingPositions = ['LM', 'LW', 'RM', 'RW', 'CAM', 'ST', 'CF'];
         const attackersWithTopRating = playersWithTopRating.filter(p => attackingPositions.includes(p.position));
         
         if (attackersWithTopRating.length > 0) {
-            // At least one attacker in the tie - pick randomly from attackers
             topRatedPlayer = attackersWithTopRating[Math.floor(Math.random() * attackersWithTopRating.length)];
         } else {
-            // No attackers in tie - pick randomly from all tied players
             topRatedPlayer = playersWithTopRating[Math.floor(Math.random() * playersWithTopRating.length)];
         }
     }
-    
-    const topRating = maxRatingValue;
 
-    console.log(`Final (${formation.length}): DEF=[${def.map(p => p.name).join(',')}] MID=[${mid.map(p => p.name).join(',')}] FWD=[${fwd.map(p => p.name).join(',')}]`);
-    console.log(`Top rating: ${topRating}, Player: ${topRatedPlayer.name} (${topRatedPlayer.position})`);
+    const getTeamColor = (teamName) => {
+        const colors = {
+            // Premier League
+            'Liverpool': 'bg-red-600',
+            'Manchester United': 'bg-red-600',
+            'Manchester City': 'bg-sky-400',
+            'Chelsea': 'bg-blue-600',
+            'Arsenal': 'bg-red-600',
+            'Tottenham': 'bg-gray-800',
+            'Newcastle': 'bg-black',
+            'Aston Villa': 'bg-purple-700',
+            'Brighton': 'bg-sky-600',
+            'West Ham': 'bg-purple-900',
+            'Leicester': 'bg-sky-400',
+            'Leeds': 'bg-yellow-400 text-black',
+            'Southampton': 'bg-red-600',
+            'Burnley': 'bg-purple-900',
+            'Bournemouth': 'bg-red-600',
+            'Crystal Palace': 'bg-blue-600',
+            'Brentford': 'bg-red-600',
+            'Nottingham Forest': 'bg-red-600',
+            'Wolves': 'bg-orange-500',
+            'Sunderland': 'bg-red-600',
+            // La Liga
+            'Barcelona': 'bg-blue-700',
+            'Real Madrid': 'bg-white text-black',
+            'Atletico Madrid': 'bg-red-600',
+            'Sevilla': 'bg-red-600',
+            'Real Betis': 'bg-green-600',
+            'Valencia': 'bg-orange-500',
+            'Villarreal': 'bg-yellow-400 text-black',
+            'Athletic Bilbao': 'bg-red-600',
+            'Real Sociedad': 'bg-blue-600',
+            'Celta Vigo': 'bg-sky-400',
+            'Espanyol': 'bg-blue-600',
+            // MLS
+            'Atlanta United': 'bg-red-600',
+            'LA Galaxy': 'bg-blue-700',
+            'LAFC': 'bg-black',
+            'Seattle Sounders': 'bg-green-600',
+            'Portland Timbers': 'bg-green-700',
+            'Inter Miami': 'bg-pink-500',
+            'New England Revolution': 'bg-blue-700',
+            'Columbus Crew': 'bg-yellow-400 text-black',
+            'San Jose Earthquakes': 'bg-blue-600'
+        };
+        return colors[teamName] || 'bg-zinc-700';
+    };
+
+    const getRatingColor = (rating, isTop) => {
+        if (isTop) return 'bg-emerald-400 text-black';
+        if (rating >= 9.0) return 'bg-green-600 text-white';
+        if (rating >= 8.0) return 'bg-green-600 text-white';
+        return 'bg-yellow-500 text-black';
+    };
 
     const renderPlayer = (p) => {
-        const isTop = p === topRatedPlayer; // Compare by object reference
-        const ratingClass = isTop ? 'formation-rating formation-rating-top' : 'formation-rating';
+        const isTop = p === topRatedPlayer;
+        const ratingColor = getRatingColor(p.rating, isTop);
         const photoUrl = getPlayerPhotoUrl(p.name, p.team) || p.photoUrl || '';
         const teamLogo = getLogo(p.team);
         const initials = getInitials(p.name);
         const clickFn = p.key ? `viewPlayer('${_jsEscapeSingle(p.key)}')` : '';
-        const shortName = p.name.split(' ').pop();
+        const shortName = p.name.split(' ').pop().toUpperCase();
+        const teamColor = getTeamColor(p.team);
         
         return `
-            <div class="formation-player" ${clickFn ? `onclick="${clickFn}"` : ''}>
-                <div class="formation-avatar">
-                    ${photoUrl
-                        ? `<img src="${photoUrl}" class="formation-avatar-img" onerror="this.outerHTML='<div style=width:64px;height:64px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#666;>${initials}</div>'">`
-                        : `<div style="width:64px;height:64px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#666;">${initials}</div>`}
-                    <div class="formation-avatar-team-logo">
-                        <img src="${teamLogo}" alt="${p.team}">
+            <div class="flex flex-col items-center gap-2" ${clickFn ? `onclick="${clickFn}" style="cursor:pointer;"` : ''}>
+                <div class="relative">
+                    <div class="w-20 h-20 rounded-full border-4 border-white bg-zinc-800 overflow-hidden shadow-lg">
+                        ${photoUrl
+                            ? `<img src="${photoUrl}" class="w-full h-full object-cover" onerror="this.outerHTML='<div class=\\'w-full h-full flex items-center justify-center text-2xl font-black text-zinc-500\\'>${initials}</div>'">`
+                            : `<div class="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-500">${initials}</div>`}
                     </div>
-                    <div class="${ratingClass}">${p.rating.toFixed(1)}</div>
+                    <div class="absolute -top-2 -left-2 w-9 h-9 rounded-full border-4 border-white bg-white overflow-hidden shadow">
+                        <img src="${teamLogo}" class="w-full h-full object-contain p-0.5" alt="${p.team}">
+                    </div>
+                    <div class="absolute -top-2 -right-2 w-10 h-10 rounded-full ${ratingColor} flex items-center justify-center text-sm font-black border-4 border-white shadow">
+                        ${p.rating.toFixed(1)}
+                    </div>
                 </div>
-                <div class="formation-name">${shortName}</div>
+                <div class="${teamColor} px-6 py-1 rounded text-white text-xs font-black shadow">
+                    ${shortName}
+                </div>
             </div>`;
     };
 
-    const lineHTML = (arr) => arr.length
-        ? `<div class="formation-line">${arr.map(renderPlayer).join('')}</div>`
-        : '';
+    const renderBenchPlayer = (p) => {
+        const ratingColor = p.rating >= 9.0 ? 'bg-green-600 text-white' : p.rating >= 8.0 ? 'bg-green-600 text-white' : 'bg-yellow-500 text-black';
+        const photoUrl = getPlayerPhotoUrl(p.name, p.team) || '';
+        const teamLogo = getLogo(p.team);
+        const initials = getInitials(p.name);
+        const shortName = p.name.split(' ').pop();
+        
+        return `
+            <div class="flex flex-col items-center gap-1">
+                <div class="relative">
+                    <div class="w-14 h-14 rounded-full border-3 border-white bg-zinc-800 overflow-hidden shadow">
+                        ${photoUrl
+                            ? `<img src="${photoUrl}" class="w-full h-full object-cover">`
+                            : `<div class="w-full h-full flex items-center justify-center text-lg font-black text-zinc-500">${initials}</div>`}
+                    </div>
+                    <div class="absolute -top-1.5 -left-1.5 w-7 h-7 rounded-full border-3 border-white bg-white overflow-hidden shadow-sm">
+                        <img src="${teamLogo}" class="w-full h-full object-contain p-0.5" alt="${p.team}">
+                    </div>
+                    <div class="absolute -top-1.5 -right-1.5 w-8 h-8 rounded-full ${ratingColor} flex items-center justify-center text-xs font-black border-3 border-white shadow">
+                        ${p.rating.toFixed(1)}
+                    </div>
+                </div>
+                <div class="text-xs text-zinc-600 font-bold">${shortName}</div>
+            </div>`;
+    };
 
-    // Positions from top (fwd) to bottom (gk)
-    const positions = ['8%', '30%', '57%', '82%'];
-    const lines = [fwd, mid, def, gk];
-
-    let formationHTML = '';
-    lines.forEach((line, i) => {
-        if (!line.length) return;
-        formationHTML += `<div class="formation-line" style="top:${positions[i]};">${line.map(renderPlayer).join('')}</div>`;
-    });
-
+    // Build the 4-2-3-1 formation layout
     return `
-        <div class="totm-container" id="totm-download-target">
-            <div class="totm-header">
-                <div class="totm-title">Team of the Matchday</div>
-                <div class="totm-subtitle">${LEAGUE_META[league]?.name || league} · ${labelStr}</div>
+        <div class="bg-gradient-to-br from-stone-100 to-stone-200 rounded-2xl p-8 shadow-xl" id="totm-download-target">
+            <div class="text-center mb-8">
+                <div class="text-3xl font-black text-zinc-800 mb-1">Team of the Matchday</div>
+                <div class="text-sm text-zinc-500 font-semibold">${LEAGUE_META[league]?.name || league} · ${labelStr}</div>
             </div>
-            <div class="formation">${formationHTML}</div>
+            
+            <!-- Formation -->
+            <div class="relative w-full mx-auto" style="max-width: 800px; min-height: 650px;">
+                
+                <!-- ST (Top) -->
+                <div class="absolute left-1/2 -translate-x-1/2 flex justify-center" style="top: 4%;">
+                    ${st[0] ? renderPlayer(st[0]) : ''}
+                </div>
+                
+                <!-- LM - CAM - RM (Attacking midfield) -->
+                <div class="absolute w-full flex justify-between px-8" style="top: 24%;">
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${lm[0] ? renderPlayer(lm[0]) : ''}
+                    </div>
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${cam[0] ? renderPlayer(cam[0]) : ''}
+                    </div>
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${rm[0] ? renderPlayer(rm[0]) : ''}
+                    </div>
+                </div>
+                
+                <!-- LCDM - RCDM (Defensive midfield) -->
+                <div class="absolute left-1/2 -translate-x-1/2 flex gap-20" style="top: 44%;">
+                    ${lcdm[0] ? renderPlayer(lcdm[0]) : ''}
+                    ${rcdm[0] ? renderPlayer(rcdm[0]) : ''}
+                </div>
+                
+                <!-- LB - CB - CB - RB (Defense) -->
+                <div class="absolute w-full flex justify-between px-4" style="top: 64%;">
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${lb[0] ? renderPlayer(lb[0]) : ''}
+                    </div>
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${cb[0] ? renderPlayer(cb[0]) : ''}
+                    </div>
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${cb[1] ? renderPlayer(cb[1]) : ''}
+                    </div>
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${rb[0] ? renderPlayer(rb[0]) : ''}
+                    </div>
+                </div>
+                
+                <!-- GK (Bottom) -->
+                <div class="absolute left-1/2 -translate-x-1/2 flex justify-center" style="top: 84%;">
+                    ${gk[0] ? renderPlayer(gk[0]) : ''}
+                </div>
+            </div>
+            
+            <!-- Bench Section -->
+            <div class="mt-12 pt-8 border-t-2 border-zinc-300">
+                <div class="text-sm font-black text-zinc-600 mb-4 uppercase tracking-wider">Bench</div>
+                <div class="flex gap-6 justify-center flex-wrap">
+                    ${remaining.slice(0, 9).map(p => renderBenchPlayer(p)).join('')}
+                </div>
+            </div>
         </div>`;
 }
 
