@@ -404,7 +404,7 @@ const LOGOS = {
     "Brentford": "https://resources.premierleague.com/premierleague25/badges-alt/94.svg",
     "Tottenham": "https://resources.premierleague.com/premierleague25/badges-alt/6.svg",
     "Crystal Palace": "https://resources.premierleague.com/premierleague25/badges-alt/31.svg",
-    "Leicester": "https://upload.wikimedia.org/wikipedia/en/thumb/2/2d/Leicester_City_crest.svg/1280px-Leicester_City_crest.svg.png",
+    "Leicester": "https://upload.wikimedia.org/wikipedia/en/thumb/2/2d/Leicester_City_crest.svg/1200px-Leicester_City_crest.svg.png",
     "Nott'm Forest": "https://resources.premierleague.com/premierleague25/badges-alt/17.svg",
     "Sunderland": "https://resources.premierleague.com/premierleague25/badges-alt/56.svg",
     "Burnley": "https://resources.premierleague.com/premierleague25/badges-alt/90.svg",
@@ -1530,8 +1530,6 @@ function goToStandingsFromTeam(lg) {
 // Format: { league: { 'Matchday Label': { startRow: X, endRow: Y } } }
 const TOTM_CONFIG = {
     PREM: {
-        'Matchday 33': { startRow: 6129, endRow: 6348 },
-        'Matchday 32': { startRow: 5909, endRow: 6128 },
         'Matchday 31': { startRow: 5733, endRow: 5908 },
         'Matchday 30': { startRow: 5524, endRow: 5732 },
         'Matchday 29': { startRow: 5304, endRow: 5523 },
@@ -1562,9 +1560,6 @@ const TOTM_CONFIG = {
         'Matchday 4': { startRow: 1476, endRow: 1695 }
     },
     LALIGA: {
-        'Matchday 33': { startRow: 5945, endRow: 6164 },
-        'Matchday 32': { startRow: 5725, endRow: 5944 },
-        'Matchday 31': { startRow: 5505, endRow: 5724 },
         'Matchday 30': { startRow: 5285, endRow: 5504 },
         'Matchday 29': { startRow: 5065, endRow: 5284 },
         'Matchday 28': { startRow: 4845, endRow: 5064 },
@@ -1572,7 +1567,6 @@ const TOTM_CONFIG = {
         'Matchday 26': { startRow: 4405, endRow: 4624 }
     },
     MLS: {
-        'Matchday 10': { startRow: 1982, endRow: 2179 },
         'Matchday 9': { startRow: 1762, endRow: 1981 },
         'Matchday 8': { startRow: 1542, endRow: 1761 },
         'Matchday 7': { startRow: 1322, endRow: 1541 },
@@ -2235,27 +2229,24 @@ async function renderTOTMTab(league, navDirection = 0) {
 
 function generateTOTMWithNav(group, league, currentIdx, totalMatchdays) {
     const totmHTML = generateTOTMFromGroup(group, league);
-    const hasOlder = currentIdx < totalMatchdays - 1;
-    const hasNewer = currentIdx > 0;
+    // currentIdx 0 = newest matchday
+    const hasOlder = currentIdx < totalMatchdays - 1; // Can go forward in array
+    const hasNewer = currentIdx > 0; // Can go backward in array
     
-    // Add navigation arrows to the header
+    // Left arrow = older (increase index), Right arrow = newer (decrease index)
     return totmHTML.replace(
-        '<div class="totm-header text-center mb-6 sm:mb-8 relative">',
-        `<div class="totm-header text-center mb-6 sm:mb-8 relative">
-            <button class="absolute left-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-zinc-800 text-white flex items-center justify-center font-black text-xl ${!hasOlder ? 'opacity-30 cursor-not-allowed' : 'hover:bg-zinc-700'}" 
-                    onclick="renderTOTMTab('${league}', 1)" ${!hasOlder ? 'disabled' : ''}>
-                ←
-            </button>
-            <button class="absolute right-0 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-zinc-800 text-white flex items-center justify-center font-black text-xl ${!hasNewer ? 'opacity-30 cursor-not-allowed' : 'hover:bg-zinc-700'}" 
-                    onclick="renderTOTMTab('${league}', -1)" ${!hasNewer ? 'disabled' : ''}>
-                →
-            </button>`
+        '<div class="totm-header">',
+        `<div class="totm-header">
+            <div class="totm-nav-arrow totm-nav-left ${!hasOlder ? 'disabled' : ''}" onclick="renderTOTMTab('${league}', 1)">←</div>
+            <div class="totm-nav-arrow totm-nav-right ${!hasNewer ? 'disabled' : ''}" onclick="renderTOTMTab('${league}', -1)">→</div>`
     );
 }
 
 function generateTOTMFromGroup(group, league) {
     const players = group.players.slice();
     const data = statsData[league];
+
+    console.log(`Building TOTM for ${group.label}: ${players.length} total players`);
 
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     let labelStr = group.label;
@@ -2283,6 +2274,7 @@ function generateTOTMFromGroup(group, league) {
         else if (pos === 'CB') categorized.cb.push(entry);
         else if (pos === 'RB' || pos === 'RWB') categorized.rb.push(entry);
         else if (pos === 'CDM' || pos === 'CM') {
+            // Split CDM/CM between LCDM and RCDM
             if (categorized.lcdm.length <= categorized.rcdm.length) categorized.lcdm.push(entry);
             else categorized.rcdm.push(entry);
         }
@@ -2290,9 +2282,10 @@ function generateTOTMFromGroup(group, league) {
         else if (pos === 'RM' || pos === 'RW') categorized.rm.push(entry);
         else if (pos === 'CAM') categorized.cam.push(entry);
         else if (pos === 'ST' || pos === 'CF') categorized.st.push(entry);
-        else categorized.st.push(entry);
+        else categorized.st.push(entry); // Unknown → striker
     });
 
+    // Pick best from each position
     const pickBest = (arr, count) => arr.sort((a, b) => b.rating - a.rating).slice(0, count);
     
     let gk   = pickBest(categorized.gk.slice(), 1);
@@ -2306,6 +2299,7 @@ function generateTOTMFromGroup(group, league) {
     let cam  = pickBest(categorized.cam.slice(), 1);
     let st   = pickBest(categorized.st.slice(), 1);
     
+    // Fill missing positions from remaining players
     const allSelected = [...gk, ...lb, ...cb, ...rb, ...lcdm, ...rcdm, ...lm, ...rm, ...cam, ...st];
     const selectedNames = new Set(allSelected.map(p => p.name));
     const remaining = players.filter(p => !selectedNames.has(p.name)).sort((a, b) => b.rating - a.rating);
@@ -2322,8 +2316,10 @@ function generateTOTMFromGroup(group, league) {
     while (cam.length < 1 && idx < remaining.length) cam.push(remaining[idx++]);
     while (st.length < 1 && idx < remaining.length) st.push(remaining[idx++]);
     
+    // Build formation 4-2-3-1
     const formation = [...gk, ...lb, ...cb, ...rb, ...lcdm, ...rcdm, ...lm, ...cam, ...rm, ...st];
     
+    // Find top rating
     const maxRatingValue = Math.max(...formation.map(p => p.rating));
     const playersWithTopRating = formation.filter(p => p.rating === maxRatingValue);
     
@@ -2333,33 +2329,66 @@ function generateTOTMFromGroup(group, league) {
     } else {
         const attackingPositions = ['LM', 'LW', 'RM', 'RW', 'CAM', 'ST', 'CF'];
         const attackersWithTopRating = playersWithTopRating.filter(p => attackingPositions.includes(p.position));
-        topRatedPlayer = attackersWithTopRating.length > 0 
-            ? attackersWithTopRating[Math.floor(Math.random() * attackersWithTopRating.length)]
-            : playersWithTopRating[Math.floor(Math.random() * playersWithTopRating.length)];
+        
+        if (attackersWithTopRating.length > 0) {
+            topRatedPlayer = attackersWithTopRating[Math.floor(Math.random() * attackersWithTopRating.length)];
+        } else {
+            topRatedPlayer = playersWithTopRating[Math.floor(Math.random() * playersWithTopRating.length)];
+        }
     }
 
     const getTeamColor = (teamName) => {
         const colors = {
-            'Liverpool': 'bg-red-600', 'Manchester United': 'bg-red-600', 'Manchester City': 'bg-sky-400',
-            'Chelsea': 'bg-blue-600', 'Arsenal': 'bg-red-600', 'Tottenham': 'bg-gray-800',
-            'Newcastle': 'bg-black', 'Aston Villa': 'bg-purple-700', 'Brighton': 'bg-sky-600',
-            'West Ham': 'bg-purple-900', 'Leicester': 'bg-sky-400', 'Leeds': 'bg-yellow-400 text-black',
-            'Southampton': 'bg-red-600', 'Burnley': 'bg-purple-900', 'Bournemouth': 'bg-red-600',
-            'Crystal Palace': 'bg-blue-600', 'Brentford': 'bg-red-600', 'Nottingham Forest': 'bg-red-600',
-            'Wolves': 'bg-orange-500', 'Sunderland': 'bg-red-600',
-            'Barcelona': 'bg-blue-700', 'Real Madrid': 'bg-white text-black', 'Atletico Madrid': 'bg-red-600',
-            'Sevilla': 'bg-red-600', 'Real Betis': 'bg-green-600', 'Valencia': 'bg-orange-500',
-            'Villarreal': 'bg-yellow-400 text-black', 'Athletic Bilbao': 'bg-red-600', 'Real Sociedad': 'bg-blue-600',
-            'Celta Vigo': 'bg-sky-400', 'Espanyol': 'bg-blue-600',
-            'Atlanta United': 'bg-red-600', 'LA Galaxy': 'bg-blue-700', 'LAFC': 'bg-black',
-            'Seattle Sounders': 'bg-green-600', 'Portland Timbers': 'bg-green-700', 'Inter Miami': 'bg-pink-500',
-            'New England Revolution': 'bg-blue-700', 'Columbus Crew': 'bg-yellow-400 text-black', 'San Jose Earthquakes': 'bg-blue-600'
+            // Premier League
+            'Liverpool': 'bg-red-600',
+            'Manchester United': 'bg-red-600',
+            'Manchester City': 'bg-sky-400',
+            'Chelsea': 'bg-blue-600',
+            'Arsenal': 'bg-red-600',
+            'Tottenham': 'bg-gray-800',
+            'Newcastle': 'bg-black',
+            'Aston Villa': 'bg-purple-700',
+            'Brighton': 'bg-sky-600',
+            'West Ham': 'bg-purple-900',
+            'Leicester': 'bg-sky-400',
+            'Leeds': 'bg-yellow-400 text-black',
+            'Southampton': 'bg-red-600',
+            'Burnley': 'bg-purple-900',
+            'Bournemouth': 'bg-red-600',
+            'Crystal Palace': 'bg-blue-600',
+            'Brentford': 'bg-red-600',
+            'Nottingham Forest': 'bg-red-600',
+            'Wolves': 'bg-orange-500',
+            'Sunderland': 'bg-red-600',
+            // La Liga
+            'Barcelona': 'bg-blue-700',
+            'Real Madrid': 'bg-white text-black',
+            'Atletico Madrid': 'bg-red-600',
+            'Sevilla': 'bg-red-600',
+            'Real Betis': 'bg-green-600',
+            'Valencia': 'bg-orange-500',
+            'Villarreal': 'bg-yellow-400 text-black',
+            'Athletic Bilbao': 'bg-red-600',
+            'Real Sociedad': 'bg-blue-600',
+            'Celta Vigo': 'bg-sky-400',
+            'Espanyol': 'bg-blue-600',
+            // MLS
+            'Atlanta United': 'bg-red-600',
+            'LA Galaxy': 'bg-blue-700',
+            'LAFC': 'bg-black',
+            'Seattle Sounders': 'bg-green-600',
+            'Portland Timbers': 'bg-green-700',
+            'Inter Miami': 'bg-pink-500',
+            'New England Revolution': 'bg-blue-700',
+            'Columbus Crew': 'bg-yellow-400 text-black',
+            'San Jose Earthquakes': 'bg-blue-600'
         };
         return colors[teamName] || 'bg-zinc-700';
     };
 
     const getRatingColor = (rating, isTop) => {
         if (isTop) return 'bg-emerald-400 text-black';
+        if (rating >= 9.0) return 'bg-green-600 text-white';
         if (rating >= 8.0) return 'bg-green-600 text-white';
         return 'bg-yellow-500 text-black';
     };
@@ -2367,7 +2396,7 @@ function generateTOTMFromGroup(group, league) {
     const renderPlayer = (p) => {
         const isTop = p === topRatedPlayer;
         const ratingColor = getRatingColor(p.rating, isTop);
-        const photoUrl = getPlayerPhotoUrl(p.name, p.team) || '';
+        const photoUrl = getPlayerPhotoUrl(p.name, p.team) || p.photoUrl || '';
         const teamLogo = getLogo(p.team);
         const initials = getInitials(p.name);
         const clickFn = p.key ? `viewPlayer('${_jsEscapeSingle(p.key)}')` : '';
@@ -2375,99 +2404,113 @@ function generateTOTMFromGroup(group, league) {
         const teamColor = getTeamColor(p.team);
         
         return `
-            <div class="flex flex-col items-center" ${clickFn ? `onclick="${clickFn}" style="cursor:pointer;"` : ''}>
-                <div class="relative mb-1">
-                    <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full border-4 border-white bg-zinc-800 overflow-hidden shadow-lg">
+            <div class="flex flex-col items-center gap-2" ${clickFn ? `onclick="${clickFn}" style="cursor:pointer;"` : ''}>
+                <div class="relative">
+                    <div class="w-20 h-20 rounded-full border-4 border-white bg-zinc-800 overflow-hidden shadow-lg">
                         ${photoUrl
-                            ? `<img src="${photoUrl}" class="w-full h-full object-cover" onerror="this.outerHTML='<div class=\\'w-full h-full flex items-center justify-center text-xl font-black text-zinc-500\\'>${initials}</div>'">`
-                            : `<div class="w-full h-full flex items-center justify-center text-xl font-black text-zinc-500">${initials}</div>`}
+                            ? `<img src="${photoUrl}" class="w-full h-full object-cover" onerror="this.outerHTML='<div class=\\'w-full h-full flex items-center justify-center text-2xl font-black text-zinc-500\\'>${initials}</div>'">`
+                            : `<div class="w-full h-full flex items-center justify-center text-2xl font-black text-zinc-500">${initials}</div>`}
                     </div>
-                    <div class="absolute -top-1.5 -left-1.5 w-7 h-7 sm:w-9 sm:h-9 rounded-full border-3 border-white bg-white overflow-hidden shadow">
-                        <img src="${teamLogo}" class="w-full h-full object-contain p-0.5">
+                    <div class="absolute -top-2 -left-2 w-9 h-9 rounded-full border-4 border-white bg-white overflow-hidden shadow">
+                        <img src="${teamLogo}" class="w-full h-full object-contain p-0.5" alt="${p.team}">
                     </div>
-                    <div class="absolute -top-1.5 -right-1.5 w-9 h-9 sm:w-10 sm:h-10 rounded-full ${ratingColor} flex items-center justify-center text-xs font-black border-3 border-white shadow">
+                    <div class="absolute -top-2 -right-2 w-10 h-10 rounded-full ${ratingColor} flex items-center justify-center text-sm font-black border-4 border-white shadow">
                         ${p.rating.toFixed(1)}
                     </div>
                 </div>
-                <div class="${teamColor} px-3 sm:px-6 py-0.5 sm:py-1 rounded text-white text-xs font-black shadow whitespace-nowrap">
+                <div class="${teamColor} px-6 py-1 rounded text-white text-xs font-black shadow">
                     ${shortName}
                 </div>
             </div>`;
     };
 
     const renderBenchPlayer = (p) => {
-        const ratingColor = p.rating >= 8.0 ? 'bg-green-600 text-white' : 'bg-yellow-500 text-black';
+        const ratingColor = p.rating >= 9.0 ? 'bg-green-600 text-white' : p.rating >= 8.0 ? 'bg-green-600 text-white' : 'bg-yellow-500 text-black';
         const photoUrl = getPlayerPhotoUrl(p.name, p.team) || '';
         const teamLogo = getLogo(p.team);
         const initials = getInitials(p.name);
-        const shortName = p.name.split(' ').pop().toUpperCase();
-        const teamColor = getTeamColor(p.team);
+        const shortName = p.name.split(' ').pop();
         
         return `
-            <div class="flex flex-col items-center">
-                <div class="relative mb-1">
-                    <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-3 border-white bg-zinc-800 overflow-hidden shadow">
+            <div class="flex flex-col items-center gap-1">
+                <div class="relative">
+                    <div class="w-14 h-14 rounded-full border-3 border-white bg-zinc-800 overflow-hidden shadow">
                         ${photoUrl
                             ? `<img src="${photoUrl}" class="w-full h-full object-cover">`
-                            : `<div class="w-full h-full flex items-center justify-center text-base font-black text-zinc-500">${initials}</div>`}
+                            : `<div class="w-full h-full flex items-center justify-center text-lg font-black text-zinc-500">${initials}</div>`}
                     </div>
-                    <div class="absolute -top-1 -left-1 w-6 h-6 sm:w-7 sm:h-7 rounded-full border-2 border-white bg-white overflow-hidden shadow-sm">
-                        <img src="${teamLogo}" class="w-full h-full object-contain p-0.5">
+                    <div class="absolute -top-1.5 -left-1.5 w-7 h-7 rounded-full border-3 border-white bg-white overflow-hidden shadow-sm">
+                        <img src="${teamLogo}" class="w-full h-full object-contain p-0.5" alt="${p.team}">
                     </div>
-                    <div class="absolute -top-1 -right-1 w-7 h-7 sm:w-8 sm:h-8 rounded-full ${ratingColor} flex items-center justify-center text-xs font-black border-2 border-white shadow">
+                    <div class="absolute -top-1.5 -right-1.5 w-8 h-8 rounded-full ${ratingColor} flex items-center justify-center text-xs font-black border-3 border-white shadow">
                         ${p.rating.toFixed(1)}
                     </div>
                 </div>
-                <div class="${teamColor} px-2 sm:px-3 py-0.5 rounded text-white text-[10px] font-black shadow whitespace-nowrap">
-                    ${shortName}
-                </div>
+                <div class="text-xs text-zinc-600 font-bold">${shortName}</div>
             </div>`;
     };
 
+    // Build the 4-2-3-1 formation layout
     return `
-        <div class="bg-gradient-to-br from-stone-100 to-stone-200 rounded-2xl p-4 sm:p-8 shadow-xl max-w-4xl mx-auto" id="totm-download-target">
-            <div class="totm-header text-center mb-6 sm:mb-8 relative">
-                <div class="text-2xl sm:text-3xl font-black text-zinc-800 mb-1">Team of the Matchday</div>
-                <div class="text-xs sm:text-sm text-zinc-500 font-semibold">${LEAGUE_META[league]?.name || league} · ${labelStr}</div>
+        <div class="bg-gradient-to-br from-stone-100 to-stone-200 rounded-2xl p-8 shadow-xl" id="totm-download-target">
+            <div class="text-center mb-8">
+                <div class="text-3xl font-black text-zinc-800 mb-1">Team of the Matchday</div>
+                <div class="text-sm text-zinc-500 font-semibold">${LEAGUE_META[league]?.name || league} · ${labelStr}</div>
             </div>
             
-            <div class="relative w-full mx-auto" style="max-width: 700px;">
-                <!-- ST -->
-                <div class="flex justify-center mb-6 sm:mb-8">
+            <!-- Formation -->
+            <div class="relative w-full mx-auto" style="max-width: 800px; min-height: 650px;">
+                
+                <!-- ST (Top) -->
+                <div class="absolute left-1/2 -translate-x-1/2 flex justify-center" style="top: 4%;">
                     ${st[0] ? renderPlayer(st[0]) : ''}
                 </div>
                 
-                <!-- LM - CAM - RM -->
-                <div class="flex justify-around items-start mb-6 sm:mb-8 px-2">
-                    ${lm[0] ? renderPlayer(lm[0]) : ''}
-                    ${cam[0] ? renderPlayer(cam[0]) : ''}
-                    ${rm[0] ? renderPlayer(rm[0]) : ''}
+                <!-- LM - CAM - RM (Attacking midfield) -->
+                <div class="absolute w-full flex justify-between px-8" style="top: 24%;">
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${lm[0] ? renderPlayer(lm[0]) : ''}
+                    </div>
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${cam[0] ? renderPlayer(cam[0]) : ''}
+                    </div>
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${rm[0] ? renderPlayer(rm[0]) : ''}
+                    </div>
                 </div>
                 
-                <!-- LCDM - RCDM -->
-                <div class="flex justify-center gap-8 sm:gap-20 mb-6 sm:mb-8">
+                <!-- LCDM - RCDM (Defensive midfield) -->
+                <div class="absolute left-1/2 -translate-x-1/2 flex gap-20" style="top: 44%;">
                     ${lcdm[0] ? renderPlayer(lcdm[0]) : ''}
                     ${rcdm[0] ? renderPlayer(rcdm[0]) : ''}
                 </div>
                 
-                <!-- LB - CB - CB - RB -->
-                <div class="flex justify-around items-start mb-6 sm:mb-8 px-1">
-                    ${lb[0] ? renderPlayer(lb[0]) : ''}
-                    ${cb[0] ? renderPlayer(cb[0]) : ''}
-                    ${cb[1] ? renderPlayer(cb[1]) : ''}
-                    ${rb[0] ? renderPlayer(rb[0]) : ''}
+                <!-- LB - CB - CB - RB (Defense) -->
+                <div class="absolute w-full flex justify-between px-4" style="top: 64%;">
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${lb[0] ? renderPlayer(lb[0]) : ''}
+                    </div>
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${cb[0] ? renderPlayer(cb[0]) : ''}
+                    </div>
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${cb[1] ? renderPlayer(cb[1]) : ''}
+                    </div>
+                    <div class="flex justify-center" style="flex: 1;">
+                        ${rb[0] ? renderPlayer(rb[0]) : ''}
+                    </div>
                 </div>
                 
-                <!-- GK -->
-                <div class="flex justify-center mb-8 sm:mb-10">
+                <!-- GK (Bottom) -->
+                <div class="absolute left-1/2 -translate-x-1/2 flex justify-center" style="top: 84%;">
                     ${gk[0] ? renderPlayer(gk[0]) : ''}
                 </div>
             </div>
             
-            <!-- Bench -->
-            <div class="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t-2 border-zinc-300">
-                <div class="text-xs sm:text-sm font-black text-zinc-600 mb-3 sm:mb-4 uppercase tracking-wider text-center">Bench</div>
-                <div class="flex gap-3 sm:gap-6 justify-center flex-wrap">
+            <!-- Bench Section -->
+            <div class="mt-12 pt-8 border-t-2 border-zinc-300">
+                <div class="text-sm font-black text-zinc-600 mb-4 uppercase tracking-wider">Bench</div>
+                <div class="flex gap-6 justify-center flex-wrap">
                     ${remaining.slice(0, 9).map(p => renderBenchPlayer(p)).join('')}
                 </div>
             </div>
