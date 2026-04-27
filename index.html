@@ -2365,10 +2365,10 @@ function generateTOTMFromGroup(group, league) {
                         ${photoUrl ? `<img src="${photoUrl}" class="w-full h-full object-cover">` : 
                         `<div class="w-full h-full flex items-center justify-center text-lg font-black text-zinc-500">${initials}</div>`}
                     </div>
-                    <div class="absolute -top-1 -left-1 w-7 h-7 rounded-full border-3 border-white bg-white overflow-hidden shadow">
+                    <div class="absolute top-0 left-0 w-7 h-7 rounded-full border-3 border-white bg-white overflow-hidden shadow" style="transform:translate(-30%, -30%);">
                         <img src="${teamLogo}" class="w-full h-full object-contain p-0.5">
                     </div>
-                    <div class="absolute -top-1 -right-1 w-9 h-9 rounded-full ${ratingColor} flex items-center justify-center text-sm font-black border-3 border-white shadow">
+                    <div class="absolute top-0 right-0 w-9 h-9 rounded-full ${ratingColor} flex items-center justify-center text-sm font-black border-3 border-white shadow" style="transform:translate(30%, -30%);">
                         ${p.rating.toFixed(1)}
                     </div>
                 </div>
@@ -2395,10 +2395,10 @@ function generateTOTMFromGroup(group, league) {
                         ${photoUrl ? `<img src="${photoUrl}" class="w-full h-full object-cover">` :
                         `<div class="w-full h-full flex items-center justify-center text-sm font-black text-zinc-500">${initials}</div>`}
                     </div>
-                    <div class="absolute -top-0.5 -left-0.5 w-6 h-6 rounded-full border-2 border-white bg-white overflow-hidden shadow-sm">
+                    <div class="absolute top-0 left-0 w-6 h-6 rounded-full border-2 border-white bg-white overflow-hidden shadow-sm" style="transform:translate(-25%, -25%);">
                         <img src="${teamLogo}" class="w-full h-full object-contain p-0.5">
                     </div>
-                    <div class="absolute -top-0.5 -right-0.5 w-8 h-8 rounded-full ${ratingColor} flex items-center justify-center text-xs font-black border-2 border-white shadow">
+                    <div class="absolute top-0 right-0 w-8 h-8 rounded-full ${ratingColor} flex items-center justify-center text-xs font-black border-2 border-white shadow" style="transform:translate(25%, -25%);">
                         ${p.rating.toFixed(1)}
                     </div>
                 </div>
