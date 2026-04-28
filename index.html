@@ -2241,11 +2241,11 @@ function generateTOTMWithNav(group, league, currentIdx, totalMatchdays) {
     const hasNewer = currentIdx > 0;
     
     return totmHTML.replace(
-        '<div class="totm-header text-center mb-6 relative">',
-        `<div class="totm-header text-center mb-6 relative">
-            <button class="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center font-black text-lg ${!hasOlder ? 'opacity-20' : 'active:bg-zinc-700'}" 
+        '<div class="totm-header text-center mb-7 relative">',
+        `<div class="totm-header text-center mb-7 relative">
+            <button class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-zinc-800 text-white flex items-center justify-center font-black text-xl ${!hasOlder ? 'opacity-20' : 'active:bg-zinc-700'}" 
                     onclick="renderTOTMTab('${league}', 1)" ${!hasOlder ? 'disabled' : ''}>←</button>
-            <button class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center font-black text-lg ${!hasNewer ? 'opacity-20' : 'active:bg-zinc-700'}" 
+            <button class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-zinc-800 text-white flex items-center justify-center font-black text-xl ${!hasNewer ? 'opacity-20' : 'active:bg-zinc-700'}" 
                     onclick="renderTOTMTab('${league}', -1)" ${!hasNewer ? 'disabled' : ''}>→</button>`
     );
 }
