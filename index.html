@@ -2347,7 +2347,7 @@ function generateTOTMFromGroup(group, league) {
     }[team] || 'text-white');
 
     const renderPlayer = (p) => {
-        if (!p) return '<div style="width:90px;"></div>';
+        if (!p) return '<div style="width:100px;"></div>';
         const isTop = p === topRatedPlayer;
         const ratingColor = isTop ? 'bg-emerald-400 text-black' : (p.rating >= 8.0 ? 'bg-green-600 text-white' : 'bg-yellow-500 text-black');
         const photoUrl = getPlayerPhotoUrl(p.name, p.team) || '';
@@ -2359,20 +2359,20 @@ function generateTOTMFromGroup(group, league) {
         const textColor = getTextColor(p.team);
         
         return `
-            <div class="flex flex-col items-center" style="width:90px;" ${click}>
-                <div class="relative mb-1.5">
-                    <div class="w-16 h-16 rounded-full border-4 border-white bg-zinc-800 overflow-hidden shadow-lg mx-auto">
+            <div class="flex flex-col items-center" style="width:100px;" ${click}>
+                <div class="relative mb-2">
+                    <div class="w-20 h-20 rounded-full border-4 border-white bg-zinc-800 overflow-hidden shadow-lg mx-auto">
                         ${photoUrl ? `<img src="${photoUrl}" class="w-full h-full object-cover">` : 
-                        `<div class="w-full h-full flex items-center justify-center text-lg font-black text-zinc-500">${initials}</div>`}
+                        `<div class="w-full h-full flex items-center justify-center text-xl font-black text-zinc-500">${initials}</div>`}
                     </div>
-                    <div class="absolute top-0 left-0 w-7 h-7 rounded-full border-3 border-white bg-white overflow-hidden shadow" style="transform:translate(-30%, -30%);">
+                    <div class="absolute top-0 left-0 w-8 h-8 rounded-full border-3 border-white bg-white overflow-hidden shadow" style="transform:translate(-30%, -30%);">
                         <img src="${teamLogo}" class="w-full h-full object-contain p-0.5">
                     </div>
-                    <div class="absolute top-0 right-0 w-9 h-9 rounded-full ${ratingColor} flex items-center justify-center text-sm font-black border-3 border-white shadow" style="transform:translate(30%, -30%);">
+                    <div class="absolute top-0 right-0 w-10 h-10 rounded-full ${ratingColor} flex items-center justify-center font-black border-3 border-white shadow" style="transform:translate(30%, -30%);font-size:13px;">
                         ${p.rating.toFixed(1)}
                     </div>
                 </div>
-                <div class="${teamColor} ${textColor} px-3 py-0.5 rounded text-xs font-black shadow whitespace-nowrap mx-auto" style="max-width:86px;overflow:hidden;text-overflow:ellipsis;">
+                <div class="${teamColor} ${textColor} px-4 py-1 rounded shadow whitespace-nowrap mx-auto" style="font-size:11px;font-weight:900;min-width:90px;text-align:center;">
                     ${name}
                 </div>
             </div>`;
@@ -2389,20 +2389,20 @@ function generateTOTMFromGroup(group, league) {
         const textColor = getTextColor(p.team);
         
         return `
-            <div class="flex flex-col items-center" style="width:72px;">
-                <div class="relative mb-1">
-                    <div class="w-14 h-14 rounded-full border-3 border-white bg-zinc-800 overflow-hidden shadow mx-auto">
+            <div class="flex flex-col items-center" style="width:80px;">
+                <div class="relative mb-1.5">
+                    <div class="w-16 h-16 rounded-full border-3 border-white bg-zinc-800 overflow-hidden shadow mx-auto">
                         ${photoUrl ? `<img src="${photoUrl}" class="w-full h-full object-cover">` :
-                        `<div class="w-full h-full flex items-center justify-center text-sm font-black text-zinc-500">${initials}</div>`}
+                        `<div class="w-full h-full flex items-center justify-center text-base font-black text-zinc-500">${initials}</div>`}
                     </div>
-                    <div class="absolute top-0 left-0 w-6 h-6 rounded-full border-2 border-white bg-white overflow-hidden shadow-sm" style="transform:translate(-25%, -25%);">
+                    <div class="absolute top-0 left-0 w-7 h-7 rounded-full border-2 border-white bg-white overflow-hidden shadow-sm" style="transform:translate(-25%, -25%);">
                         <img src="${teamLogo}" class="w-full h-full object-contain p-0.5">
                     </div>
-                    <div class="absolute top-0 right-0 w-8 h-8 rounded-full ${ratingColor} flex items-center justify-center text-xs font-black border-2 border-white shadow" style="transform:translate(25%, -25%);">
+                    <div class="absolute top-0 right-0 w-9 h-9 rounded-full ${ratingColor} flex items-center justify-center font-black border-2 border-white shadow" style="transform:translate(25%, -25%);font-size:11px;">
                         ${p.rating.toFixed(1)}
                     </div>
                 </div>
-                <div class="${teamColor} ${textColor} px-2 py-0.5 rounded text-[10px] font-black shadow whitespace-nowrap mx-auto" style="max-width:68px;overflow:hidden;text-overflow:ellipsis;">
+                <div class="${teamColor} ${textColor} px-3 py-0.5 rounded shadow whitespace-nowrap mx-auto" style="font-size:10px;font-weight:900;min-width:70px;text-align:center;">
                     ${name}
                 </div>
             </div>`;
@@ -2431,7 +2431,7 @@ function generateTOTMFromGroup(group, league) {
     ].filter(p => p);
 
     return `
-        <div class="bg-stone-50 rounded-2xl p-5 shadow-xl mx-auto" style="max-width:520px;" id="totm-download-target">
+        <div class="bg-stone-50 rounded-2xl p-5 shadow-xl mx-auto" style="max-width:580px;" id="totm-download-target">
             <div class="totm-header text-center mb-7 relative">
                 <div class="text-xl font-black text-zinc-900">Team of the Matchday</div>
                 <div class="text-xs text-zinc-600 font-medium mt-0.5">${LEAGUE_META[league]?.name || league} · ${labelStr}</div>
@@ -2440,18 +2440,18 @@ function generateTOTMFromGroup(group, league) {
             <div class="flex flex-col items-center gap-5">
                 <div class="flex justify-center">${renderPlayer(st[0])}</div>
                 
-                <div class="flex justify-center gap-4">
+                <div class="flex justify-center gap-5">
                     ${renderPlayer(lm[0])}
                     ${renderPlayer(cam[0])}
                     ${renderPlayer(rm[0])}
                 </div>
                 
-                <div class="flex justify-center gap-10">
+                <div class="flex justify-center gap-12">
                     ${renderPlayer(lcdm[0])}
                     ${renderPlayer(rcdm[0])}
                 </div>
                 
-                <div class="flex justify-center gap-3">
+                <div class="flex justify-center gap-4">
                     ${renderPlayer(lb[0])}
                     ${renderPlayer(cb[0])}
                     ${renderPlayer(cb[1])}
@@ -2462,10 +2462,10 @@ function generateTOTMFromGroup(group, league) {
             </div>
             
             <div class="mt-7 pt-5 border-t-2 border-zinc-300">
-                <div class="flex gap-2 justify-center flex-wrap mb-2">
+                <div class="flex gap-3 justify-center flex-wrap mb-2">
                     ${bench.slice(0, 5).map(renderBench).join('')}
                 </div>
-                <div class="flex gap-2 justify-center flex-wrap">
+                <div class="flex gap-3 justify-center flex-wrap">
                     ${bench.slice(5, 9).map(renderBench).join('')}
                 </div>
             </div>
