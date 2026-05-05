@@ -1530,6 +1530,7 @@ function goToStandingsFromTeam(lg) {
 // Format: { league: { 'Matchday Label': { startRow: X, endRow: Y } } }
 const TOTM_CONFIG = {
     PREM: {
+        'Matchday 35': { startRow: 6613, endRow: 6832 },
         'Matchday 34': { startRow: 6349, endRow: 6612 },
         'Matchday 33': { startRow: 6129, endRow: 6348 },
         'Matchday 32': { startRow: 5909, endRow: 6128 },
@@ -1563,6 +1564,7 @@ const TOTM_CONFIG = {
         'Matchday 4': { startRow: 1476, endRow: 1695 }
     },
     LALIGA: {
+        'Matchday 34': { startRow: 6165, endRow: 6384 },
         'Matchday 33': { startRow: 5945, endRow: 6164 },
         'Matchday 32': { startRow: 5725, endRow: 5944 },
         'Matchday 31': { startRow: 5505, endRow: 5724 },
@@ -2306,19 +2308,54 @@ function generateTOTMFromGroup(group, league) {
     const selectedNames = new Set(allSelected.map(p => p.name));
     const remaining = players.filter(p => !selectedNames.has(p.name)).sort((a, b) => b.rating - a.rating);
     
-    let idx = 0;
-    while (gk.length < 1 && idx < remaining.length) gk.push(remaining[idx++]);
-    while (lb.length < 1 && idx < remaining.length) lb.push(remaining[idx++]);
-    while (cb.length < 2 && idx < remaining.length) cb.push(remaining[idx++]);
-    while (rb.length < 1 && idx < remaining.length) rb.push(remaining[idx++]);
-    while (lcdm.length < 1 && idx < remaining.length) lcdm.push(remaining[idx++]);
-    while (rcdm.length < 1 && idx < remaining.length) rcdm.push(remaining[idx++]);
-    while (lm.length < 1 && idx < remaining.length) lm.push(remaining[idx++]);
-    while (rm.length < 1 && idx < remaining.length) rm.push(remaining[idx++]);
-    while (cam.length < 1 && idx < remaining.length) cam.push(remaining[idx++]);
-    while (st.length < 1 && idx < remaining.length) st.push(remaining[idx++]);
+    // Fill missing positions with best available players by rating
+    if (gk.length < 1) {
+        const best = remaining.find(p => !allSelected.some(s => s.name === p.name));
+        if (best) { gk.push(best); allSelected.push(best); }
+    }
+    if (lb.length < 1) {
+        const best = remaining.find(p => !allSelected.some(s => s.name === p.name));
+        if (best) { lb.push(best); allSelected.push(best); }
+    }
+    while (cb.length < 2) {
+        const best = remaining.find(p => !allSelected.some(s => s.name === p.name));
+        if (best) { cb.push(best); allSelected.push(best); }
+        else break;
+    }
+    if (rb.length < 1) {
+        const best = remaining.find(p => !allSelected.some(s => s.name === p.name));
+        if (best) { rb.push(best); allSelected.push(best); }
+    }
+    if (lcdm.length < 1) {
+        const best = remaining.find(p => !allSelected.some(s => s.name === p.name));
+        if (best) { lcdm.push(best); allSelected.push(best); }
+    }
+    if (rcdm.length < 1) {
+        const best = remaining.find(p => !allSelected.some(s => s.name === p.name));
+        if (best) { rcdm.push(best); allSelected.push(best); }
+    }
+    if (lm.length < 1) {
+        const best = remaining.find(p => !allSelected.some(s => s.name === p.name));
+        if (best) { lm.push(best); allSelected.push(best); }
+    }
+    if (rm.length < 1) {
+        const best = remaining.find(p => !allSelected.some(s => s.name === p.name));
+        if (best) { rm.push(best); allSelected.push(best); }
+    }
+    if (cam.length < 1) {
+        const best = remaining.find(p => !allSelected.some(s => s.name === p.name));
+        if (best) { cam.push(best); allSelected.push(best); }
+    }
+    if (st.length < 1) {
+        const best = remaining.find(p => !allSelected.some(s => s.name === p.name));
+        if (best) { st.push(best); allSelected.push(best); }
+    }
     
     const formation = [...gk, ...lb, ...cb, ...rb, ...lcdm, ...rcdm, ...lm, ...cam, ...rm, ...st];
+    
+    // Recalculate remaining players for bench after filling positions
+    const formationNames = new Set(formation.map(p => p.name));
+    const remainingForBench = players.filter(p => !formationNames.has(p.name)).sort((a, b) => b.rating - a.rating);
     
     const maxRatingValue = Math.max(...formation.map(p => p.rating));
     const playersWithTopRating = formation.filter(p => p.rating === maxRatingValue);
@@ -2410,13 +2447,13 @@ function generateTOTMFromGroup(group, league) {
     };
 
     const benchByPos = {
-        gk: remaining.filter(p => p.position === 'GK'),
-        cb: remaining.filter(p => p.position === 'CB'),
-        fb: remaining.filter(p => ['LB','RB','LWB','RWB'].includes(p.position)),
-        mid: remaining.filter(p => ['CDM','CM'].includes(p.position)),
-        cam: remaining.filter(p => p.position === 'CAM'),
-        wing: remaining.filter(p => ['LM','RM','LW','RW'].includes(p.position)),
-        st: remaining.filter(p => ['ST','CF'].includes(p.position))
+        gk: remainingForBench.filter(p => p.position === 'GK'),
+        cb: remainingForBench.filter(p => p.position === 'CB'),
+        fb: remainingForBench.filter(p => ['LB','RB','LWB','RWB'].includes(p.position)),
+        mid: remainingForBench.filter(p => ['CDM','CM'].includes(p.position)),
+        cam: remainingForBench.filter(p => p.position === 'CAM'),
+        wing: remainingForBench.filter(p => ['LM','RM','LW','RW'].includes(p.position)),
+        st: remainingForBench.filter(p => ['ST','CF'].includes(p.position))
     };
     
     const bench = [
