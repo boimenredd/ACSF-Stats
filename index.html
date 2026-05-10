@@ -389,7 +389,7 @@
 
 <script>
 const LOGOS = {
-    "Liverpool": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAExUlEQVR4Ae3aA6xjURCA4bVt27Zt27Zt27Zt27Zt27Z3Z/8k85Kbk4c477Q9yVfMTDFT994AnuVZnuVZnmXR2h0gQVw0dOcBZMV3d2l2JbIbsT4QdxlAK9wxYtexD/ncYQBLtOERCIqoEFTHUncYgGASLiACZuAWxmO+qzc/BIKc+INgEJSHIIwtjUzW460QtQu1nE1wOrbjdCIIhmAH6mEvFuAoeiCGDc2PwU+I6oLDEIf3uIDojst9xSWUwW1U1LoB6InzNjQfFQUwGmVxHmLoggTG5W5os+khSA1BW7TDaxSx5ekfSRtqjCTICXEy6q/ggzb/GxnxF71RF0+xxL83HR9rcR6H0F/jIfV4CUT99srhNU4hB94gN/4gLcro6X22PPKpcRo58R4nHLl/ENUYMSCYheY4iop4i0ioAsFyDEUKW978thixgLgPUSuQGIJuGI3OGIcDCIQ1EPTEGJueASERzXhZfICoM4jsaH4oyuIiqqE4RBXAbryz9QtNZYjDB42/wlpEQS9sQxNMwX7MRhkIriKrjc33hqgXEGREMYjWzIHgBwQpUA2HIRiFFphtc/Pd8Q43NbcFs5EPgtsYja5oj8c4hwo4iJu2NZ8XonagKQQDNS9IhlMQvIZgK8KiK5ZAsBaBbRvAB4iKgGsQtEAMiDYq6jD6OX4jCF6gNIahkk3Nl4aozxoTtQnz0A3Ljd8DR1EMldEG/SCoZ9ujPxeirjgHoNZhlhG7g1MojIcQXENGG9/5d0DUW43dhxh+Q9R0ZEUXLENdzERTGwewGeIQBAON2GlttB9EzUcJ9MUItLD1i88YiMMMjYuhJbYjB14YuS/IYusAEkEMhVHFiA3HMaxGVQxBG5R1hf/zVkAMzVHPiOXAG1xABwjGIqorDOEkxHAHk41YMo2/RnqIGu0KQxgP8Qsy4hweISj+QLDKFYYQC0vwA+KLUPiEasgIUVVd5X/+jmiI0bgDMQRGCtzW+nkQXHeVAXyH4B4SakwcEmvshB4Hhqhgtjcf1fxE0PhZiOqvsXGOy+2GIJ7tA+iFPfgEwXYfPinCoTxiICRaesVtH0A4ZIJgL3oiuja4C4J22Kr1g9AABfDDVd4D9nk1asSnQpDV2A0mNMpjqis0Hx+CN97kKkHQ0pvcUIR0hQFshSCpN7ngECzw7juE/c3rax+dfak5i+euuqPDRxzwo6YoBNFtbzYI+uIIamMhBBEQ1Jv6WeiKcPiGGbZ/1J3BQQhe4xYu4DYEixwvi1MQ9Q138VgJFtg6iM0+xIOikJ4OgcRY40NtUlQO4Fn2POq5sFkV96GmL1ZhDTZgC3J5U1cFu/EAVzEN8W0Ywl/88CWfEYKt6IdTGGjUnIegI7KhEd6hjw0DeInLvuQjml+Fjd3k1kCcMUeumA0DeIVrvuQjQ9Bazyd25CJAMMzm94FXuOrnAPSjEeLIFYegojsMYDk64qYjVxKCqu4wgG7e5BJAsMj2AVwxvsxEMN8E0dOHy5+AILE3uaz+vfmAEDxHE6zFG8TCSONX4SA9XxqNHNcRGq8gGIbiaIDbGIokGORfB9AcV3Ee13ETrZEZR7Rmhtac0PNdMMmb6+qOR/iOV1iMaCiCvf6obfuXZ3mWZ3nWf6vSccAGg47ZAAAAAElFTkSuQmCC",
+    "Liverpool": "https://1000logos.net/wp-content/uploads/2017/04/Logo-Liverpool.png",
     "Newcastle": "https://resources.premierleague.com/premierleague25/badges-alt/4.svg",
     "Chelsea": "https://resources.premierleague.com/premierleague25/badges-alt/8.svg",
     "Aston Villa": "https://resources.premierleague.com/premierleague25/badges-alt/7.svg",
@@ -1530,6 +1530,7 @@ function goToStandingsFromTeam(lg) {
 // Format: { league: { 'Matchday Label': { startRow: X, endRow: Y } } }
 const TOTM_CONFIG = {
     PREM: {
+        'Matchday 36': { startRow: 6833, endRow: 7052 },
         'Matchday 35': { startRow: 6613, endRow: 6832 },
         'Matchday 34': { startRow: 6349, endRow: 6612 },
         'Matchday 33': { startRow: 6129, endRow: 6348 },
@@ -1564,6 +1565,7 @@ const TOTM_CONFIG = {
         'Matchday 4': { startRow: 1476, endRow: 1695 }
     },
     LALIGA: {
+        'Matchday 35': { startRow: 6385, endRow: 6604 },
         'Matchday 34': { startRow: 6165, endRow: 6384 },
         'Matchday 33': { startRow: 5945, endRow: 6164 },
         'Matchday 32': { startRow: 5725, endRow: 5944 },
@@ -1575,6 +1577,8 @@ const TOTM_CONFIG = {
         'Matchday 26': { startRow: 4405, endRow: 4624 }
     },
     MLS: {
+        'Matchday 14': { startRow: 2818, endRow: 3037 },
+        'Matchday 13': { startRow: 2598, endRow: 2817 },
         'Matchday 12': { startRow: 2378, endRow: 2597 },
         'Matchday 11': { startRow: 2180, endRow: 2377 },
         'Matchday 10': { startRow: 1982, endRow: 2179 },
