@@ -1565,6 +1565,7 @@ const TOTM_CONFIG = {
         'Matchday 4': { startRow: 1476, endRow: 1695 }
     },
     LALIGA: {
+        'Matchday 36': { startRow: 6605, endRow: 6824 },
         'Matchday 35': { startRow: 6385, endRow: 6604 },
         'Matchday 34': { startRow: 6165, endRow: 6384 },
         'Matchday 33': { startRow: 5945, endRow: 6164 },
@@ -1577,6 +1578,7 @@ const TOTM_CONFIG = {
         'Matchday 26': { startRow: 4405, endRow: 4624 }
     },
     MLS: {
+        'Matchday 15': { startRow: 3038, endRow: 3257 },
         'Matchday 14': { startRow: 2818, endRow: 3037 },
         'Matchday 13': { startRow: 2598, endRow: 2817 },
         'Matchday 12': { startRow: 2378, endRow: 2597 },
@@ -2600,11 +2602,26 @@ function getQualifyColor(lg, pos) {
     } else if (lg === 'UCL' || lg === 'EUROPA') {
         if (pos <= 8) return '#22c55e'; // Bright green for R16
         if (pos <= 24) return '#3b82f6'; // Blue for R16 PO
+    } else if (lg === 'PREM') {
+        // Premier League: 1=Champ, 2-5=UCL, 6-7=UEL, 8-9=UECL, 18+=Rel
+        if (pos === 1) return '#00ff85'; // Champ
+        if (pos <= 5) return '#3b82f6'; // UCL (2-5)
+        if (pos <= 7) return '#fbbf24'; // UEL (6-7)
+        if (pos <= 9) return '#166534'; // UECL (8-9)
+        if (pos >= 18) return '#ef4444'; // Relegation
+    } else if (lg === 'LALIGA') {
+        // La Liga: 1=Champ, 2-5=UCL, 6-7=UEL, 8=UECL, 18+=Rel
+        if (pos === 1) return '#00ff85'; // Champ
+        if (pos <= 5) return '#3b82f6'; // UCL (2-5)
+        if (pos <= 7) return '#fbbf24'; // UEL (6-7)
+        if (pos === 8) return '#166534'; // UECL (8 only)
+        if (pos >= 18) return '#ef4444'; // Relegation
     } else {
+        // Default for other leagues
         if (pos === 1) return '#00ff85';
-        if (pos <= 4) return '#3b82f6';
-        if (pos === 5) return '#fbbf24';
-        if (pos === 6) return '#166534';
+        if (pos <= 5) return '#3b82f6';
+        if (pos <= 7) return '#fbbf24';
+        if (pos <= 9) return '#166534';
         if (pos >= 18) return '#ef4444';
     }
     return 'transparent';
