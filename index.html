@@ -226,6 +226,12 @@
                 <img src="https://images.fotmob.com/image_resources/logo/leaguelogo/dark/73.png" class="league-item-logo">
                 <div class="league-item-name">Europa League</div>
             </div>
+
+            <div class="leagues-title" style="margin-top:24px;">International</div>
+            <div class="league-item" onclick="viewLeague('WC2026')">
+                <img src="https://assets.football-logos.cc/logos/tournaments/1500x1500/fifa-world-cup-2026--white.10e0b37b.png" class="league-item-logo">
+                <div class="league-item-name">World Cup</div>
+            </div>
         </div>
 
         <!-- CENTER: All tab content -->
@@ -4322,22 +4328,45 @@ async function renderLeagueOverview(league) {
         'LALIGA': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/87.png',
         'MLS': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/130.png',
         'UCL': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/42.png',
-        'EUROPA': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/73.png'
+        'EUROPA': 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/73.png',
+        'WC2026': 'https://assets.football-logos.cc/logos/tournaments/1500x1500/fifa-world-cup-2026--white.10e0b37b.png'
     };
     const leagueCountry = { 
         PREM: 'England', 
         LALIGA: 'Spain', 
         MLS: 'USA', 
         UCL: 'Europe', 
-        EUROPA: 'Europe' 
+        EUROPA: 'Europe',
+        WC2026: 'International'
     };
     const leagueName = { 
         PREM: 'Premier League', 
         LALIGA: 'La Liga', 
         MLS: 'MLS', 
         UCL: 'Champions League', 
-        EUROPA: 'Europa League' 
+        EUROPA: 'Europa League',
+        WC2026: 'World Cup'
     };
+
+    // Coming Soon leagues
+    if (league === 'WC2026') {
+        content.innerHTML = `
+            <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:20px;">
+                <div style="display:flex;align-items:center;gap:14px;margin-bottom:32px;">
+                    <img src="${leagueLogos[league]}" style="width:44px;height:44px;object-fit:contain;">
+                    <div>
+                        <div style="font-size:18px;font-weight:900;">${leagueName[league]}</div>
+                        <div style="font-size:11px;color:#888;margin-top:3px;">${leagueCountry[league]}</div>
+                    </div>
+                </div>
+                <div style="text-align:center;padding:60px 20px;">
+                    <div style="font-size:48px;margin-bottom:16px;">🌍</div>
+                    <div style="font-size:24px;font-weight:900;color:#fff;margin-bottom:8px;">Coming Soon</div>
+                    <div style="font-size:14px;color:#888;">World Cup data will be available here once the tournament begins.</div>
+                </div>
+            </div>`;
+        return;
+    }
     
     const hasStats = ['PREM', 'LALIGA', 'MLS', 'UCL'].includes(league);
 
