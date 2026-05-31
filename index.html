@@ -534,7 +534,33 @@ const LOGOS = {
     "Nice": "https://img.uefa.com/imgml/TP/teams/logos/32x32/52355.png",
     "Malmo": "https://img.uefa.com/imgml/TP/teams/logos/32x32/50152.png",
     "Utrecht": "https://img.uefa.com/imgml/TP/teams/logos/32x32/52323.png",
-    "M. Tel-Aviv": "https://img.uefa.com/imgml/TP/teams/logos/32x32/57477.png"
+    "M. Tel-Aviv": "https://img.uefa.com/imgml/TP/teams/logos/32x32/57477.png",
+
+    // World Cup 2026 National Teams
+    "France": "https://upload.wikimedia.org/wikipedia/en/2/23/French_Football_Federation_logo.svg",
+    "Argentina": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c1/Argentina_national_football_team_logo.svg/960px-Argentina_national_football_team_logo.svg.png",
+    "England": "https://upload.wikimedia.org/wikipedia/en/thumb/8/8b/England_national_football_team_crest.svg/960px-England_national_football_team_crest.svg.png",
+    "Morocco": "https://upload.wikimedia.org/wikipedia/en/thumb/d/d0/Royal_Moroccan_Football_Federation_logo.svg/960px-Royal_Moroccan_Football_Federation_logo.svg.png",
+    "Germany": "https://upload.wikimedia.org/wikipedia/en/thumb/e/e3/DFBEagle.svg/250px-DFBEagle.svg.png",
+    "Croatia": "https://upload.wikimedia.org/wikipedia/en/thumb/8/84/Croatian_Football_Federation_logo.svg/960px-Croatian_Football_Federation_logo.svg.png",
+    "USA": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/United_States_Soccer_Federation_logo.svg/960px-United_States_Soccer_Federation_logo.svg.png",
+    "Poland": "https://upload.wikimedia.org/wikipedia/commons/c/c9/Herb_Polski.svg",
+    "Sweden": "https://upload.wikimedia.org/wikipedia/en/3/3f/Sweden_national_football_team_badge.svg",
+    "Japan": "https://upload.wikimedia.org/wikipedia/en/8/84/Japan_national_football_team_crest.svg",
+    "Ecuador": "https://upload.wikimedia.org/wikipedia/en/b/ba/Ecuador_national_football_team.png",
+    "Spain": "https://upload.wikimedia.org/wikipedia/en/thumb/3/39/Spain_national_football_team_crest.svg/960px-Spain_national_football_team_crest.svg.png",
+    "Netherlands": "https://upload.wikimedia.org/wikipedia/en/7/78/Netherlands_national_football_team_logo.svg",
+    "Canada": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Canadian_Soccer_Association_logo.svg/1280px-Canadian_Soccer_Association_logo.svg.png",
+    "Italy": "https://upload.wikimedia.org/wikipedia/commons/b/bf/Logo_Italy_National_Football_Team_-_2023.svg",
+    "Colombia": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/FCF-Logo-2023.svg/1280px-FCF-Logo-2023.svg.png",
+    "Portugal": "https://upload.wikimedia.org/wikipedia/en/6/64/Portuguese_Football_Federation_logo.svg",
+    "Brazil": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Confedera%C3%A7%C3%A3o_Brasileira_de_Futebol_logo_%282020%29.svg/250px-Confedera%C3%A7%C3%A3o_Brasileira_de_Futebol_logo_%282020%29.svg.png",
+    "Norway": "https://upload.wikimedia.org/wikipedia/en/thumb/6/6c/Norway_national_football_team_logo.svg/960px-Norway_national_football_team_logo.svg.png",
+    "Senegal": "https://upload.wikimedia.org/wikipedia/en/1/16/Senegalese_Football_Federation_logo.svg",
+    "Uruguay": "https://logodownload.org/wp-content/uploads/2021/09/auf-seleccion-de-futbol-de-uruguay-logo-3.png",
+    "Denmark": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Dansk_boldspil_union_logo.svg/250px-Dansk_boldspil_union_logo.svg.png",
+    "Australia": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Australia_national_football_team_badge.svg",
+    "Korea Republic": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5e/Korea_Football_Association_logo.svg/250px-Korea_Football_Association_logo.svg.png"
 };
 
 function _normMatch(s) {
@@ -888,6 +914,7 @@ const SCHEDULE_URLS = {
         url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=284985759&single=true&output=csv',
         columns: { home: 'B', away: 'C', homeScore: 'D', awayScore: 'D', dateCol: 'A' }
     },
+    WC2026: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1967785362&single=true&output=csv',
     EUROPA: {
         url: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=284985759&single=true&output=csv',
         columns: { home: 'H', away: 'I', homeScore: 'J', awayScore: 'J', dateCol: 'G' }
@@ -906,7 +933,8 @@ const STANDINGS_URLS = {
     LALIGA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=886605383&single=true&output=csv',
     MLS: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT03H3Or-8DCxNZkAnIdhVuwJsej-AEuo6VgZO3pG4WsBYt1HPxCLN0CsGa5P33XghzKltG5AiymB4q/pub?gid=1177278404&single=true&output=csv',
     UCL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=474382009&single=true&output=csv',
-    EUROPA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1627277990&single=true&output=csv'
+    EUROPA: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=1627277990&single=true&output=csv',
+    WC2026: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=175572507&single=true&output=csv'
 };
 
 // ===== ARTICLES CONFIGURATION =====
@@ -1805,7 +1833,8 @@ const LEAGUE_META = {
     LALIGA: { name: 'Spain - La Liga', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/esp.png' },
     MLS: { name: 'USA - MLS', logo: 'https://images.fotmob.com/image_resources/logo/teamlogo/usa.png' },
     UCL: { name: 'Europe - Champions League', logo: 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/42.png' },
-    EUROPA: { name: 'Europe - Europa League', logo: 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/73.png' }
+    EUROPA: { name: 'Europe - Europa League', logo: 'https://images.fotmob.com/image_resources/logo/leaguelogo/dark/73.png' },
+    WC2026: { name: 'World Cup 2026', logo: 'https://assets.football-logos.cc/logos/tournaments/1500x1500/fifa-world-cup-2026--white.10e0b37b.png' }
 };
 
 const STATS_URLS = {
@@ -1838,11 +1867,18 @@ const STATS_URLS = {
         ratingsLog: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRljln76x3l1S6dUXrA_4Krl_rUUcw6IBYwV5cvFuozORLF6GIuIE3PV9_8QJqUJuH9CbJxX3VGvEqx/pub?gid=812230696&single=true&output=csv',
         avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRljln76x3l1S6dUXrA_4Krl_rUUcw6IBYwV5cvFuozORLF6GIuIE3PV9_8QJqUJuH9CbJxX3VGvEqx/pub?gid=692292778&single=true&output=csv',
         lineupBuilder: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRljln76x3l1S6dUXrA_4Krl_rUUcw6IBYwV5cvFuozORLF6GIuIE3PV9_8QJqUJuH9CbJxX3VGvEqx/pub?gid=983480432&single=true&output=csv'
+    },
+    WC2026: {
+        goals: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMSx7Qn7j4pyMGvzlnxejZ56JFBnkkpfsHi9MqZmYCu996ATM2C7bSjdOhGu1zBnV3oJSarsvGyYKs/pub?gid=0&single=true&output=csv',
+        assists: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMSx7Qn7j4pyMGvzlnxejZ56JFBnkkpfsHi9MqZmYCu996ATM2C7bSjdOhGu1zBnV3oJSarsvGyYKs/pub?gid=1828601090&single=true&output=csv',
+        cleanSheets: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMSx7Qn7j4pyMGvzlnxejZ56JFBnkkpfsHi9MqZmYCu996ATM2C7bSjdOhGu1zBnV3oJSarsvGyYKs/pub?gid=1875623411&single=true&output=csv',
+        ratingsLog: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMSx7Qn7j4pyMGvzlnxejZ56JFBnkkpfsHi9MqZmYCu996ATM2C7bSjdOhGu1zBnV3oJSarsvGyYKs/pub?gid=812230696&single=true&output=csv',
+        avgRatings: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRMSx7Qn7j4pyMGvzlnxejZ56JFBnkkpfsHi9MqZmYCu996ATM2C7bSjdOhGu1zBnV3oJSarsvGyYKs/pub?gid=692292778&single=true&output=csv'
     }
 };
 
 let allMatches = [], uniqueDates = [], dateIdx = 0, currentView = 'hub', currentTeam = null, currentPlayer = null;
-let statsData = { PREM: {}, LALIGA: {}, MLS: {}, UCL: {}, EUROPA: {}, COMBINED: {} };
+let statsData = { PREM: {}, LALIGA: {}, MLS: {}, UCL: {}, EUROPA: {}, WC2026: {}, COMBINED: {} };
 
 let currentTeamPlayersList = [];
 let currentTeamLeague = null;
@@ -4355,23 +4391,25 @@ async function renderLeagueOverview(league) {
         WC2026: 'World Cup'
     };
 
-    // Coming Soon leagues
+    // WC2026 - Full tournament view
     if (league === 'WC2026') {
         content.innerHTML = `
-            <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:20px;">
-                <div style="display:flex;align-items:center;gap:14px;margin-bottom:32px;">
+            <div style="background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:20px 20px 0;margin-bottom:0;">
+                <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
                     <img src="${leagueLogos[league]}" style="width:44px;height:44px;object-fit:contain;">
                     <div>
                         <div style="font-size:18px;font-weight:900;">${leagueName[league]}</div>
                         <div style="font-size:11px;color:#888;margin-top:3px;">${leagueCountry[league]}</div>
                     </div>
                 </div>
-                <div style="text-align:center;padding:60px 20px;">
-                    <div style="font-size:48px;margin-bottom:16px;">🌍</div>
-                    <div style="font-size:24px;font-weight:900;color:#fff;margin-bottom:8px;">Coming Soon</div>
-                    <div style="font-size:14px;color:#888;">World Cup data will be available here once the tournament begins.</div>
+                <div style="display:flex;gap:0;border-bottom:1px solid #1e1e1e;margin:0 -20px;">
+                    <div class="lov-tab active-lov-tab" onclick="switchLeagueTab(event,'wc-groups','WC2026')" style="padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid #00ff85;color:#fff;">Groups</div>
+                    <div class="lov-tab" onclick="switchLeagueTab(event,'fixtures','WC2026')" style="padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;color:#888;border-bottom:2px solid transparent;">Fixtures</div>
+                    <div class="lov-tab" onclick="switchLeagueTab(event,'stats','WC2026')" style="padding:10px 20px;font-size:12px;font-weight:700;cursor:pointer;color:#888;border-bottom:2px solid transparent;">Stats</div>
                 </div>
-            </div>`;
+            </div>
+            <div id="leagueTabContent" style="margin-top:16px;"></div>`;
+        renderLeagueTabContent('wc-groups', 'WC2026');
         return;
     }
     
@@ -4422,9 +4460,240 @@ async function renderLeagueTabContent(tab, league) {
     const content = document.getElementById('leagueTabContent');
     if (!content) return;
 
+    if (tab === 'wc-groups') {
+        content.innerHTML = '<div style="color:#555;padding:32px;text-align:center">Loading groups...</div>';
+        const WC_STANDINGS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=175572507&single=true&output=csv';
+        
+        const WC_GROUPS = [
+            { name: 'Group A', startRow: 1, endRow: 5 },
+            { name: 'Group B', startRow: 8, endRow: 12 },
+            { name: 'Group C', startRow: 15, endRow: 19 },
+            { name: 'Group D', startRow: 1, endRow: 5, col: 'J' },
+            { name: 'Group E', startRow: 8, endRow: 12, col: 'J' },
+            { name: 'Group F', startRow: 15, endRow: 19, col: 'J' },
+        ];
+
+        Papa.parse(WC_STANDINGS_URL, {
+            download: true, header: false,
+            complete: (res) => {
+                const rows = res.data;
+                // Groups A-C use columns A-H (indices 0-7), D-F use J-Q (indices 9-16)
+                const parseGroup = (startRow, endRow, colOffset) => {
+                    const result = [];
+                    for (let i = startRow; i <= endRow; i++) {
+                        const row = rows[i];
+                        if (!row) continue;
+                        const team = row[colOffset + 1];
+                        if (!team || !team.trim()) continue;
+                        result.push({
+                            pos: row[colOffset + 0],
+                            team: team.trim(),
+                            mp: row[colOffset + 2] || '0',
+                            wdl: row[colOffset + 3] || '0-0-0',
+                            gf: row[colOffset + 4] || '0',
+                            ga: row[colOffset + 5] || '0',
+                            gd: row[colOffset + 6] || '0',
+                            pts: row[colOffset + 7] || '0',
+                        });
+                    }
+                    return result;
+                };
+
+                const groups = [
+                    { name: 'Group A', teams: parseGroup(1, 4, 0) },
+                    { name: 'Group B', teams: parseGroup(8, 11, 0) },
+                    { name: 'Group C', teams: parseGroup(15, 18, 0) },
+                    { name: 'Group D', teams: parseGroup(1, 4, 9) },
+                    { name: 'Group E', teams: parseGroup(8, 11, 9) },
+                    { name: 'Group F', teams: parseGroup(15, 18, 9) },
+                ];
+
+                // Also parse 3rd place table (A24:H30 = rows 23-29, cols 0-7)
+                const thirdPlace = parseGroup(23, 29, 0);
+
+                const renderGroup = (g) => `
+                    <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
+                        <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">${g.name}</div>
+                        <div style="display:grid;grid-template-columns:16px 1fr 28px 60px 28px 28px 28px 32px;gap:4px;align-items:center;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #222;">
+                            <div style="font-size:10px;color:#555;">#</div>
+                            <div style="font-size:10px;color:#555;">Team</div>
+                            <div style="font-size:10px;color:#555;text-align:center;">MP</div>
+                            <div style="font-size:10px;color:#555;text-align:center;">W-D-L</div>
+                            <div style="font-size:10px;color:#555;text-align:center;">GF</div>
+                            <div style="font-size:10px;color:#555;text-align:center;">GA</div>
+                            <div style="font-size:10px;color:#555;text-align:center;">GD</div>
+                            <div style="font-size:10px;color:#555;text-align:right;">PTS</div>
+                        </div>
+                        ${g.teams.map((t, i) => {
+                            const qColor = i < 2 ? '#22c55e' : i === 2 ? '#3b82f6' : 'transparent';
+                            return `
+                            <div style="display:grid;grid-template-columns:16px 1fr 28px 60px 28px 28px 28px 32px;gap:4px;align-items:center;padding:7px 0;${i < g.teams.length - 1 ? 'border-bottom:1px solid #141414;' : ''}">
+                                <div style="display:flex;align-items:center;gap:4px;">
+                                    <div style="width:3px;height:16px;border-radius:2px;background:${qColor};flex-shrink:0;"></div>
+                                    <span style="font-size:11px;color:#555;">${i + 1}</span>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:7px;">
+                                    <img src="${getLogo(t.team)}" style="width:18px;height:18px;object-fit:contain;flex-shrink:0;">
+                                    <span style="font-size:12px;font-weight:700;">${t.team}</span>
+                                </div>
+                                <div style="font-size:11px;color:#888;text-align:center;font-family:monospace;">${t.mp}</div>
+                                <div style="font-size:10px;color:#888;text-align:center;font-family:monospace;">${t.wdl}</div>
+                                <div style="font-size:11px;color:#888;text-align:center;font-family:monospace;">${t.gf}</div>
+                                <div style="font-size:11px;color:#888;text-align:center;font-family:monospace;">${t.ga}</div>
+                                <div style="font-size:11px;color:#888;text-align:center;font-family:monospace;">${t.gd}</div>
+                                <div style="font-size:12px;font-weight:900;color:#00ff85;text-align:right;">${t.pts}</div>
+                            </div>`;
+                        }).join('')}
+                    </div>`;
+
+                const thirdHtml = thirdPlace.length ? `
+                    <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;margin-top:0;">
+                        <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">Best 3rd Place Teams</div>
+                        <div style="display:grid;grid-template-columns:16px 1fr 28px 60px 28px 28px 28px 32px;gap:4px;align-items:center;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid #222;">
+                            <div style="font-size:10px;color:#555;">#</div>
+                            <div style="font-size:10px;color:#555;">Team</div>
+                            <div style="font-size:10px;color:#555;text-align:center;">MP</div>
+                            <div style="font-size:10px;color:#555;text-align:center;">W-D-L</div>
+                            <div style="font-size:10px;color:#555;text-align:center;">GF</div>
+                            <div style="font-size:10px;color:#555;text-align:center;">GA</div>
+                            <div style="font-size:10px;color:#555;text-align:center;">GD</div>
+                            <div style="font-size:10px;color:#555;text-align:right;">PTS</div>
+                        </div>
+                        ${thirdPlace.map((t, i) => `
+                            <div style="display:grid;grid-template-columns:16px 1fr 28px 60px 28px 28px 28px 32px;gap:4px;align-items:center;padding:7px 0;${i < thirdPlace.length - 1 ? 'border-bottom:1px solid #141414;' : ''}">
+                                <div style="display:flex;align-items:center;gap:4px;">
+                                    <div style="width:3px;height:16px;border-radius:2px;background:${i < 2 ? '#22c55e' : 'transparent'};flex-shrink:0;"></div>
+                                    <span style="font-size:11px;color:#555;">${i + 1}</span>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:7px;">
+                                    <img src="${getLogo(t.team)}" style="width:18px;height:18px;object-fit:contain;flex-shrink:0;">
+                                    <span style="font-size:12px;font-weight:700;">${t.team}</span>
+                                </div>
+                                <div style="font-size:11px;color:#888;text-align:center;font-family:monospace;">${t.mp}</div>
+                                <div style="font-size:10px;color:#888;text-align:center;font-family:monospace;">${t.wdl}</div>
+                                <div style="font-size:11px;color:#888;text-align:center;font-family:monospace;">${t.gf}</div>
+                                <div style="font-size:11px;color:#888;text-align:center;font-family:monospace;">${t.ga}</div>
+                                <div style="font-size:11px;color:#888;text-align:center;font-family:monospace;">${t.gd}</div>
+                                <div style="font-size:12px;font-weight:900;color:#00ff85;text-align:right;">${t.pts}</div>
+                            </div>`).join('')}
+                    </div>` : '';
+
+                const legend = `
+                    <div style="display:flex;gap:16px;padding:8px 0;flex-wrap:wrap;">
+                        <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#22c55e;"></div><span style="font-size:10px;font-weight:800;color:#555;text-transform:uppercase;">R16</span></div>
+                        <div style="display:flex;align-items:center;gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#3b82f6;"></div><span style="font-size:10px;font-weight:800;color:#555;text-transform:uppercase;">Best 3rd</span></div>
+                    </div>`;
+
+                content.innerHTML = `
+                    ${legend}
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        ${groups.map(renderGroup).join('')}
+                    </div>
+                    <div style="margin-top:10px;">
+                        ${thirdHtml}
+                    </div>`;
+            },
+            error: () => { content.innerHTML = '<div style="color:#ef4444;padding:32px;text-align:center;">Failed to load group standings.</div>'; }
+        });
+        return;
+    }
+
+    if (tab === 'stats') {
+        await loadStats('WC2026');
+        const data = statsData['WC2026'] || {};
+        const renderList = (arr, color) => (arr || []).slice(0, 10).map((p, i) => `
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;${i < 9 ? 'border-bottom:1px solid #1a1a1a;' : ''}">
+                <div style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:#1a1a1a;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                    ${makeSmallAvatar(p.name, p.team)}
+                </div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:13px;font-weight:700;">${p.name}</div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+                        <img src="${getLogo(p.team)}" style="width:14px;height:14px;object-fit:contain;">
+                        <span style="font-size:11px;color:#666;">${p.team}</span>
+                    </div>
+                </div>
+                <div style="width:32px;height:32px;border-radius:50%;background:${i===0?color:'#1a1a1a'};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;flex-shrink:0;">${p.value}</div>
+            </div>`).join('');
+
+        content.innerHTML = `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
+                    <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">Top Scorers</div>
+                    ${renderList(data.goals, '#c0392b')}
+                </div>
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
+                    <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">Top Assists</div>
+                    ${renderList(data.assists, '#2980b9')}
+                </div>
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
+                    <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">Clean Sheets</div>
+                    ${renderList(data.cleanSheets, '#166534')}
+                </div>
+                <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
+                    <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:12px;">Avg Ratings</div>
+                    ${renderList(data.avgRatings, '#d97706')}
+                </div>
+            </div>`;
+        return;
+    }
+
+    if (tab === 'fixtures' && league === 'WC2026') {
+        content.innerHTML = '<div style="color:#555;padding:32px;text-align:center">Loading fixtures...</div>';
+        Papa.parse(SCHEDULE_URLS['WC2026'], {
+            download: true, header: true,
+            complete: (res) => {
+                const rows = res.data.filter(r => r.Home || r.home);
+                if (!rows.length) { content.innerHTML = '<div style="color:#555;padding:32px;text-align:center;">No fixtures found.</div>'; return; }
+                
+                // Group by round/date
+                const byRound = {};
+                rows.forEach(r => {
+                    const round = r.Round || r.round || r.Stage || r.stage || 'Fixtures';
+                    if (!byRound[round]) byRound[round] = [];
+                    byRound[round].push(r);
+                });
+
+                content.innerHTML = Object.entries(byRound).map(([round, matches]) => `
+                    <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;margin-bottom:10px;">
+                        <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">${round}</div>
+                        ${matches.map(m => {
+                            const home = m.Home || m.home || '';
+                            const away = m.Away || m.away || '';
+                            const score = m.Score || m.score || m.Result || m.result || '';
+                            const date = m.Date || m.date || '';
+                            const played = score && score.includes('-');
+                            return `
+                            <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #141414;">
+                                <div style="flex:1;display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+                                    <span style="font-size:13px;font-weight:700;text-align:right;">${home}</span>
+                                    <img src="${getLogo(home)}" style="width:22px;height:22px;object-fit:contain;">
+                                </div>
+                                <div style="min-width:64px;text-align:center;">
+                                    ${played
+                                        ? `<span style="font-size:14px;font-weight:900;background:#1a1a1a;padding:4px 10px;border-radius:6px;">${score}</span>`
+                                        : `<span style="font-size:10px;color:#555;">${date}</span>`}
+                                </div>
+                                <div style="flex:1;display:flex;align-items:center;gap:8px;">
+                                    <img src="${getLogo(away)}" style="width:22px;height:22px;object-fit:contain;">
+                                    <span style="font-size:13px;font-weight:700;">${away}</span>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                    </div>`).join('');
+            }
+        });
+        return;
+    }
+
+    if (tab === 'overview' && league === 'WC2026') {
+        renderLeagueTabContent('wc-groups', 'WC2026');
+        return;
+    }
+
     if (tab === 'overview') {
         // Show top stats preview + table preview side by side
-        const hasStats = ['PREM', 'LALIGA', 'MLS', 'UCL'].includes(league);
+        const hasStats = ['PREM', 'LALIGA', 'MLS', 'UCL', 'WC2026'].includes(league);
         
         if (hasStats) {
             await Promise.all([loadStats(league), loadStandingsData(league)]);
