@@ -254,9 +254,9 @@
                     <button id="btn-PREM" onclick="renderStandings('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
                     <button id="btn-LALIGA" onclick="renderStandings('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
                     <button id="btn-MLS" onclick="renderStandings('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
+                    <button id="btn-WC2026" onclick="renderStandings('WC2026')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">WC</button>
                     <button id="btn-UCL" onclick="renderStandings('UCL')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">UCL</button>
                     <button id="btn-EUROPA" onclick="renderStandings('EUROPA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">UEL</button>
-                    <button id="btn-WC2026" onclick="renderStandings('WC2026')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">WORLD CUP</button>
                 </div>
                 <div class="px-4 overflow-x-auto">
                     <div class="bg-zinc-900/50 rounded-xl border border-zinc-800">
@@ -274,8 +274,8 @@
                     <button id="stat-btn-PREM" onclick="renderStats('PREM')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap active-league">PREMIER LEAGUE</button>
                     <button id="stat-btn-LALIGA" onclick="renderStats('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
                     <button id="stat-btn-MLS" onclick="renderStats('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
+                    <button id="stat-btn-WC2026" onclick="renderStats('WC2026')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">WC</button>
                     <button id="stat-btn-UCL" onclick="renderStats('UCL')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">UCL</button>
-                    <button id="stat-btn-WC2026" onclick="renderStats('WC2026')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">WORLD CUP</button>
                     <button id="stat-btn-COMBINED" onclick="renderStats('COMBINED')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">COMBINED</button>
                 </div>
                 <div id="statsContent" class="px-4"></div>
@@ -1962,7 +1962,7 @@ function _leagueForTeamFast(teamName){
 }
 
 async function init() {
-    const keys = ['PREM', 'LALIGA', 'MLS', 'UCL', 'EUROPA'];
+    const keys = ['PREM', 'LALIGA', 'MLS', 'WC2026', 'UCL', 'EUROPA'];
     allMatches = [];
     const dateMap = {};
 
@@ -2691,10 +2691,74 @@ function renderStandings(lg) {
     const btn = document.getElementById(`btn-${lg}`);
     if (btn) btn.classList.add('active-league');
 
-    // WC2026 has group-based standings — redirect to full league view
+    // WC2026 has group-based standings — render groups inline in the standings tab
     if (lg === 'WC2026') {
-        viewLeague('WC2026');
-        switchTab('league-overview');
+        const head = document.getElementById('standingsHead');
+        const body = document.getElementById('standingsBody');
+        const legend = document.getElementById('legend');
+        head.innerHTML = '';
+        legend.innerHTML = `
+            <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:#22c55e"></div><span class="text-[9px] font-black text-zinc-500 uppercase">R16</span></div>
+            <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:#3b82f6"></div><span class="text-[9px] font-black text-zinc-500 uppercase">Best 3rd</span></div>`;
+        body.innerHTML = '<tr><td colspan="8" style="padding:16px;text-align:center;color:#555;">Loading groups...</td></tr>';
+
+        const WC_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=175572507&single=true&output=csv';
+        Papa.parse(WC_URL, {
+            download: true, header: false,
+            complete: (res) => {
+                const rows = res.data;
+                const parseGroup = (startRow, endRow, colOffset) => {
+                    const result = [];
+                    for (let i = startRow; i <= endRow; i++) {
+                        const row = rows[i];
+                        if (!row) continue;
+                        const team = row[colOffset + 1];
+                        if (!team || !team.trim()) continue;
+                        result.push({ team: team.trim(), mp: row[colOffset+2]||'0', wdl: row[colOffset+3]||'0-0-0', gf: row[colOffset+4]||'0', ga: row[colOffset+5]||'0', gd: row[colOffset+6]||'0', pts: row[colOffset+7]||'0' });
+                    }
+                    return result;
+                };
+                const groups = [
+                    { name: 'Group A', teams: parseGroup(2,5,0) },
+                    { name: 'Group B', teams: parseGroup(9,12,0) },
+                    { name: 'Group C', teams: parseGroup(16,19,0) },
+                    { name: 'Group D', teams: parseGroup(2,5,9) },
+                    { name: 'Group E', teams: parseGroup(9,12,9) },
+                    { name: 'Group F', teams: parseGroup(16,19,9) },
+                ];
+                const third = parseGroup(24,29,0);
+
+                body.innerHTML = groups.map(g => `
+                    <tr><td colspan="8" style="padding:12px 16px 4px;font-size:10px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;">${g.name}</td></tr>
+                    ${g.teams.map((t,i) => {
+                        const qc = i<2?'#22c55e':i===2?'#3b82f6':'transparent';
+                        return `<tr class="border-b border-zinc-800/30" style="cursor:pointer;" onclick="viewTeam('${_jsEscapeSingle(t.team)}','WC2026')" onmouseover="this.style.background='#161616'" onmouseout="this.style.background=''">
+                            <td class="pl-4 py-3"><div class="flex items-center gap-1"><div style="width:3px;height:16px;border-radius:2px;background:${qc};flex-shrink:0;"></div><span class="text-zinc-500">${i+1}</span></div></td>
+                            <td><div class="flex items-center gap-3"><img src="${getLogo(t.team)}" class="w-5 h-5 object-contain"><span class="font-bold text-[12px]">${t.team}</span></div></td>
+                            <td class="text-center text-zinc-400 font-mono">${t.mp}</td>
+                            <td class="text-center font-mono text-[10px]">${t.wdl}</td>
+                            <td class="text-center text-zinc-400 font-mono">${t.gf}</td>
+                            <td class="text-center text-zinc-400 font-mono">${t.ga}</td>
+                            <td class="text-center text-zinc-400 font-mono">${t.gd}</td>
+                            <td class="pr-4 text-right text-[#00ff85] font-black">${t.pts}</td>
+                        </tr>`;
+                    }).join('')}
+                    <tr><td colspan="8" style="height:8px;"></td></tr>`).join('') +
+                    (third.length ? `
+                    <tr><td colspan="8" style="padding:12px 16px 4px;font-size:10px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;">Best 3rd Place</td></tr>
+                    ${third.map((t,i) => `<tr class="border-b border-zinc-800/30" style="cursor:pointer;" onclick="viewTeam('${_jsEscapeSingle(t.team)}','WC2026')" onmouseover="this.style.background='#161616'" onmouseout="this.style.background=''">
+                        <td class="pl-4 py-3"><div class="flex items-center gap-1"><div style="width:3px;height:16px;border-radius:2px;background:${i<2?'#22c55e':'transparent'};flex-shrink:0;"></div><span class="text-zinc-500">${i+1}</span></div></td>
+                        <td><div class="flex items-center gap-3"><img src="${getLogo(t.team)}" class="w-5 h-5 object-contain"><span class="font-bold text-[12px]">${t.team}</span></div></td>
+                        <td class="text-center text-zinc-400 font-mono">${t.mp}</td>
+                        <td class="text-center font-mono text-[10px]">${t.wdl}</td>
+                        <td class="text-center text-zinc-400 font-mono">${t.gf}</td>
+                        <td class="text-center text-zinc-400 font-mono">${t.ga}</td>
+                        <td class="text-center text-zinc-400 font-mono">${t.gd}</td>
+                        <td class="pr-4 text-right text-[#00ff85] font-black">${t.pts}</td>
+                    </tr>`).join('')}` : '');
+            }
+        });
+        head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="pr-4 text-right">PTS</th>`;
         return;
     }
     const body = document.getElementById('standingsBody');
