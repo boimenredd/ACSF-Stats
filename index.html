@@ -256,6 +256,7 @@
                     <button id="btn-MLS" onclick="renderStandings('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
                     <button id="btn-UCL" onclick="renderStandings('UCL')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">UCL</button>
                     <button id="btn-EUROPA" onclick="renderStandings('EUROPA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">UEL</button>
+                    <button id="btn-WC2026" onclick="renderStandings('WC2026')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">WORLD CUP</button>
                 </div>
                 <div class="px-4 overflow-x-auto">
                     <div class="bg-zinc-900/50 rounded-xl border border-zinc-800">
@@ -274,6 +275,7 @@
                     <button id="stat-btn-LALIGA" onclick="renderStats('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
                     <button id="stat-btn-MLS" onclick="renderStats('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
                     <button id="stat-btn-UCL" onclick="renderStats('UCL')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">UCL</button>
+                    <button id="stat-btn-WC2026" onclick="renderStats('WC2026')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">WORLD CUP</button>
                     <button id="stat-btn-COMBINED" onclick="renderStats('COMBINED')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">COMBINED</button>
                 </div>
                 <div id="statsContent" class="px-4"></div>
@@ -285,6 +287,7 @@
                     <button id="totm-btn-LALIGA" onclick="renderTOTMTab('LALIGA')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">LA LIGA</button>
                     <button id="totm-btn-MLS" onclick="renderTOTMTab('MLS')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">MLS</button>
                     <button id="totm-btn-UCL" onclick="renderTOTMTab('UCL')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">UCL</button>
+                    <button id="totm-btn-WC2026" onclick="renderTOTMTab('WC2026')" class="league-btn text-[10px] font-black bg-zinc-800 px-5 py-2.5 rounded-full whitespace-nowrap">WORLD CUP</button>
                 </div>
                 <div id="totmContent" class="px-4"></div>
             </div>
@@ -1616,6 +1619,7 @@ const TOTM_CONFIG = {
         'Matchday 26': { startRow: 4405, endRow: 4624 }
     },
     MLS: {
+        'Matchday 18': { startRow: 3698, endRow: 3917 },
         'Matchday 17': { startRow: 3478, endRow: 3697 },
         'Matchday 16': { startRow: 3258, endRow: 3477 },
         'Matchday 15': { startRow: 3038, endRow: 3257 },
@@ -1644,7 +1648,8 @@ const TOTM_CONFIG = {
         'R16 PO Leg 2': { startRow: 1597, endRow: 1695 },
         'R16 PO Leg 1': { startRow: 1487, endRow: 1596 },
         'Round 8': { startRow: 1278, endRow: 1486 }
-    }
+    },
+    WC2026: {}
 };
 
 // ===== MATCHDAY DATE MAPPINGS =====
@@ -2683,8 +2688,15 @@ function getQualifyColor(lg, pos) {
 
 function renderStandings(lg) {
     document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active-league'));
-    document.getElementById(`btn-${lg}`).classList.add('active-league');
-    const head = document.getElementById('standingsHead');
+    const btn = document.getElementById(`btn-${lg}`);
+    if (btn) btn.classList.add('active-league');
+
+    // WC2026 has group-based standings — redirect to full league view
+    if (lg === 'WC2026') {
+        viewLeague('WC2026');
+        switchTab('league-overview');
+        return;
+    }
     const body = document.getElementById('standingsBody');
     const legend = document.getElementById('legend');
 
@@ -4463,21 +4475,14 @@ async function renderLeagueTabContent(tab, league) {
     if (tab === 'wc-groups') {
         content.innerHTML = '<div style="color:#555;padding:32px;text-align:center">Loading groups...</div>';
         const WC_STANDINGS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRGHDcX_hIIzPlyqTZhiySqRNTQho5XFkyRaHqHa0tiPDC3D7zO_b3Mud054IRLzPKaHV1cERaYj3w0/pub?gid=175572507&single=true&output=csv';
-        
-        const WC_GROUPS = [
-            { name: 'Group A', startRow: 1, endRow: 5 },
-            { name: 'Group B', startRow: 8, endRow: 12 },
-            { name: 'Group C', startRow: 15, endRow: 19 },
-            { name: 'Group D', startRow: 1, endRow: 5, col: 'J' },
-            { name: 'Group E', startRow: 8, endRow: 12, col: 'J' },
-            { name: 'Group F', startRow: 15, endRow: 19, col: 'J' },
-        ];
 
         Papa.parse(WC_STANDINGS_URL, {
             download: true, header: false,
             complete: (res) => {
                 const rows = res.data;
-                // Groups A-C use columns A-H (indices 0-7), D-F use J-Q (indices 9-16)
+                // Rows are 0-indexed: A3:H6 = rows 2-5, A10:H13 = rows 9-12, A17:H20 = rows 16-19
+                // J3:Q6 = rows 2-5 col offset 9, J10:Q13 = rows 9-12 col 9, J17:J20 = rows 16-19 col 9
+                // A25:H30 = rows 24-29 col 0
                 const parseGroup = (startRow, endRow, colOffset) => {
                     const result = [];
                     for (let i = startRow; i <= endRow; i++) {
@@ -4500,16 +4505,15 @@ async function renderLeagueTabContent(tab, league) {
                 };
 
                 const groups = [
-                    { name: 'Group A', teams: parseGroup(1, 4, 0) },
-                    { name: 'Group B', teams: parseGroup(8, 11, 0) },
-                    { name: 'Group C', teams: parseGroup(15, 18, 0) },
-                    { name: 'Group D', teams: parseGroup(1, 4, 9) },
-                    { name: 'Group E', teams: parseGroup(8, 11, 9) },
-                    { name: 'Group F', teams: parseGroup(15, 18, 9) },
+                    { name: 'Group A', teams: parseGroup(2, 5, 0) },
+                    { name: 'Group B', teams: parseGroup(9, 12, 0) },
+                    { name: 'Group C', teams: parseGroup(16, 19, 0) },
+                    { name: 'Group D', teams: parseGroup(2, 5, 9) },
+                    { name: 'Group E', teams: parseGroup(9, 12, 9) },
+                    { name: 'Group F', teams: parseGroup(16, 19, 9) },
                 ];
 
-                // Also parse 3rd place table (A24:H30 = rows 23-29, cols 0-7)
-                const thirdPlace = parseGroup(23, 29, 0);
+                const thirdPlace = parseGroup(24, 29, 0);
 
                 const renderGroup = (g) => `
                     <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;">
@@ -4527,7 +4531,7 @@ async function renderLeagueTabContent(tab, league) {
                         ${g.teams.map((t, i) => {
                             const qColor = i < 2 ? '#22c55e' : i === 2 ? '#3b82f6' : 'transparent';
                             return `
-                            <div style="display:grid;grid-template-columns:16px 1fr 28px 60px 28px 28px 28px 32px;gap:4px;align-items:center;padding:7px 0;${i < g.teams.length - 1 ? 'border-bottom:1px solid #141414;' : ''}">
+                            <div style="display:grid;grid-template-columns:16px 1fr 28px 60px 28px 28px 28px 32px;gap:4px;align-items:center;padding:7px 0;${i < g.teams.length - 1 ? 'border-bottom:1px solid #141414;' : ''}cursor:pointer;" onclick="viewTeam('${_jsEscapeSingle(t.team)}','WC2026')" onmouseover="this.style.background='#161616'" onmouseout="this.style.background=''">
                                 <div style="display:flex;align-items:center;gap:4px;">
                                     <div style="width:3px;height:16px;border-radius:2px;background:${qColor};flex-shrink:0;"></div>
                                     <span style="font-size:11px;color:#555;">${i + 1}</span>
@@ -4560,7 +4564,7 @@ async function renderLeagueTabContent(tab, league) {
                             <div style="font-size:10px;color:#555;text-align:right;">PTS</div>
                         </div>
                         ${thirdPlace.map((t, i) => `
-                            <div style="display:grid;grid-template-columns:16px 1fr 28px 60px 28px 28px 28px 32px;gap:4px;align-items:center;padding:7px 0;${i < thirdPlace.length - 1 ? 'border-bottom:1px solid #141414;' : ''}">
+                            <div style="display:grid;grid-template-columns:16px 1fr 28px 60px 28px 28px 28px 32px;gap:4px;align-items:center;padding:7px 0;${i < thirdPlace.length - 1 ? 'border-bottom:1px solid #141414;' : ''}cursor:pointer;" onclick="viewTeam('${_jsEscapeSingle(t.team)}','WC2026')" onmouseover="this.style.background='#161616'" onmouseout="this.style.background=''">
                                 <div style="display:flex;align-items:center;gap:4px;">
                                     <div style="width:3px;height:16px;border-radius:2px;background:${i < 2 ? '#22c55e' : 'transparent'};flex-shrink:0;"></div>
                                     <span style="font-size:11px;color:#555;">${i + 1}</span>
