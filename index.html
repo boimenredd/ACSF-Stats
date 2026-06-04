@@ -1491,6 +1491,9 @@ let standingsCache = {};
 // Loads standings rows for a league once, returns sorted array by position.
 // Each row: { pos:number, team:string, wdl:string, pts:number, mp:number }
 function loadStandingsData(lg) {
+    // WC2026 uses group standings, not a regular standings CSV
+    if (lg === 'WC2026') return Promise.resolve([]);
+
     if (standingsCache[lg] && standingsCache[lg].loaded) return Promise.resolve(standingsCache[lg].rows);
 
     standingsCache[lg] = { loaded: false, rows: [] };
@@ -2012,6 +2015,57 @@ async function init() {
     };
 
     for (let k of keys) {
+        // WC2026 uses header-based CSV — handle separately
+        if (k === 'WC2026') {
+            await new Promise(res => {
+                Papa.parse(SCHEDULE_URLS['WC2026'], {
+                    download: true, header: true,
+                    complete: (results) => {
+                        (results.data || []).forEach(row => {
+                            const home = (row.Home || row.home || '').trim();
+                            const away = (row.Away || row.away || '').trim();
+                            if (!home || !away) return;
+                            const rawDate = (row.Date || row.date || '').trim();
+                            const rawScore = (row.Score || row.score || row.Result || row.result || 'v').toString().trim();
+                            const comp = (row.Round || row.round || row.Stage || row.stage || 'World Cup').trim();
+                            
+                            let date = null;
+                            if (rawDate) {
+                                // Try parseSheetDate first (handles "June 14" style)
+                                const pd = parseSheetDate(rawDate);
+                                if (pd && pd !== 'MATCHDAY_MARKER') {
+                                    date = pd;
+                                } else {
+                                    // Try native Date parsing (handles "6/14/2026", "2026-06-14", etc.)
+                                    const nd = new Date(rawDate);
+                                    if (!isNaN(nd.getTime())) {
+                                        date = new Date(nd.getFullYear(), nd.getMonth(), nd.getDate());
+                                    }
+                                }
+                            }
+                            if (!date) return;
+                            
+                            const score = rawScore || 'v';
+                            allMatches.push({
+                                league: 'WC2026',
+                                date,
+                                home,
+                                away,
+                                homeKey: canonicalTeamName(home),
+                                awayKey: canonicalTeamName(away),
+                                score,
+                                comp
+                            });
+                            dateMap[date.getTime()] = true;
+                        });
+                        res();
+                    },
+                    error: () => res()
+                });
+            });
+            continue;
+        }
+
         const scheduleConfig = SCHEDULE_URLS[k];
         const isCustomColumns = typeof scheduleConfig === 'object' && scheduleConfig.url;
         const url = isCustomColumns ? scheduleConfig.url : scheduleConfig;
@@ -2691,12 +2745,13 @@ function renderStandings(lg) {
     const btn = document.getElementById(`btn-${lg}`);
     if (btn) btn.classList.add('active-league');
 
+    const head = document.getElementById('standingsHead');
+    const body = document.getElementById('standingsBody');
+    const legend = document.getElementById('legend');
+
     // WC2026 has group-based standings — render groups inline in the standings tab
     if (lg === 'WC2026') {
-        const head = document.getElementById('standingsHead');
-        const body = document.getElementById('standingsBody');
-        const legend = document.getElementById('legend');
-        head.innerHTML = '';
+        head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="pr-4 text-right">PTS</th>`;
         legend.innerHTML = `
             <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:#22c55e"></div><span class="text-[9px] font-black text-zinc-500 uppercase">R16</span></div>
             <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:#3b82f6"></div><span class="text-[9px] font-black text-zinc-500 uppercase">Best 3rd</span></div>`;
@@ -2761,8 +2816,6 @@ function renderStandings(lg) {
         head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="pr-4 text-right">PTS</th>`;
         return;
     }
-    const body = document.getElementById('standingsBody');
-    const legend = document.getElementById('legend');
 
     head.innerHTML = `<th class="pl-4 py-3">POS</th><th>Team</th><th class="text-center">MP</th><th class="text-center">W-D-L</th><th class="text-center">GF</th><th class="text-center">GA</th><th class="text-center">GD</th><th class="pr-4 text-right">PTS</th>`;
 
