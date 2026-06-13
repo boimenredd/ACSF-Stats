@@ -1923,6 +1923,75 @@ function parseSheetDate(raw) {
     return null;
 }
 
+// Parses the WC2026 match list, which uses a "block" layout:
+// Col A row1 of block = matchday number, row2 = date ("Jun 13th"), rows 3-4 blank
+// Col B = Home, Col C = Away, Col D = Result. Blocks separated by blank rows.
+function parseWCMatchRows(rows) {
+    const matches = [];
+    let i = 0;
+    while (i < rows.length) {
+        const row = rows[i] || [];
+        const home = (row[1] || '').toString().trim();
+        const away = (row[2] || '').toString().trim();
+
+        if (!home || !away || home.toLowerCase() === 'home' || away.toLowerCase() === 'away') {
+            i++;
+            continue;
+        }
+
+        // Collect contiguous match rows for this block
+        const blockRows = [];
+        let j = i;
+        while (j < rows.length) {
+            const r = rows[j] || [];
+            const h = (r[1] || '').toString().trim();
+            const a = (r[2] || '').toString().trim();
+            if (!h || !a) break;
+            blockRows.push(r);
+            j++;
+        }
+
+        // Find matchday number and date string from column A within the block
+        let matchday = null, dateStr = null;
+        blockRows.forEach(r => {
+            const a = (r[0] || '').toString().trim();
+            if (!a) return;
+            if (/^\d+$/.test(a)) matchday = a;
+            else dateStr = a;
+        });
+
+        let date = null;
+        if (dateStr) {
+            const cleaned = dateStr.replace(/(\d+)(st|nd|rd|th)/i, '$1');
+            const pd = parseSheetDate(cleaned);
+            if (pd && pd !== 'MATCHDAY_MARKER') {
+                date = pd;
+            } else {
+                const nd = new Date(cleaned + ' 2026');
+                if (!isNaN(nd.getTime())) date = new Date(nd.getFullYear(), nd.getMonth(), nd.getDate());
+            }
+        }
+
+        if (date) {
+            blockRows.forEach(r => {
+                const h = (r[1] || '').toString().trim();
+                const a = (r[2] || '').toString().trim();
+                const result = (r[3] || '').toString().trim();
+                matches.push({
+                    date,
+                    matchday,
+                    home: h,
+                    away: a,
+                    score: result || 'v'
+                });
+            });
+        }
+
+        i = j + 1; // skip block + separator row
+    }
+    return matches;
+}
+
 function _stripLeadingPosFromTeam(pos, team) {
     const t = (team || '').toString().trim();
     const p = (pos || '').toString().trim();
@@ -2015,48 +2084,25 @@ async function init() {
     };
 
     for (let k of keys) {
-        // WC2026 uses header-based CSV — handle separately
+        // WC2026 uses a block-layout CSV — handle separately
         if (k === 'WC2026') {
             await new Promise(res => {
                 Papa.parse(SCHEDULE_URLS['WC2026'], {
-                    download: true, header: true,
+                    download: true, header: false,
                     complete: (results) => {
-                        (results.data || []).forEach(row => {
-                            const home = (row.Home || row.home || '').trim();
-                            const away = (row.Away || row.away || '').trim();
-                            if (!home || !away) return;
-                            const rawDate = (row.Date || row.date || '').trim();
-                            const rawScore = (row.Score || row.score || row.Result || row.result || 'v').toString().trim();
-                            const comp = (row.Round || row.round || row.Stage || row.stage || 'World Cup').trim();
-                            
-                            let date = null;
-                            if (rawDate) {
-                                // Try parseSheetDate first (handles "June 14" style)
-                                const pd = parseSheetDate(rawDate);
-                                if (pd && pd !== 'MATCHDAY_MARKER') {
-                                    date = pd;
-                                } else {
-                                    // Try native Date parsing (handles "6/14/2026", "2026-06-14", etc.)
-                                    const nd = new Date(rawDate);
-                                    if (!isNaN(nd.getTime())) {
-                                        date = new Date(nd.getFullYear(), nd.getMonth(), nd.getDate());
-                                    }
-                                }
-                            }
-                            if (!date) return;
-                            
-                            const score = rawScore || 'v';
+                        const parsed = parseWCMatchRows(results.data || []);
+                        parsed.forEach(m => {
                             allMatches.push({
                                 league: 'WC2026',
-                                date,
-                                home,
-                                away,
-                                homeKey: canonicalTeamName(home),
-                                awayKey: canonicalTeamName(away),
-                                score,
-                                comp
+                                date: m.date,
+                                home: m.home,
+                                away: m.away,
+                                homeKey: canonicalTeamName(m.home),
+                                awayKey: canonicalTeamName(m.away),
+                                score: m.score,
+                                comp: m.matchday ? `Matchday ${m.matchday}` : 'World Cup'
                             });
-                            dateMap[date.getTime()] = true;
+                            dateMap[m.date.getTime()] = true;
                         });
                         res();
                     },
@@ -4762,47 +4808,48 @@ async function renderLeagueTabContent(tab, league) {
     if (tab === 'fixtures' && league === 'WC2026') {
         content.innerHTML = '<div style="color:#555;padding:32px;text-align:center">Loading fixtures...</div>';
         Papa.parse(SCHEDULE_URLS['WC2026'], {
-            download: true, header: true,
+            download: true, header: false,
             complete: (res) => {
-                const rows = res.data.filter(r => r.Home || r.home);
-                if (!rows.length) { content.innerHTML = '<div style="color:#555;padding:32px;text-align:center;">No fixtures found.</div>'; return; }
-                
-                // Group by round/date
+                const matches = parseWCMatchRows(res.data || []);
+                if (!matches.length) { content.innerHTML = '<div style="color:#555;padding:32px;text-align:center;">No fixtures found.</div>'; return; }
+
+                // Group by matchday
                 const byRound = {};
-                rows.forEach(r => {
-                    const round = r.Round || r.round || r.Stage || r.stage || 'Fixtures';
+                matches.forEach(m => {
+                    const round = m.matchday ? `Matchday ${m.matchday}` : 'Fixtures';
                     if (!byRound[round]) byRound[round] = [];
-                    byRound[round].push(r);
+                    byRound[round].push(m);
                 });
 
-                content.innerHTML = Object.entries(byRound).map(([round, matches]) => `
+                const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+                content.innerHTML = Object.entries(byRound).map(([round, roundMatches]) => `
                     <div style="background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:16px;margin-bottom:10px;">
                         <div style="font-size:11px;font-weight:800;color:#888;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">${round}</div>
-                        ${matches.map(m => {
-                            const home = m.Home || m.home || '';
-                            const away = m.Away || m.away || '';
-                            const score = m.Score || m.score || m.Result || m.result || '';
-                            const date = m.Date || m.date || '';
-                            const played = score && score.includes('-');
+                        ${roundMatches.map(m => {
+                            const score = m.score;
+                            const played = score && score !== 'v' && /\d+\s*-\s*\d+/.test(score);
+                            const dateLabel = `${months[m.date.getMonth()]} ${m.date.getDate()}`;
                             return `
-                            <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #141414;">
+                            <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #141414;cursor:pointer;" onclick="viewTeam('${_jsEscapeSingle(m.home)}','WC2026')">
                                 <div style="flex:1;display:flex;align-items:center;gap:8px;justify-content:flex-end;">
-                                    <span style="font-size:13px;font-weight:700;text-align:right;">${home}</span>
-                                    <img src="${getLogo(home)}" style="width:22px;height:22px;object-fit:contain;">
+                                    <span style="font-size:13px;font-weight:700;text-align:right;">${m.home}</span>
+                                    <img src="${getLogo(m.home)}" style="width:22px;height:22px;object-fit:contain;">
                                 </div>
                                 <div style="min-width:64px;text-align:center;">
                                     ${played
                                         ? `<span style="font-size:14px;font-weight:900;background:#1a1a1a;padding:4px 10px;border-radius:6px;">${score}</span>`
-                                        : `<span style="font-size:10px;color:#555;">${date}</span>`}
+                                        : `<span style="font-size:10px;color:#555;">${dateLabel}</span>`}
                                 </div>
                                 <div style="flex:1;display:flex;align-items:center;gap:8px;">
-                                    <img src="${getLogo(away)}" style="width:22px;height:22px;object-fit:contain;">
-                                    <span style="font-size:13px;font-weight:700;">${away}</span>
+                                    <img src="${getLogo(m.away)}" style="width:22px;height:22px;object-fit:contain;">
+                                    <span style="font-size:13px;font-weight:700;">${m.away}</span>
                                 </div>
                             </div>`;
                         }).join('')}
                     </div>`).join('');
-            }
+            },
+            error: () => { content.innerHTML = '<div style="color:#ef4444;padding:32px;text-align:center;">Failed to load fixtures.</div>'; }
         });
         return;
     }
