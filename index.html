@@ -2221,7 +2221,7 @@ function renderMatches() {
     document.getElementById('dateText').textContent = `${days[dObj.getDay()]}, ${months[dObj.getMonth()]} ${dObj.getDate()}`;
 
     const filtered = allMatches.filter(m => m.date.getTime() === target);
-    const leagueOrder = ['PREM', 'LALIGA', 'MLS', 'UCL', 'EUROPA'];
+    const leagueOrder = ['PREM', 'LALIGA', 'MLS', 'WC2026', 'UCL', 'EUROPA'];
 
     let html = '';
     leagueOrder.forEach(lg => {
