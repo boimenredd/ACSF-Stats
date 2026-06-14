@@ -397,17 +397,17 @@
                 <span class="text-lg">📊</span>
                 <span>STATS</span>
             </div>
-            <div class="nav-item" onclick="switchTab('articles')">
-                <span class="text-lg">📰</span>
-                <span>ARTICLES</span>
+            <div class="nav-item" onclick="switchTab('totm')">
+                <span class="text-lg">⭐</span>
+                <span>TEAM OF MD</span>
             </div>
             <div class="nav-item" onclick="switchTab('games')">
                 <span class="text-lg">🎮</span>
                 <span>GAMES</span>
             </div>
-            <div class="nav-item" onclick="switchTab('totm')">
-                <span class="text-lg">⭐</span>
-                <span>TEAM OF MD</span>
+            <div class="nav-item" onclick="switchTab('articles')">
+                <span class="text-lg">📰</span>
+                <span>ARTICLES</span>
             </div>
         </div>
     </nav>
@@ -3396,15 +3396,22 @@ document.addEventListener('click', (e) => {
     box.classList.add('hidden');
 });
 
-function _teamLeaders(players){
+function _teamLeaders(players, league){
     const valid = (players || []).slice();
 
     const goalsSorted = valid.slice().sort((a,b)=> (b.goals||0)-(a.goals||0));
     const assistsSorted = valid.slice().sort((a,b)=> (b.assists||0)-(a.assists||0));
-    
-    // For ratings: first try players with at least 5 games, fallback to all players if empty
-    const ratingsWith5Plus = valid.filter(p => (p.matches || 0) >= 5).slice().sort((a,b)=> (Number(b.avgRating||0))-(Number(a.avgRating||0)));
-    const ratingSorted = ratingsWith5Plus.length > 0 ? ratingsWith5Plus : valid.slice().sort((a,b)=> (Number(b.avgRating||0))-(Number(a.avgRating||0)));
+
+    // For ratings: first try players with at least 5 games, fallback to all players if empty.
+    // For the World Cup, matchcounts are naturally low (group stage = max 3), so always
+    // include everyone regardless of matches played.
+    let ratingSorted;
+    if (league === 'WC2026') {
+        ratingSorted = valid.slice().sort((a,b)=> (Number(b.avgRating||0))-(Number(a.avgRating||0)));
+    } else {
+        const ratingsWith5Plus = valid.filter(p => (p.matches || 0) >= 5).slice().sort((a,b)=> (Number(b.avgRating||0))-(Number(a.avgRating||0)));
+        ratingSorted = ratingsWith5Plus.length > 0 ? ratingsWith5Plus : valid.slice().sort((a,b)=> (Number(b.avgRating||0))-(Number(a.avgRating||0)));
+    }
 
     const goalsLeader = goalsSorted[0] || null;
     const assistsLeader = assistsSorted[0] || null;
@@ -3418,7 +3425,7 @@ function showTeamLeaderboard(type){
     if (!box) return;
 
     const players = currentTeamPlayersList || [];
-    const { goalsSorted, assistsSorted, ratingSorted } = _teamLeaders(players);
+    const { goalsSorted, assistsSorted, ratingSorted } = _teamLeaders(players, currentTeamLeague);
 
     let title = '';
     let list = [];
@@ -3787,7 +3794,7 @@ async function viewTeam(teamName, league) {
     currentTeamLeague = league;
     currentTeamName = teamName;
 
-    const { goalsLeader, assistsLeader, ratingLeader } = _teamLeaders(teamPlayers);
+    const { goalsLeader, assistsLeader, ratingLeader } = _teamLeaders(teamPlayers, league);
 
     const teamMatchesAll = allMatches
         .filter(m => m.league === league && (m.homeKey === tk || m.awayKey === tk))
