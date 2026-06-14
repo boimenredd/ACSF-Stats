@@ -304,6 +304,18 @@
                 <div id="articleDetailContent"></div>
             </div>
 
+            <div id="games-tab" class="hidden" style="padding-top:16px; padding-bottom:24px;">
+                <div class="px-4">
+                    <h2 class="text-xl font-black uppercase mb-6 text-center">Games</h2>
+                    <div id="gamesContent"></div>
+                </div>
+            </div>
+
+            <div id="game-detail-tab" class="hidden" style="padding:16px;">
+                <button onclick="backToGames()" class="text-[10px] font-black text-[#00ff85] mb-4 block">← BACK TO GAMES</button>
+                <div id="gameDetailContent"></div>
+            </div>
+
             <div id="league-overview-tab" class="hidden" style="padding:16px;">
                 <button onclick="backToHub()" class="text-[10px] font-black text-[#00ff85] mb-4 block">← BACK TO HUB</button>
                 <div id="leagueOverviewContent"></div>
@@ -385,13 +397,17 @@
                 <span class="text-lg">📊</span>
                 <span>STATS</span>
             </div>
-            <div class="nav-item" onclick="switchTab('totm')">
-                <span class="text-lg">⭐</span>
-                <span>TEAM OF MD</span>
-            </div>
             <div class="nav-item" onclick="switchTab('articles')">
                 <span class="text-lg">📰</span>
                 <span>ARTICLES</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('games')">
+                <span class="text-lg">🎮</span>
+                <span>GAMES</span>
+            </div>
+            <div class="nav-item" onclick="switchTab('totm')">
+                <span class="text-lg">⭐</span>
+                <span>TEAM OF MD</span>
             </div>
         </div>
     </nav>
@@ -2712,13 +2728,13 @@ function changeDate(step) {
 
 function switchTab(t) {
     currentView = t;
-    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','articles-tab','article-detail-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
+    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','articles-tab','article-detail-tab','games-tab','game-detail-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
     allTabs.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
     });
 
-    const tabMap = { hub: 'hub-tab', standings: 'standings-tab', stats: 'stats-tab', totm: 'totm-tab', articles: 'articles-tab' };
+    const tabMap = { hub: 'hub-tab', standings: 'standings-tab', stats: 'stats-tab', totm: 'totm-tab', articles: 'articles-tab', games: 'games-tab' };
     const showId = tabMap[t] || 'hub-tab';
     const show = document.getElementById(showId);
     if (show) show.classList.remove('hidden');
@@ -2729,7 +2745,8 @@ function switchTab(t) {
                          (t === 'standings' && spanText === 'STANDINGS') ||
                          (t === 'stats' && spanText === 'STATS') ||
                          (t === 'totm' && spanText === 'TEAM OF MD') ||
-                         (t === 'articles' && spanText === 'ARTICLES');
+                         (t === 'articles' && spanText === 'ARTICLES') ||
+                         (t === 'games' && spanText === 'GAMES');
         el.classList.toggle('active', isActive);
     });
 
@@ -2737,6 +2754,7 @@ function switchTab(t) {
     if (t === 'stats') renderStats('PREM');
     if (t === 'totm') renderTOTMTab('PREM');
     if (t === 'articles') renderArticles();
+    if (t === 'games') renderGames();
 }
 
 function backToView() {
@@ -2745,10 +2763,15 @@ function backToView() {
     else if (currentView === 'stats') switchTab('stats');
     else if (currentView === 'totm') switchTab('totm');
     else if (currentView === 'articles') switchTab('articles');
+    else if (currentView === 'games') switchTab('games');
 }
 
 function backToArticles() {
     switchTab('articles');
+}
+
+function backToGames() {
+    switchTab('games');
 }
 
 function getQualifyColor(lg, pos) {
@@ -4287,7 +4310,7 @@ let currentLineup = Array(11).fill(null);
 let currentPickerSlot = null;
 
 function openLineupBuilder() {
-    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','league-overview-tab','team-tab','player-tab'];
+    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','articles-tab','article-detail-tab','games-tab','game-detail-tab','league-overview-tab','team-tab','player-tab'];
     allTabs.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
     document.getElementById('lineup-builder-tab').classList.remove('hidden');
     renderLineupField();
@@ -4295,11 +4318,15 @@ function openLineupBuilder() {
 
 function closeLineupBuilder() {
     document.getElementById('lineup-builder-tab').classList.add('hidden');
-    document.getElementById('hub-tab').classList.remove('hidden');
+    if (currentView === 'games') {
+        document.getElementById('games-tab').classList.remove('hidden');
+    } else {
+        document.getElementById('hub-tab').classList.remove('hidden');
+    }
 }
 
 function backToHub() {
-    const allTabs = ['standings-tab','stats-tab','totm-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
+    const allTabs = ['standings-tab','stats-tab','totm-tab','articles-tab','article-detail-tab','games-tab','game-detail-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
     allTabs.forEach(id => { const el = document.getElementById(id); if (el) el.classList.add('hidden'); });
     document.getElementById('hub-tab').classList.remove('hidden');
 }
@@ -5505,13 +5532,77 @@ async function renderArticles() {
     content.innerHTML = articlesHTML;
 }
 
+function renderGames() {
+    const content = document.getElementById('gamesContent');
+
+    const games = [
+        {
+            id: 'continental-cup',
+            title: 'ACSF Continental Cup',
+            tagline: 'Draft your squad. Chase the trophy.',
+            badge: 'COMING SOON',
+            badgeColor: '#fbbf24',
+            icon: '🏆',
+        },
+        {
+            id: 'build-your-xi',
+            title: 'Build Your Own XI',
+            tagline: 'Create your dream lineup',
+            badge: 'PLAY NOW',
+            badgeColor: '#00ff85',
+            icon: '⚽',
+        }
+    ];
+
+    content.innerHTML = games.map(g => `
+        <div class="bg-zinc-900/50 rounded-xl border border-zinc-800 p-4 mb-4 cursor-pointer hover:border-[#00ff85] transition-all" onclick="${g.id === 'build-your-xi' ? 'openLineupBuilder()' : `viewGame('${g.id}')`}">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-[10px] font-black uppercase tracking-wider" style="color:${g.badgeColor}">${g.badge}</span>
+                <span class="text-2xl">${g.icon}</span>
+            </div>
+            <h3 class="text-lg font-black mb-1">${g.title}</h3>
+            <div class="text-[12px] text-zinc-500 mb-3">${g.tagline}</div>
+            <div class="text-[10px] text-[#00ff85] font-black mt-3">${g.id === 'build-your-xi' ? 'OPEN BUILDER →' : 'LEARN MORE →'}</div>
+        </div>
+    `).join('');
+}
+
+function viewGame(gameId) {
+    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','articles-tab','article-detail-tab','games-tab','game-detail-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
+    allTabs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+
+    document.getElementById('game-detail-tab').classList.remove('hidden');
+    currentView = 'games';
+
+    const content = document.getElementById('gameDetailContent');
+
+    if (gameId === 'continental-cup') {
+        content.innerHTML = `
+            <div class="max-w-xl mx-auto text-center py-12">
+                <div class="text-6xl mb-4">🏆</div>
+                <div class="text-[11px] font-black uppercase tracking-wider text-yellow-400 mb-2">Coming Soon</div>
+                <h1 class="text-2xl font-black mb-4">ACSF Continental Cup</h1>
+                <p class="text-zinc-400 text-[14px] leading-relaxed">
+                    Draft your team of ACSF stars and lead them through the Continental Cup.
+                    Build a squad from across the league, manage your roster, and battle
+                    your way through the bracket for glory.
+                </p>
+                <div class="text-[10px] text-zinc-600 mt-6 uppercase font-black tracking-wider">Check back soon for launch details</div>
+            </div>
+        `;
+    }
+}
+
 async function viewArticle(articleId) {
     const articles = await loadArticles();
     const article = articles.find(a => a.id === articleId);
     
     if (!article) return;
     
-    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','articles-tab','article-detail-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
+    const allTabs = ['hub-tab','standings-tab','stats-tab','totm-tab','articles-tab','article-detail-tab','games-tab','game-detail-tab','league-overview-tab','team-tab','player-tab','lineup-builder-tab'];
     allTabs.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
